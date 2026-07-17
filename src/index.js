@@ -129,14 +129,20 @@ async function handleWrite(request, env) {
     key:    env.GAS_TOKEN || '',
   };
 
+  // ยิงเป็น GET — Apps Script ตอบ POST ด้วย redirect 302 แล้ว body หายระหว่างทาง
+  // (มาตรฐานเว็บบังคับเปลี่ยน POST→GET ตอนตาม redirect) → ได้หน้า HTML กลับมาแทน JSON
+  const url = new URL(env.GAS_URL);
+  for (const [k, v] of Object.entries(payload)) if (v) url.searchParams.set(k, v);
+
   try {
-    const up = await fetch(env.GAS_URL, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    return new Response(await up.text(), {
+    const up = await fetch(url.toString(), { redirect: 'follow', headers: { accept: 'application/json' } });
+    const text = await up.text();
+
+    // ถ้ายังได้ HTML กลับมา = Apps Script ไม่ได้รันโค้ดที่คิด — บอกให้ชัด อย่าให้ JSON.parse พังเงียบ ๆ
+    if (text.trim().startsWith('<')) {
+      return json({ ok: false, error: 'Apps Script ตอบเป็นหน้าเว็บ ไม่ใช่ JSON — ตรวจว่า Deploy เวอร์ชันใหม่แล้ว และ Access = Anyone' }, 502);
+    }
+    return new Response(text, {
       status: up.status,
       headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
     });
