@@ -308,6 +308,41 @@ svg.spark{display:block;width:100%;height:150px;overflow:visible}
 .dtable td:nth-child(3),.dtable td:nth-child(4),.dtable th:nth-child(3),.dtable th:nth-child(4){text-align:right}
 .dot{width:6px;height:6px;border-radius:99px;display:inline-block;margin-right:8px;vertical-align:middle}
 .muted{color:var(--ink-4);font-family:var(--mono);font-size:10.5px}
+.teamsec{padding:18px 24px;border-bottom:.5px solid var(--hair)}
+.tnow{display:flex;align-items:flex-start;gap:10px;background:var(--surface-2);border:.5px solid var(--hair);
+  border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.tnow .body{flex:1;min-width:0}
+.tnow .txt{font-size:13px;line-height:1.6;word-break:break-word}
+.tnow .meta{font-family:var(--mono);font-size:10px;color:var(--ink-4);margin-top:5px}
+.tnone{font-family:var(--mono);font-size:11px;color:var(--ink-4);padding:2px 0 12px}
+.stbtns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.stbtn{border:.5px solid var(--hair);background:var(--surface);border-radius:var(--pill);padding:6px 11px;
+  font:inherit;font-size:11.5px;color:var(--ink-2);cursor:pointer;transition:.15s}
+.stbtn:hover{border-color:var(--ink-3);color:var(--ink)}
+.stbtn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+textarea{width:100%;font-family:var(--sans);font-size:13px;color:var(--ink);background:var(--surface);
+  border:.5px solid var(--hair);border-radius:10px;padding:10px 12px;outline:none;resize:vertical;min-height:64px}
+textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in srgb,var(--ink) 10%,transparent)}
+.frow{display:flex;gap:8px;align-items:center;margin-top:10px}
+.frow input{flex:1;min-width:0}
+.save{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+.save:hover{background:var(--ink);opacity:.88}
+.save:disabled{opacity:.4;cursor:default}
+.tlog{margin-top:16px;border-top:.5px solid var(--hair);padding-top:14px}
+.tlog h4{font-family:var(--mono);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-4);margin-bottom:10px}
+.tl{display:grid;grid-template-columns:8px 1fr;gap:10px;padding-bottom:14px;position:relative}
+.tl::before{content:"";position:absolute;left:3px;top:12px;bottom:0;width:1px;background:var(--hair)}
+.tl:last-child::before{display:none}
+.tl .dotm{width:7px;height:7px;border-radius:99px;background:var(--ink-3);margin-top:4px;z-index:1}
+.tl.new .dotm{background:var(--green)}
+.tl .c{min-width:0}
+.tl .s{font-size:12.5px;font-weight:600}
+.tl .n{font-size:12.5px;color:var(--ink-2);line-height:1.55;word-break:break-word}
+.tl .m{font-family:var(--mono);font-size:9.5px;color:var(--ink-4);margin-top:3px}
+.pen{border:0;background:none;color:var(--ink-4);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:6px}
+.pen:hover{color:var(--ink);background:var(--sel)}
+.tag{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:var(--pill);background:var(--track);
+  color:var(--ink-2);white-space:nowrap;flex:none}
 .note{background:var(--surface-2);border:.5px solid var(--hair);border-radius:var(--r);padding:11px 13px;
   font-size:12.5px;color:var(--ink-2);line-height:1.65}
 .note b{color:var(--ink);font-weight:600}
@@ -555,6 +590,11 @@ const med = a => { if(!a.length) return 0; const s=a.slice().sort((x,y)=>x-y), h
 let DATA=null, VIEW=null, DAY=null, M={}, SORT={k:'code',dir:1}, FILTER='', MODE='day', WTAB='down';
 let LIST=[], KBI=-1, SERIES=[];
 const HIST = {};
+const NOTES = {};
+const DEMO_NOTES = { LO_0001:[
+  {status:'นัดช่างแล้ว', note:'ร้านแจ้งว่าตู้ไม่ติด นัดช่างเข้าพรุ่งนี้บ่าย', by:'วิษณุ', at:new Date(Date.now()-2*3600e3).toISOString()},
+  {status:'รับเรื่องแล้ว', note:'โทรหาร้านแล้ว รอเขาเช็คปลั๊กก่อน', by:'มิว', at:new Date(Date.now()-26*3600e3).toISOString()},
+] };
 
 /* ── theme ── */
 const setTheme = t => { document.documentElement.dataset.theme = t; try{localStorage.dealTheme=t}catch(e){} };
@@ -972,7 +1012,8 @@ function open(code){
 
   $('#dbody').innerHTML =
     '<div class="dhead"><button class="dclose" id="dclose" aria-label="ปิด">✕</button>'+
-      '<div class="code">'+r.code+(r.owner?' · '+esc(r.owner):'')+'</div><h2>'+esc(r.name)+'</h2>'+
+      '<div class="code">'+r.code+(r.owner?' · '+esc(r.owner):'')+'</div>'+
+      '<h2 id="dname">'+esc(r.name)+' <button class="pen" id="rename" title="แก้ชื่อตู้">✎</button></h2>'+
       '<div class="dstats">'+
         '<div><div class="k">สะสมเดือนนี้</div><div class="v">'+money(tot)+'</div></div>'+
         '<div><div class="k">เฉลี่ย/วันตอน Online</div><div class="v">'+money(m.avg)+'</div></div>'+
@@ -996,12 +1037,123 @@ function open(code){
       'ตู้ยัง Online แต่ '+RULE.DROP_WIN+' วันล่าสุดทำได้เฉลี่ย <b>'+money(m.recent)+'</b> บาท '+
       'จากปกติ <b>'+money(m.base)+'</b> บาท (ร่วง '+Math.round(m.dropPct*100)+'%) — '+
       'ตู้ไม่ได้พัง แต่คนเล่นน้อยลง ลองเช็คว่าโดนย้ายมุม หรือมีอะไรบัง</div></div>' : '')+
+    '<div class="teamsec"><h3 style="font-size:9.5px;font-family:var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px">สถานะจากทีม</h3>'+
+      '<div id="tnow"><div class="tnone">กำลังโหลด…</div></div>'+
+      '<div class="stbtns" id="stbtns"></div>'+
+      '<textarea id="tnote" placeholder="เกิดอะไรขึ้น / ทำอะไรไปแล้ว / ต้องทำอะไรต่อ"></textarea>'+
+      '<div class="frow"><input id="tby" placeholder="ชื่อคุณ" value="'+esc(who())+'">'+
+        '<button class="gbtn save" id="tsave">บันทึก</button></div>'+
+      '<div class="tlog" id="tlog"></div>'+
+    '</div>'+
     '<div class="dsec"><h3>ประวัติรายเดือน · ยอดรวม</h3><div id="hist"><div class="muted">กำลังโหลด…</div></div></div>'+
     '<table class="dtable"><thead><tr><th>'+(MODE==='day'?'วันที่':'รอบเช็ค')+'</th><th>สถานะ</th>'+
       '<th>รายได้'+(MODE==='day'?'/วัน':'')+'</th><th>สะสม/เดือน</th></tr></thead><tbody>'+body+'</tbody></table>';
   $('#dclose').onclick = close;
   $('#drawer').classList.add('on'); $('#scrim').classList.add('on'); $('#drawer').setAttribute('aria-hidden','false');
+  $('#rename').onclick = () => doRename(r);
+  $('#tsave').onclick  = () => saveNote(r);
   loadHistory(code);
+  loadNotes(code);
+}
+
+/* ══ บันทึกของทีม ══ */
+const who = () => { try { return localStorage.dealWho || ''; } catch(e){ return ''; } };
+let PICK = '';
+
+async function post(body){
+  const r = await fetch(API, { method:'POST', headers:{'content-type':'application/json'},
+    body: JSON.stringify(Object.assign({}, body, KEY?{key:KEY}:{})) });
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error);
+  return j.data;
+}
+
+const FALLBACK_ST = ['รับเรื่องแล้ว','นัดช่างแล้ว','ช่างเข้าหน้างาน','ซ่อมเสร็จ','รอลูกค้าตอบ','ร้านปิดชั่วคราว','ปกติ ไม่ต้องทำอะไร'];
+
+async function loadNotes(code){
+  let d;
+  if(!API){ d = { notes: DEMO_NOTES[code] || [], statuses: FALLBACK_ST }; }
+  else {
+    try { d = await api({action:'notes', code:code}); }
+    catch(e){ const el=$('#tnow'); if(el) el.innerHTML = '<div class="tnone">โหลดบันทึกไม่ได้: '+esc(e.message)+'</div>'; return; }
+  }
+  NOTES[code] = d.notes;
+  PICK = '';
+  const sb = $('#stbtns'); if(!sb) return;
+  sb.innerHTML = (d.statuses||FALLBACK_ST).map(x=>
+    '<button class="stbtn" data-s="'+esc(x)+'" aria-pressed="false">'+esc(x)+'</button>').join('');
+  sb.onclick = e => { const b = e.target.closest('.stbtn'); if(!b) return;
+    const on = b.getAttribute('aria-pressed')==='true';
+    sb.querySelectorAll('.stbtn').forEach(x=>x.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed', on?'false':'true');
+    PICK = on ? '' : b.dataset.s; };
+  paintNotes(code);
+}
+
+function paintNotes(code){
+  const list = NOTES[code] || [];
+  const now = $('#tnow'), log = $('#tlog');
+  if(!now) return;
+  if(!list.length){
+    now.innerHTML = '<div class="tnone">ยังไม่มีใครบันทึกอะไรไว้ — เป็นคนแรกได้เลย</div>';
+    log.innerHTML = ''; return;
+  }
+  const a = list[0];
+  now.innerHTML = '<div class="tnow">'+
+    (a.status?'<span class="chip c-UNKNOWN" style="flex:none">'+esc(a.status)+'</span>':'')+
+    '<div class="body"><div class="txt">'+(esc(a.note)||'<span class="muted">ไม่มีข้อความ</span>')+'</div>'+
+    '<div class="meta">'+esc(a.by)+' · '+when(a.at)+'</div></div></div>';
+  log.innerHTML = '<h4>ประวัติการบันทึก · '+list.length+' ครั้ง</h4>' + list.map((x,i)=>
+    '<div class="tl'+(i===0?' new':'')+'"><i class="dotm"></i><div class="c">'+
+    (x.status?'<div class="s">'+esc(x.status)+'</div>':'')+
+    (x.note?'<div class="n">'+esc(x.note)+'</div>':'')+
+    '<div class="m">'+esc(x.by)+' · '+when(x.at)+'</div></div></div>').join('');
+}
+
+/** "17 ก.ค. 21:30 · 2 ชม.ที่แล้ว" */
+function when(iso){
+  const d = new Date(iso); if(isNaN(d)) return esc(iso);
+  const s = d.toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  const m = Math.round((Date.now()-d)/60000);
+  const ago = m<1?'เมื่อกี้': m<60?m+' นาทีที่แล้ว': m<1440?Math.round(m/60)+' ชม.ที่แล้ว': Math.round(m/1440)+' วันที่แล้ว';
+  return s+' · '+ago;
+}
+
+async function saveNote(r){
+  const note = $('#tnote').value.trim();
+  const by   = $('#tby').value.trim();
+  if(!PICK && !note) return toast('เลือกสถานะ หรือพิมพ์ข้อความก่อน');
+  if(!by) return toast('ใส่ชื่อคุณก่อน จะได้รู้ว่าใครบันทึก');
+  try { localStorage.dealWho = by; } catch(e){}
+
+  const btn = $('#tsave'); btn.disabled = true; btn.textContent = 'กำลังบันทึก…';
+  const entry = { status:PICK, note:note, by:by, at:new Date().toISOString() };
+  try {
+    if(API) await post({action:'note', code:r.code, name:r.name, status:PICK, note:note, by:by});
+    NOTES[r.code] = [entry].concat(NOTES[r.code]||[]);
+    $('#tnote').value = ''; PICK = '';
+    $('#stbtns').querySelectorAll('.stbtn').forEach(x=>x.setAttribute('aria-pressed','false'));
+    paintNotes(r.code);
+    toast('บันทึกแล้ว');
+  } catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
+  finally { btn.disabled = false; btn.textContent = 'บันทึก'; }
+}
+
+async function doRename(r){
+  const name = prompt('ชื่อตู้ใหม่', r.name);
+  if(name==null) return;
+  const v = name.trim();
+  if(!v || v===r.name) return;
+  const by = ($('#tby') && $('#tby').value.trim()) || who() || 'ไม่ระบุ';
+  try {
+    if(API) await post({action:'rename', code:r.code, name:v, by:by});
+    r.name = v;
+    $('#dname').innerHTML = esc(v)+' <button class="pen" id="rename" title="แก้ชื่อตู้">✎</button>';
+    $('#rename').onclick = () => doRename(r);
+    render(); renderWatch();
+    toast('เปลี่ยนชื่อแล้ว');
+    loadNotes(r.code);
+  } catch(e){ toast('เปลี่ยนชื่อไม่สำเร็จ: '+e.message); }
 }
 
 async function loadHistory(code){
