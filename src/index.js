@@ -9,7 +9,8 @@
  *   GAS_TOKEN  = ค่าเดียวกับ API_TOKEN ใน DEAL_MachineStatus_API.gs
  */
 
-const ALLOWED = ['months', 'month', 'history'];
+const ALLOWED = ['months', 'month', 'history', 'notes'];   // อ่าน (GET)
+const WRITE   = ['note', 'rename'];                         // เขียน (POST)
 const PASS = ['month', 'code', 'fresh'];   // พารามิเตอร์ที่ยอมส่งต่อ นอกนั้นตัดทิ้ง
 
 export default {
@@ -17,8 +18,9 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === '/api' || url.pathname === '/api/') {
-      if (request.method !== 'GET') return json({ ok: false, error: 'method not allowed' }, 405);
-      return handleApi(request, url, env, ctx);
+      if (request.method === 'GET')  return handleApi(request, url, env, ctx);
+      if (request.method === 'POST') return handleWrite(request, env);
+      return json({ ok: false, error: 'method not allowed' }, 405);
     }
 
     // ไฟล์หน้าเว็บ
@@ -99,4 +101,46 @@ function json(obj, status = 200) {
     status,
     headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
   });
+}
+
+/**
+ * เขียนกลับ Lark ผ่าน Apps Script (POST เท่านั้น — กันคนเผลอกดลิงก์แล้วข้อมูลเปลี่ยน)
+ *
+ * ผู้บันทึก: ถ้าเปิด Cloudflare Access แล้ว จะได้อีเมลจริงจาก header ปลอมไม่ได้
+ *            ถ้ายังไม่เปิด ใช้ชื่อที่กรอกเองในหน้าเว็บ (เชื่อถือได้น้อยกว่า)
+ */
+async function handleWrite(request, env) {
+  if (!env.GAS_URL) return json({ ok: false, error: 'ยังไม่ได้ตั้ง secret GAS_URL ใน Worker' }, 500);
+
+  let body;
+  try { body = await request.json(); }
+  catch { return json({ ok: false, error: 'body ไม่ใช่ JSON' }, 400); }
+
+  if (!WRITE.includes(body.action)) return json({ ok: false, error: 'action ไม่ถูกต้อง' }, 400);
+
+  const email = request.headers.get('Cf-Access-Authenticated-User-Email');
+  const payload = {
+    action: body.action,
+    code:   String(body.code   || '').slice(0, 40),
+    name:   String(body.name   || '').slice(0, 200),
+    status: String(body.status || '').slice(0, 60),
+    note:   String(body.note   || '').slice(0, 2000),
+    by:     (email || String(body.by || '')).slice(0, 100) || 'ไม่ระบุ',
+    key:    env.GAS_TOKEN || '',
+  };
+
+  try {
+    const up = await fetch(env.GAS_URL, {
+      method: 'POST',
+      redirect: 'follow',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return new Response(await up.text(), {
+      status: up.status,
+      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+    });
+  } catch (err) {
+    return json({ ok: false, error: 'ต่อ Apps Script ไม่ได้: ' + err.message }, 502);
+  }
 }
