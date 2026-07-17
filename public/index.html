@@ -214,8 +214,11 @@ svg.spark{display:block;width:100%;height:150px;overflow:visible}
 .tools{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
 .count{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
 .panel{overflow:hidden}
-.thead,.row{display:grid;grid-template-columns:84px minmax(130px,1fr) minmax(0,1.9fr) 78px 76px 104px;gap:14px;
+.thead,.row{display:grid;grid-template-columns:80px minmax(120px,1fr) minmax(0,1.5fr) 76px 72px 72px 88px;gap:12px;
   align-items:center;padding:0 20px}
+.num.sm{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.num.sm.zero{color:var(--ink-4);font-weight:400}
+.op{color:var(--amber);font-style:normal;margin-left:2px;font-weight:700}
 .thead{height:36px;border-bottom:.5px solid var(--hair);font-size:9.5px;color:var(--ink-4);font-family:var(--mono);
   letter-spacing:.07em;text-transform:uppercase;background:var(--surface-2)}
 .thead span[data-sort]{cursor:pointer;user-select:none;transition:color .18s}
@@ -282,7 +285,10 @@ svg.spark{display:block;width:100%;height:150px;overflow:visible}
 .dclose{position:absolute;top:18px;right:18px;border:0;background:var(--track);border-radius:99px;
   width:28px;height:28px;font-size:12px;color:var(--ink-2);cursor:pointer;transition:transform .2s var(--spring)}
 .dclose:hover{color:var(--ink)} .dclose:active{transform:scale(.9)}
-.dstats{display:flex;gap:24px;margin-top:16px;flex-wrap:wrap}
+.dchip{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+.dstats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;
+  background:var(--surface-2);border:.5px solid var(--hair);border-radius:14px;padding:14px 16px}
+.dstats>div{min-width:0} .dstats .op{font-style:normal;color:var(--amber)}
 .dstats .k{font-size:9.5px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--ink-4)}
 .dstats .v{font-family:var(--disp);font-size:20px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .dsec{padding:18px 24px;border-bottom:.5px solid var(--hair)}
@@ -399,8 +405,15 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
   .hc:nth-child(odd){padding-left:0;border-left:0}
   .wrow{grid-template-columns:22px 1fr 92px 104px;gap:10px}
   .wrow>*:nth-child(2),.wrow>*:nth-child(6){display:none}
-  .thead,.row{grid-template-columns:70px 1fr 72px 72px;gap:10px}
-  .thead span:nth-child(3),.row>*:nth-child(3),.thead span:nth-child(6),.row>*:nth-child(6){display:none}
+  .thead,.row{grid-template-columns:1fr 58px 54px 62px;gap:8px;padding:0 12px}
+  .thead span:nth-child(1),.row>*:nth-child(1),
+  .thead span:nth-child(3),.row>*:nth-child(3){display:none}
+  .row{height:auto;padding:11px 12px;grid-template-areas:"nm d w m" "st d w m"}
+  .row>*:nth-child(2){grid-area:nm}
+  .row>*:nth-child(4){grid-area:st;font-size:9.5px;padding:2px 7px;margin-top:3px;justify-self:start}
+  .row>*:nth-child(5){grid-area:d} .row>*:nth-child(6){grid-area:w} .row>*:nth-child(7){grid-area:m}
+  .thead{height:32px;font-size:8.5px}
+  .num{font-size:12px} .num.sm{font-size:11.5px} .nm{font-size:13.5px}
   .lbrow{grid-template-columns:24px 1fr 58px 56px 62px;gap:10px}
   .lbrow>*:nth-child(3),.lbrow>*:nth-child(4),.lbrow>*:nth-child(6){display:none}
   .hero{padding:32px 0 26px}
@@ -471,8 +484,8 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
         <div class="sub" id="k-daysub">—</div>
       </div>
       <div class="hc">
-        <div class="k">เงินที่หายไปเดือนนี้</div><div class="v2 tab red" id="k-lost">—<small>บาท</small></div>
-        <div class="sub" id="k-lostsub">—</div>
+        <div class="k">รายได้ 7 วันล่าสุด</div><div class="v2 tab" id="k-week">—<small>บาท</small></div>
+        <div class="sub" id="k-weeksub">—</div>
       </div>
     </div>
     <span id="bar-up" style="display:none"></span><span id="bar-upx" style="display:none"></span>
@@ -486,7 +499,7 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
         <button data-w="drop" aria-pressed="false">รายได้ร่วง <i class="n" data-wc="drop">0</i></button>
         <button data-w="err" aria-pressed="false">เข้าเช็คไม่ได้ <i class="n" data-wc="err">0</i></button>
       </div>
-      <div class="money" id="wl-lost"></div>
+      <div class="money" id="wl-note"></div>
     </div>
     <div id="wl-rows"></div>
   </div>
@@ -535,8 +548,9 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
       <span data-sort="name">โลเคชั่น</span>
       <span id="th-strip">ไทม์ไลน์ →</span>
       <span data-sort="down">สถานะ</span>
-      <span data-sort="up" style="text-align:right">Uptime</span>
-      <span data-sort="mon" style="text-align:right">สะสม/เดือน</span>
+      <span data-sort="day" style="text-align:right">วันนี้</span>
+      <span data-sort="week" style="text-align:right">7 วัน</span>
+      <span data-sort="mon" style="text-align:right">เดือนนี้</span>
     </div>
     <div id="rows"></div>
   </div>
@@ -706,7 +720,16 @@ function build(){
     const dropPct = (base>=RULE.DROP_MIN && baseArr.length>=3 && recentIdx.length) ? 1 - recent/base : 0;
     const last = lastOf(cells) || {s:'UNKNOWN'};
 
+    // ── รายได้จริง: วัน / 7 วัน / เดือน (วัดได้ ไม่ใช่ประเมิน) ──
+    const withData = cells.filter(Boolean);
+    const lastClosed = closed.filter(Boolean).slice(-1)[0] || null;
+    const dayRev  = lastClosed ? (lastClosed.d || 0) : (last.d || 0);
+    const dayOpen = !lastClosed || (cells.length && DAY.part[cells.length-1]);
+    const week    = withData.slice(-7).reduce((s,c)=> s + (c.d||0), 0);
+    const month   = withData.reduce((s,c)=> Math.max(s, c.m||0), 0);
+
     M[r.code] = { uptime, upx, down, avg, lost, base, recent, dropPct,
+      dayRev, dayOpen, week, month,
       dropping: last.s==='ONLINE' && dropPct >= RULE.DROP_PCT, last, days: have.length };
     if(uptime!=null) upAll.push(uptime);
   });
@@ -789,8 +812,7 @@ function renderWatch(){
   $('#wtab [data-wc="err"]').textContent  = sets.err.length;
   knob($('#wtab'));
 
-  const totalLost = sets.down.reduce((s,r)=> s + M[r.code].lost, 0);
-  $('#wl-lost').innerHTML = 'ประเมินเงินที่หายไป <b>' + money(totalLost) + '</b> บาท';
+  $('#wl-note').innerHTML = 'เรียงตามรายได้เฉลี่ยตอนตู้ปกติ — ตู้ที่ทำเงินได้มากอยู่บนสุด';
 
   const list = sets[WTAB];
   const maxD = Math.max.apply(null, DATA.rows.flatMap(r=>DAY.cells(r).filter(Boolean).map(c=>c.d||0)).concat([1]));
@@ -814,7 +836,7 @@ function renderWatch(){
       right = '<div class="lost" style="color:var(--amber)">เข้าไม่ได้<small>เช็ค login</small></div>';
     } else {
       mid = '<div class="down '+(m.down>=5?'d3':m.down>=3?'d2':'d1')+'">ดับ '+m.down+' วัน</div>';
-      right = '<div class="lost">−'+money(m.lost)+'<small>บาท</small></div>';
+      right = '<div class="lost avg">'+money(m.avg)+'<small>เฉลี่ย/วัน</small></div>';
     }
     return '<div class="wrow" data-code="'+r.code+'">'+
       '<div class="rank">'+(i+1)+'</div><div class="code">'+r.code+'</div>'+
@@ -887,19 +909,18 @@ function render(){
 
   const onNow = rows.filter(r=>M[r.code].last.s==='ONLINE').length;
   const onPct = onNow/n*100;
-  const lostTot = rows.reduce((s,r)=> s + (isDead(r) ? M[r.code].lost : 0), 0);
-  const keepPct = (mon+lostTot) ? mon/(mon+lostTot)*100 : 100;
+  const weekTot = rows.reduce((s,r)=> s + (M[r.code].week||0), 0);
 
   setNum('#k-mon', mon);
   setNum('#k-day', day);
   setNum('#k-on', onPct, v=>Math.round(v));
   setNum('#k-up', avgUp, v=>Math.round(v));
   setNum('#k-upx', avgUpx, v=>Math.round(v));
-  setNum('#k-lost', lostTot);
+  setNum('#k-week', weekTot);
   $('#k-onsub').textContent = onNow+' จาก '+rows.length+' ตู้';
   $('#k-daysub').textContent = 'เฉลี่ย '+money(day/n)+' บาท/ตู้';
   $('#k-upsub').textContent = 'ค่ากลาง '+Math.round(M.__medUp)+'% · ต่ำกว่า 60% อยู่ '+bad+' ตู้';
-  $('#k-lostsub').textContent = 'รักษารายได้ไว้ได้ '+Math.round(keepPct)+'%';
+  $('#k-weeksub').textContent = 'เฉลี่ย '+money(weekTot/7)+' บาท/วัน';
   renderMix(tally, rows.length);
   $('#seg [data-c="all"]').textContent = rows.length;
   Object.keys(tally).forEach(k => $('#seg [data-c="'+k+'"]').textContent = tally[k]);
@@ -915,7 +936,8 @@ function render(){
     return !(FILTER && (!c || c.s!==FILTER));
   });
   const key = r => { const m = M[r.code], c = lastOf(CELLS(r))||{};
-    return SORT.k==='mon' ? (c.m||0) : SORT.k==='down' ? m.down
+    return SORT.k==='mon' ? (m.month||0) : SORT.k==='week' ? (m.week||0)
+         : SORT.k==='day' ? (m.dayRev||0) : SORT.k==='down' ? m.down
          : SORT.k==='up' ? (m.uptime==null?-1:m.uptime) : (r[SORT.k]||''); };
   list.sort((a,b)=>{ const x=key(a),y=key(b);
     return (typeof x==='number' ? x-y : String(x).localeCompare(String(y),'th'))*SORT.dir; });
@@ -935,8 +957,9 @@ function render(){
       '<div class="pulse">'+strip+'</div>'+
       (m.down ? '<span class="chip c-OFFLINE">ดับ '+m.down+' วัน</span>'
               : '<span class="chip c-'+c.s+'">'+(c.s==='ONLINE'?'ปกติ':c.s)+'</span>')+
-      '<div class="up '+upc+'">'+(m.uptime==null?'–':Math.round(m.uptime)+'%')+'</div>'+
-      '<div class="num'+(c.m?'':' zero')+'">'+money(c.m)+'</div></div>';
+      '<div class="num sm'+(m.dayRev?'':' zero')+'">'+money(m.dayRev)+(m.dayOpen&&m.dayRev?'<i class="op">·</i>':'')+'</div>'+
+      '<div class="num sm'+(m.week?'':' zero')+'">'+money(m.week)+'</div>'+
+      '<div class="num'+(m.month?'':' zero')+'">'+money(m.month)+'</div></div>';
   }).join('') : '<div class="empty"><b>ไม่พบตู้ที่ตรงเงื่อนไข</b>ลองเลือก “ทั้งหมด”</div>';
 }
 
@@ -1019,11 +1042,13 @@ function open(code){
     '<div class="dhead"><button class="dclose" id="dclose" aria-label="ปิด">✕</button>'+
       '<div class="code">'+r.code+(r.owner?' · '+esc(r.owner):'')+'</div>'+
       '<h2 id="dname">'+(r.name&&r.name.trim()?esc(r.name):'<span class="noname">ยังไม่ได้ตั้งชื่อ</span>')+' <button class="pen" id="rename" title="แก้ชื่อตู้">✎</button></h2>'+
+      '<div class="dchip"><span class="chip c-'+(m.down?'OFFLINE':m.last.s)+'">'+
+        (m.down ? 'ดับ '+m.down+' วัน' : m.last.s==='ONLINE' ? 'ออนไลน์วันนี้' : m.last.s)+'</span>'+
+        '<span class="muted">เฉลี่ยตอนปกติ '+money(m.avg)+' บาท/วัน · uptime '+(m.uptime==null?'–':Math.round(m.uptime)+'%')+'</span></div>'+
       '<div class="dstats">'+
-        '<div><div class="k">สะสมเดือนนี้</div><div class="v">'+money(tot)+'</div></div>'+
-        '<div><div class="k">เฉลี่ย/วันตอน Online</div><div class="v">'+money(m.avg)+'</div></div>'+
-        '<div><div class="k">สถานะ</div><div class="v" style="color:'+(m.down?'var(--red)':'var(--green)')+'">'+
-          (m.down? 'ดับ '+m.down+' วัน' : 'ปกติ')+'</div></div>'+
+        '<div><div class="k">วันนี้'+(m.dayOpen?' <i class="op">·ยังไม่ปิด</i>':'')+'</div><div class="v">'+money(m.dayRev)+'</div></div>'+
+        '<div><div class="k">7 วันล่าสุด</div><div class="v">'+money(m.week)+'</div></div>'+
+        '<div><div class="k">เดือนนี้</div><div class="v">'+money(m.month)+'</div></div>'+
       '</div></div>'+
     '<div class="dsec"><h3>Uptime เทียบทั้งกอง</h3>'+
       '<div class="bench"><div class="lbl"><span>Uptime ดิบ</span><b style="color:'+upCol+'">'+
