@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DEAL! — สถานะตู้</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Anuphan:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ══════════════ design tokens ══════════════ */
+:root{
+  --bg:#F5F3EF; --bg-2:#EFECE6;
+  --surface:#FFFFFF; --surface-2:#FAF8F5;
+  --material:rgba(255,255,255,.72);
+  --ink:#2B2B2B; --ink-2:#6F6A63; --ink-3:#A9A299; --ink-4:#C9C3BA;
+  --hair:rgba(43,43,43,.09); --line-2:#F1EDE7; --track:#EBE7E0;
+  --red:#8B1E1E; --green:#2F7D4F; --amber:#B7791F;
+  --sel:rgba(43,43,43,.05);
+  --e1:0 .5px 1px rgba(43,43,43,.06), 0 1px 2px rgba(43,43,43,.04);
+  --e2:0 1px 2px rgba(43,43,43,.05), 0 6px 16px -6px rgba(43,43,43,.12);
+  --e3:0 8px 20px -6px rgba(43,43,43,.16), 0 32px 64px -24px rgba(43,43,43,.28);
+  --glass:rgba(245,243,239,.68);
+  --R:20px; --r:12px; --pill:980px;
+  --spring:cubic-bezier(.32,.72,0,1);
+  --sans:'Anuphan','Plus Jakarta Sans',-apple-system,system-ui,sans-serif;
+  --disp:'Plus Jakarta Sans','Anuphan',-apple-system,system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+[data-theme="dark"]{
+  --bg:#131211; --bg-2:#0D0C0B;
+  --surface:#1C1B19; --surface-2:#232220;
+  --material:rgba(32,31,29,.72);
+  --ink:#F2EFEA; --ink-2:#9C958B; --ink-3:#6B655D; --ink-4:#4A453F;
+  --hair:rgba(255,255,255,.08); --line-2:#252320; --track:#2A2825;
+  --red:#D4544F; --green:#5BB07E; --amber:#DBA43C;
+  --sel:rgba(255,255,255,.05);
+  --e1:0 .5px 1px rgba(0,0,0,.4);
+  --e2:0 1px 2px rgba(0,0,0,.4), 0 8px 20px -8px rgba(0,0,0,.5);
+  --e3:0 12px 28px -8px rgba(0,0,0,.6), 0 40px 80px -24px rgba(0,0,0,.7);
+  --glass:rgba(19,18,17,.66);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+::selection{background:color-mix(in srgb,var(--red) 22%,transparent)}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  transition:background .4s var(--spring),color .4s var(--spring)}
+.wrap{max-width:1320px;margin:0 auto;padding:0 28px 120px}
+.tab{font-variant-numeric:tabular-nums}
+
+/* ══════════════ nav ══════════════ */
+.nav{position:sticky;top:0;z-index:30;background:var(--glass);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);
+  border-bottom:.5px solid var(--hair);padding:10px 28px;
+  display:flex;align-items:center;gap:14px;transition:padding .3s var(--spring)}
+.nav.small{padding:6px 28px}
+.logo{display:flex;align-items:center;gap:10px;margin-right:auto;min-width:0}
+.mark{width:26px;height:26px;border-radius:7px;background:var(--red);position:relative;flex:none}
+.mark::after{content:"";position:absolute;inset:7px 7px auto 7px;height:2px;background:#fff;border-radius:2px;
+  box-shadow:0 4.5px 0 rgba(255,255,255,.92)}
+.logo b{font-family:var(--disp);font-size:14px;font-weight:700;letter-spacing:-.015em;display:block;line-height:1.25}
+.logo span{font-size:10.5px;color:var(--ink-3);font-family:var(--mono);white-space:nowrap;
+  max-height:14px;opacity:1;transition:.3s var(--spring)}
+.nav.small .logo span{max-height:0;opacity:0}
+
+.gbtn{font:inherit;font-size:12.5px;font-weight:500;color:var(--ink);background:var(--surface);
+  border:.5px solid var(--hair);border-radius:var(--r);padding:6px 11px;cursor:pointer;outline:none;
+  box-shadow:var(--e1);transition:transform .2s var(--spring),background .2s,box-shadow .2s;
+  display:inline-flex;align-items:center;gap:6px}
+.gbtn:hover{background:var(--surface-2)}
+.gbtn:active{transform:scale(.96)}
+.gbtn:focus-visible{box-shadow:0 0 0 3.5px color-mix(in srgb,var(--red) 28%,transparent)}
+.ico{width:32px;height:32px;justify-content:center;padding:0;font-size:13px}
+.ico.spin{animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+kbd{font-family:var(--mono);font-size:10px;background:var(--sel);border:.5px solid var(--hair);
+  border-radius:5px;padding:1px 4px;color:var(--ink-3)}
+select.gbtn{-webkit-appearance:none;appearance:none;padding-right:24px;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);
+  background-position:calc(100% - 13px) 13px,calc(100% - 9px) 13px;background-size:4px 4px;background-repeat:no-repeat}
+
+/* ══════════════ segmented (iOS) ══════════════ */
+.sc{position:relative;display:inline-flex;background:var(--track);border-radius:10px;padding:2px;isolation:isolate}
+.sc .knob{position:absolute;top:2px;bottom:2px;border-radius:8px;background:var(--surface);box-shadow:var(--e1);
+  transition:transform .38s var(--spring),width .38s var(--spring);z-index:-1}
+.sc button{border:0;background:none;font:inherit;font-size:12px;font-weight:600;color:var(--ink-2);
+  padding:5px 13px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;
+  transition:color .25s;position:relative}
+.sc button[aria-pressed="true"]{color:var(--ink)}
+.sc button:active{transform:scale(.97)}
+.sc .n{font-family:var(--mono);font-size:9.5px;color:var(--ink-4);font-style:normal;transition:color .25s}
+.sc button[aria-pressed="true"] .n{color:var(--ink-3)}
+
+/* ══════════════ hero ══════════════ */
+.hero{padding:46px 0 34px;max-width:760px}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px}
+h1{font-family:var(--disp);font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-.035em;line-height:1.16}
+h1 em{font-style:normal;color:var(--red)}
+h1 .g{color:var(--ink-3)}
+.herosub{margin-top:14px;color:var(--ink-2);font-size:14.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.live{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--ink-3);
+  background:var(--surface);border:.5px solid var(--hair);border-radius:var(--pill);padding:3px 10px}
+.blip{width:6px;height:6px;border-radius:99px;background:var(--green);position:relative}
+.blip::after{content:"";position:absolute;inset:0;border-radius:99px;background:var(--green);animation:pl 2.4s infinite}
+@keyframes pl{0%{transform:scale(1);opacity:.5}70%{transform:scale(3.4);opacity:0}100%{opacity:0}}
+
+/* ══════════════ cards ══════════════ */
+.card{background:var(--surface);border:.5px solid var(--hair);border-radius:var(--R);box-shadow:var(--e2)}
+.sect{display:flex;align-items:baseline;gap:12px;margin:0 0 14px;flex-wrap:wrap}
+.sect h2{font-family:var(--disp);font-size:19px;font-weight:700;letter-spacing:-.02em}
+.sect .cap{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-left:auto}
+
+/* stat grid */
+/* ══════════════ fleet health ══════════════ */
+.health{padding:26px 28px 22px;margin-bottom:34px}
+.hmain{display:grid;grid-template-columns:auto 1fr;gap:36px;align-items:center;
+  padding-bottom:22px;border-bottom:.5px solid var(--hair)}
+.hbig .k{font-size:10.5px;font-family:var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+.hbig .v{font-family:var(--disp);font-size:clamp(44px,6vw,62px);font-weight:800;letter-spacing:-.045em;
+  line-height:1;margin-top:8px;font-variant-numeric:tabular-nums}
+.hbig .v small{font-size:17px;font-weight:600;color:var(--ink-3);margin-left:5px;letter-spacing:0}
+.hbig .sub{font-size:11px;color:var(--ink-3);font-family:var(--mono);margin-top:9px}
+.hbar{min-width:0}
+.mix{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--track);gap:2px}
+.mix i{display:block;width:0;transition:width 1s var(--spring);border-radius:99px}
+.mx-ONLINE{background:var(--green)} .mx-OFFLINE{background:var(--red);opacity:.62}
+.mx-ERROR{background:var(--amber)} .mx-UNKNOWN{background:var(--ink-4)}
+.mixleg{display:flex;gap:18px;margin-top:14px;flex-wrap:wrap;font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+.mixleg span{display:flex;align-items:center;gap:6px}
+.mixleg b{color:var(--ink);font-family:var(--disp);font-weight:700;font-variant-numeric:tabular-nums}
+.hgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;padding-top:20px}
+.hc{padding:0 22px;border-left:.5px solid var(--hair)}
+.hc:first-child{padding-left:0;border-left:0}
+.hc .k{font-size:10.5px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.hc .v2{font-family:var(--disp);font-size:26px;font-weight:800;letter-spacing:-.035em;margin-top:7px;line-height:1;
+  font-variant-numeric:tabular-nums}
+.hc .v2.red{color:var(--red)}
+.hc .v2 small{font-size:11px;font-weight:600;color:var(--ink-4);margin-left:4px;letter-spacing:0}
+.hc .sub{font-size:10.5px;color:var(--ink-4);font-family:var(--mono);margin-top:8px;line-height:1.5}
+
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:34px}
+.st{padding:18px 20px 16px;position:relative;overflow:hidden}
+.st .k{font-size:10.5px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.st .v{font-family:var(--disp);font-size:32px;font-weight:800;letter-spacing:-.035em;margin-top:8px;line-height:1;
+  font-variant-numeric:tabular-nums}
+.st .v small{font-size:12px;font-weight:600;color:var(--ink-3);margin-left:4px;letter-spacing:0}
+.st .sub{font-size:11px;color:var(--ink-3);margin-top:8px;font-family:var(--mono)}
+.gauge{height:3px;border-radius:99px;background:var(--track);margin-top:12px;overflow:hidden}
+.gauge i{display:block;height:100%;border-radius:99px;background:var(--green);width:0;
+  transition:width .9s var(--spring)}
+.gauge i.amber{background:var(--amber)} .gauge i.red{background:var(--red)}
+
+/* ══════════════ chart ══════════════ */
+.chartcard{padding:22px 24px 10px;margin-bottom:34px;position:relative}
+.chead{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.chead .big{font-family:var(--disp);font-size:38px;font-weight:800;letter-spacing:-.04em;line-height:1.05;
+  font-variant-numeric:tabular-nums}
+.chead .big small{font-size:13px;font-weight:600;color:var(--ink-3);margin-left:6px;letter-spacing:0}
+.chead .meta{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);margin-top:6px}
+.chead .meta b{color:var(--green);font-weight:500} .chead .meta b.dn{color:var(--red)}
+.chartwrap{position:relative;margin-top:10px;cursor:crosshair}
+svg.spark{display:block;width:100%;height:150px;overflow:visible}
+.cross{position:absolute;top:0;bottom:0;width:1px;background:var(--ink-3);opacity:0;pointer-events:none;transition:opacity .15s}
+.cross::after{content:"";position:absolute;left:50%;top:var(--y,0);width:9px;height:9px;margin:-4.5px 0 0 -4.5px;
+  border-radius:99px;background:var(--red);box-shadow:0 0 0 2.5px var(--surface)}
+.chartwrap.scrub .cross{opacity:.4}
+.readout{position:absolute;top:-4px;transform:translateX(-50%);background:var(--ink);color:var(--bg);
+  border-radius:8px;padding:5px 9px;font-family:var(--mono);font-size:10.5px;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .15s;z-index:3}
+.chartwrap.scrub .readout{opacity:1}
+.xlab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--ink-4);padding:8px 0 12px}
+
+/* ══════════════ watchlist ══════════════ */
+.wl{overflow:hidden;margin-bottom:34px}
+.wl-h{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:.5px solid var(--hair);flex-wrap:wrap}
+.wl-h h2{font-family:var(--disp);font-size:16px;font-weight:700;letter-spacing:-.02em}
+.wl-h .money{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.wl-h .money b{font-family:var(--disp);font-size:16px;color:var(--red);font-weight:800;letter-spacing:-.02em}
+.wrow{display:grid;grid-template-columns:24px 84px minmax(120px,1fr) 100px 108px 132px;gap:14px;align-items:center;
+  padding:12px 20px;border-bottom:.5px solid var(--line-2);cursor:pointer;transition:background .16s}
+.wrow:hover{background:var(--sel)}
+.wrow:last-child{border-bottom:0}
+.rank{font-family:var(--mono);font-size:11px;color:var(--ink-4);text-align:center}
+.down{font-family:var(--disp);font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.down.d1{color:var(--amber)} .down.d2{color:var(--red)} .down.d3{color:var(--red)}
+.lost{font-family:var(--disp);font-weight:800;font-variant-numeric:tabular-nums;text-align:right;color:var(--red);
+  letter-spacing:-.02em;white-space:nowrap}
+.lost small{font-weight:400;font-size:10px;color:var(--ink-4);margin-left:4px;font-family:var(--mono)}
+.mini{display:flex;gap:2px;align-items:flex-end;height:22px}
+.wl-empty{padding:44px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+.wl-empty b{display:block;font-family:var(--disp);color:var(--green);font-size:16px;margin-bottom:5px;letter-spacing:-.02em}
+
+/* ══════════════ leaderboard ══════════════ */
+.lb{overflow:hidden;margin-bottom:34px;display:none}
+.lb.on{display:block}
+.lbrow{display:grid;grid-template-columns:26px minmax(100px,1fr) 44px minmax(0,1.2fr) 58px 50px 62px 96px;gap:12px;
+  align-items:center;padding:12px 20px;border-bottom:.5px solid var(--line-2)}
+.lbrow:last-child{border-bottom:0}
+.lbrow.head{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-4);
+  padding:9px 20px;background:var(--surface-2)}
+.lbrow.head>*{text-align:right}
+.lbrow.head>*:nth-child(-n+4){text-align:left}
+.lbrow.head>*:nth-child(3){text-align:right}
+.lbname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbnum{text-align:right;font-family:var(--disp);font-weight:700;font-variant-numeric:tabular-nums;font-size:13px;letter-spacing:-.01em}
+.lbnum.dim{color:var(--ink-3);font-weight:400}
+.lbnum.bad{color:var(--red)}
+.lbbar{height:5px;border-radius:99px;background:var(--track);position:relative}
+.lbbar i{display:block;height:100%;border-radius:99px;transition:width .9s var(--spring)}
+.lbbar u{position:absolute;top:-3px;width:1.5px;height:11px;background:var(--ink);border-radius:2px;opacity:.45}
+.medal{font-size:12px;text-align:center}
+
+/* ══════════════ table ══════════════ */
+.tools{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.count{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.panel{overflow:hidden}
+.thead,.row{display:grid;grid-template-columns:84px minmax(130px,1fr) minmax(0,1.9fr) 78px 76px 104px;gap:14px;
+  align-items:center;padding:0 20px}
+.thead{height:36px;border-bottom:.5px solid var(--hair);font-size:9.5px;color:var(--ink-4);font-family:var(--mono);
+  letter-spacing:.07em;text-transform:uppercase;background:var(--surface-2)}
+.thead span[data-sort]{cursor:pointer;user-select:none;transition:color .18s}
+.thead span[data-sort]:hover{color:var(--ink-2)}
+.thead span.on{color:var(--ink)}
+.thead span.on::after{content:"↑";margin-left:4px}
+.thead span.on.desc::after{content:"↓"}
+.row{height:54px;border-bottom:.5px solid var(--line-2);cursor:pointer;position:relative;
+  transition:background .16s;animation:fi .45s var(--spring) backwards}
+.row::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:2.5px;border-radius:0 3px 3px 0;
+  background:transparent;transition:background .2s}
+.row:hover,.row.kb{background:var(--sel)}
+.row.kb{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--ink) 22%,transparent)}
+.row.alert::before{background:var(--red)}
+.row:last-child{border-bottom:0}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}}
+.code{font-family:var(--mono);font-size:10.5px;color:var(--ink-4)}
+.nm{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.warn{font-size:9px;color:var(--red);flex:none}
+.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-family:var(--disp);letter-spacing:-.015em}
+.num.zero{color:var(--ink-4);font-weight:400}
+.up{font-family:var(--mono);font-size:11px;font-variant-numeric:tabular-nums;text-align:right}
+.up.good{color:var(--green)} .up.mid{color:var(--ink-2)} .up.bad{color:var(--red)}
+
+.pulse{display:flex;gap:2px;align-items:flex-end;height:30px}
+.tick{flex:1;min-width:2px;height:100%;display:flex;align-items:flex-end;border-radius:2px;background:var(--track);
+  transition:transform .18s var(--spring),background .18s}
+.tick i{display:block;width:100%;border-radius:2px;min-height:2px}
+.tick[data-s="ONLINE"] i{background:var(--green)}
+.tick[data-s="OFFLINE"] i{background:var(--red);opacity:.5}
+.tick[data-s="ERROR"] i{background:var(--amber)}
+.tick[data-s="UNKNOWN"] i{background:var(--ink-4)}
+.tick.part{opacity:.5}
+.tick[data-t]:hover{transform:scaleX(1.8);background:var(--hair)}
+
+.chip{font-size:10px;font-weight:600;padding:4px 9px;border-radius:var(--pill);justify-self:start;
+  font-family:var(--mono);letter-spacing:.02em;white-space:nowrap}
+.c-ONLINE{background:color-mix(in srgb,var(--green) 12%,transparent);color:var(--green)}
+.c-OFFLINE{background:color-mix(in srgb,var(--red) 11%,transparent);color:var(--red)}
+.c-ERROR{background:color-mix(in srgb,var(--amber) 14%,transparent);color:var(--amber)}
+.c-UNKNOWN{background:var(--track);color:var(--ink-3)}
+
+/* ══════════════ tooltip ══════════════ */
+#tip{position:fixed;z-index:60;pointer-events:none;opacity:0;transform:translate(-50%,-135%) scale(.94);
+  transition:opacity .14s,transform .22s var(--spring);
+  background:var(--ink);color:var(--bg);border-radius:9px;padding:6px 10px;font-size:10.5px;font-family:var(--mono);
+  white-space:nowrap;box-shadow:var(--e3)}
+#tip.on{opacity:1;transform:translate(-50%,-135%) scale(1)}
+
+/* ══════════════ sheet ══════════════ */
+.scrim{position:fixed;inset:0;background:rgba(15,14,13,.36);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  opacity:0;pointer-events:none;transition:opacity .35s var(--spring);z-index:40}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(620px,96vw);background:var(--surface);
+  border-left:.5px solid var(--hair);box-shadow:var(--e3);
+  transform:translateX(101%);transition:transform .46s var(--spring);overflow-y:auto;z-index:50;
+  overscroll-behavior:contain}
+.sheet.on{transform:none}
+.dhead{position:sticky;top:0;background:var(--material);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+  border-bottom:.5px solid var(--hair);padding:20px 24px 16px;z-index:2}
+.dhead h2{font-family:var(--disp);font-size:21px;font-weight:800;letter-spacing:-.03em;margin-top:3px}
+.dclose{position:absolute;top:18px;right:18px;border:0;background:var(--track);border-radius:99px;
+  width:28px;height:28px;font-size:12px;color:var(--ink-2);cursor:pointer;transition:transform .2s var(--spring)}
+.dclose:hover{color:var(--ink)} .dclose:active{transform:scale(.9)}
+.dstats{display:flex;gap:24px;margin-top:16px;flex-wrap:wrap}
+.dstats .k{font-size:9.5px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--ink-4)}
+.dstats .v{font-family:var(--disp);font-size:20px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.dsec{padding:18px 24px;border-bottom:.5px solid var(--hair)}
+.dsec h3{font-size:9.5px;font-family:var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+.bench{margin-bottom:16px}
+.bench .lbl{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px}
+.bench .lbl b{font-family:var(--disp);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.bmark{position:relative;height:6px;background:var(--track);border-radius:99px}
+.bmark i{display:block;height:100%;border-radius:99px;transition:width .9s var(--spring)}
+.bmark u{position:absolute;top:-4px;width:1.5px;height:14px;background:var(--ink);border-radius:2px}
+.bmark u::after{content:attr(data-l);position:absolute;top:17px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:9px;color:var(--ink-4);white-space:nowrap}
+.hist{display:flex;gap:6px;align-items:flex-end;height:72px}
+.hcol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;min-width:0}
+.hcol .hb{width:100%;background:var(--red);border-radius:4px;min-height:3px;opacity:.8;transition:height .8s var(--spring)}
+.hcol .hl{font-family:var(--mono);font-size:9px;color:var(--ink-4)}
+.hcol.now .hb{opacity:1;box-shadow:0 0 0 1.5px var(--surface),0 0 0 3.5px color-mix(in srgb,var(--red) 35%,transparent)}
+.hvals{display:flex;gap:6px;margin-top:8px}
+.hvals span{flex:1;text-align:center;font-family:var(--mono);font-size:9px;color:var(--ink-2);min-width:0;overflow:hidden}
+.dtable{width:100%;border-collapse:collapse;font-size:12.5px}
+.dtable th{text-align:left;font-family:var(--mono);font-size:9.5px;color:var(--ink-4);text-transform:uppercase;
+  letter-spacing:.06em;padding:11px 24px;border-bottom:.5px solid var(--hair);background:var(--surface-2)}
+.dtable td{padding:9px 24px;border-bottom:.5px solid var(--line-2);font-variant-numeric:tabular-nums}
+.dtable tr:hover td{background:var(--sel)}
+.dtable td:nth-child(3),.dtable td:nth-child(4),.dtable th:nth-child(3),.dtable th:nth-child(4){text-align:right}
+.dot{width:6px;height:6px;border-radius:99px;display:inline-block;margin-right:8px;vertical-align:middle}
+.muted{color:var(--ink-4);font-family:var(--mono);font-size:10.5px}
+.note{background:var(--surface-2);border:.5px solid var(--hair);border-radius:var(--r);padding:11px 13px;
+  font-size:12.5px;color:var(--ink-2);line-height:1.65}
+.note b{color:var(--ink);font-weight:600}
+
+/* ══════════════ command palette ══════════════ */
+.cmdk{position:fixed;inset:0;z-index:70;display:flex;justify-content:center;align-items:flex-start;padding-top:14vh;
+  background:rgba(15,14,13,.3);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;transition:opacity .22s}
+.cmdk.on{opacity:1;pointer-events:auto}
+.cbox{width:min(580px,92vw);background:var(--material);-webkit-backdrop-filter:blur(30px) saturate(180%);
+  backdrop-filter:blur(30px) saturate(180%);border:.5px solid var(--hair);border-radius:16px;box-shadow:var(--e3);
+  overflow:hidden;transform:scale(.96) translateY(-8px);transition:transform .3s var(--spring)}
+.cmdk.on .cbox{transform:none}
+#cin{width:100%;border:0;background:none;outline:none;font-family:var(--sans);font-size:16px;color:var(--ink);
+  padding:16px 18px;border-bottom:.5px solid var(--hair)}
+#cin::placeholder{color:var(--ink-4)}
+.clist{max-height:min(46vh,360px);overflow-y:auto;padding:6px}
+.citem{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;cursor:pointer}
+.citem.sel{background:var(--sel)}
+.citem .cc{font-family:var(--mono);font-size:10px;color:var(--ink-4);width:62px;flex:none}
+.citem .cn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px}
+.citem .cs{font-family:var(--mono);font-size:10px}
+.cgroup{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-4);
+  padding:8px 12px 4px}
+.cfoot{border-top:.5px solid var(--hair);padding:7px 14px;display:flex;gap:14px;
+  font-family:var(--mono);font-size:9.5px;color:var(--ink-4)}
+
+/* ══════════════ toast ══════════════ */
+#toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px) scale(.96);z-index:80;
+  background:var(--ink);color:var(--bg);border-radius:var(--pill);padding:9px 18px;font-size:12.5px;
+  box-shadow:var(--e3);opacity:0;pointer-events:none;transition:.32s var(--spring)}
+#toast.on{opacity:1;transform:translate(-50%,0) scale(1)}
+
+.foot{margin-top:16px;display:flex;justify-content:space-between;color:var(--ink-4);font-size:10.5px;
+  font-family:var(--mono);flex-wrap:wrap;gap:10px}
+.legend{display:flex;gap:16px}
+.legend span{display:flex;align-items:center;gap:6px}
+.empty{padding:70px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:6px;font-family:var(--disp);letter-spacing:-.02em}
+.skel{height:54px;border-bottom:.5px solid var(--line-2);
+  background:linear-gradient(100deg,transparent 20%,var(--sel) 50%,transparent 80%);background-size:200% 100%;
+  animation:sh 1.4s infinite}
+@keyframes sh{to{background-position:-200% 0}}
+
+@media (max-width:1000px){
+  .wrap{padding:0 18px 100px} .nav{padding:10px 18px}
+  .grid4{grid-template-columns:1fr 1fr}
+  .health{padding:22px 18px}
+  .hmain{grid-template-columns:1fr;gap:20px}
+  .hgrid{grid-template-columns:1fr 1fr;gap:20px 0}
+  .hc{padding:0 14px}
+  .hc:nth-child(odd){padding-left:0;border-left:0}
+  .wrow{grid-template-columns:22px 1fr 92px 104px;gap:10px}
+  .wrow>*:nth-child(2),.wrow>*:nth-child(6){display:none}
+  .thead,.row{grid-template-columns:70px 1fr 72px 72px;gap:10px}
+  .thead span:nth-child(3),.row>*:nth-child(3),.thead span:nth-child(6),.row>*:nth-child(6){display:none}
+  .lbrow{grid-template-columns:24px 1fr 58px 56px 62px;gap:10px}
+  .lbrow>*:nth-child(3),.lbrow>*:nth-child(4),.lbrow>*:nth-child(6){display:none}
+  .hero{padding:32px 0 26px}
+  .sheet{width:100%;top:auto;height:92vh;border-radius:16px 16px 0 0;border:0;transform:translateY(101%)}
+  .sheet.on{transform:none}
+  .dhead{padding-top:26px}
+  .dhead::before{content:"";position:absolute;top:9px;left:50%;transform:translateX(-50%);
+    width:38px;height:4px;border-radius:99px;background:var(--ink-4)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="logo">
+    <div class="mark"></div>
+    <div><b>สถานะตู้</b><span id="stamp">—</span></div>
+  </div>
+  <div class="sc" id="mode"><div class="knob"></div>
+    <button data-m="day" aria-pressed="true">รายวัน</button>
+    <button data-m="round" aria-pressed="false">รายรอบ</button>
+  </div>
+  <select class="gbtn" id="month"></select>
+  <button class="gbtn" id="cmd">ค้นหา <kbd>⌘K</kbd></button>
+  <button class="gbtn ico" id="reload" title="ดึงข้อมูลสดจาก Lark">↻</button>
+  <button class="gbtn ico" id="theme" title="สลับธีม">◐</button>
+  <button class="gbtn ico" id="csv" title="ดาวน์โหลด CSV">↓</button>
+</nav>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow" id="eyebrow">ภาพรวมทั้งกอง</div>
+    <h1 id="headline">กำลังโหลด…</h1>
+    <div class="herosub">
+      <span class="live"><i class="blip"></i><span id="livetxt">—</span></span>
+      <span id="subtxt"></span>
+    </div>
+  </header>
+
+  <div class="health card">
+    <div class="hmain">
+      <div class="hbig">
+        <div class="k">ออนไลน์ตอนนี้</div>
+        <div class="v tab" id="k-on">—<small>%</small></div>
+        <div class="sub" id="k-onsub">—</div>
+      </div>
+      <div class="hbar">
+        <div class="mix" id="mix">
+          <i class="mx-ONLINE" title="Online"></i><i class="mx-OFFLINE" title="Offline"></i>
+          <i class="mx-ERROR" title="Error"></i><i class="mx-UNKNOWN" title="Unknown"></i>
+        </div>
+        <div class="mixleg" id="mixleg"></div>
+      </div>
+    </div>
+    <div class="hgrid">
+      <div class="hc">
+        <div class="k">Uptime ที่นับผิด</div><div class="v2 tab" id="k-upx">—<small>%</small></div>
+        <div class="sub">ตัดวันร้านปิดออก · ใช้วัดทีม</div>
+      </div>
+      <div class="hc">
+        <div class="k">Uptime ดิบ</div><div class="v2 tab" id="k-up">—<small>%</small></div>
+        <div class="sub" id="k-upsub">—</div>
+      </div>
+      <div class="hc">
+        <div class="k" id="k-daylab">รายได้วันล่าสุด</div><div class="v2 tab" id="k-day">—<small>บาท</small></div>
+        <div class="sub" id="k-daysub">—</div>
+      </div>
+      <div class="hc">
+        <div class="k">เงินที่หายไปเดือนนี้</div><div class="v2 tab red" id="k-lost">—<small>บาท</small></div>
+        <div class="sub" id="k-lostsub">—</div>
+      </div>
+    </div>
+    <span id="bar-up" style="display:none"></span><span id="bar-upx" style="display:none"></span>
+  </div>
+
+  <div class="sect"><h2>ต้องทำวันนี้</h2><div class="cap">เรียงตามเงินที่กำลังเสียไป</div></div>
+  <div class="card wl">
+    <div class="wl-h">
+      <div class="sc" id="wtab"><div class="knob"></div>
+        <button data-w="down" aria-pressed="true">ตู้ดับ <i class="n" data-wc="down">0</i></button>
+        <button data-w="drop" aria-pressed="false">รายได้ร่วง <i class="n" data-wc="drop">0</i></button>
+        <button data-w="err" aria-pressed="false">เข้าเช็คไม่ได้ <i class="n" data-wc="err">0</i></button>
+      </div>
+      <div class="money" id="wl-lost"></div>
+    </div>
+    <div id="wl-rows"></div>
+  </div>
+
+  <div class="sect"><h2>รายได้รวม</h2><div class="cap" id="chart-h">—</div></div>
+  <div class="card chartcard">
+    <div class="chead">
+      <div>
+        <div class="big" id="k-mon">—<small>บาท สะสมเดือนนี้</small></div>
+        <div class="meta" id="k-delta">—</div>
+      </div>
+    </div>
+    <div class="chartwrap" id="cw">
+      <div class="readout" id="readout"></div>
+      <div class="cross" id="cross"></div>
+      <svg class="spark" id="spark" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="xlab"><span id="x0">—</span><span id="x1">—</span></div>
+  </div>
+
+  <div class="sect" id="lb-sect" style="display:none"><h2>Leaderboard</h2>
+    <div class="cap" id="lb-field"></div></div>
+  <div class="card lb" id="lb">
+    <div class="lbrow head">
+      <span></span><span>ผู้ดูแล</span><span>ตู้</span><span>Uptime ที่นับผิด · ขีด = ค่ากลาง</span>
+      <span></span><span>ดิบ</span><span>ดับ</span><span>เงินที่หาย</span>
+    </div>
+    <div id="lb-rows"></div>
+  </div>
+
+  <div class="sect"><h2>ตู้ทั้งหมด</h2></div>
+  <div class="tools">
+    <div class="sc" id="seg"><div class="knob"></div>
+      <button data-f="" aria-pressed="true">ทั้งหมด <i class="n" data-c="all">0</i></button>
+      <button data-f="ONLINE" aria-pressed="false">Online <i class="n" data-c="ONLINE">0</i></button>
+      <button data-f="OFFLINE" aria-pressed="false">Offline <i class="n" data-c="OFFLINE">0</i></button>
+      <button data-f="ERROR" aria-pressed="false">Error <i class="n" data-c="ERROR">0</i></button>
+      <button data-f="UNKNOWN" aria-pressed="false">Unknown <i class="n" data-c="UNKNOWN">0</i></button>
+    </div>
+    <div class="count" id="count"></div>
+  </div>
+
+  <div class="card panel">
+    <div class="thead">
+      <span data-sort="code" class="on">รหัส</span>
+      <span data-sort="name">โลเคชั่น</span>
+      <span id="th-strip">ไทม์ไลน์ →</span>
+      <span data-sort="down">สถานะ</span>
+      <span data-sort="up" style="text-align:right">Uptime</span>
+      <span data-sort="mon" style="text-align:right">สะสม/เดือน</span>
+    </div>
+    <div id="rows"></div>
+  </div>
+
+  <div class="foot">
+    <div class="legend">
+      <span><i class="dot" style="background:var(--green)"></i>Online</span>
+      <span><i class="dot" style="background:var(--red);opacity:.5"></i>Offline</span>
+      <span><i class="dot" style="background:var(--amber)"></i>Error</span>
+      <span><i class="dot" style="background:var(--ink-4)"></i>Unknown</span>
+    </div>
+    <div id="foot-note"></div>
+  </div>
+</div>
+
+<div id="tip"></div>
+<div id="toast"></div>
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="drawer" aria-hidden="true"><div id="dbody"></div></aside>
+
+<div class="cmdk" id="cmdk">
+  <div class="cbox">
+    <input id="cin" placeholder="ค้นหาตู้ หรือพิมพ์คำสั่ง…" autocomplete="off" spellcheck="false">
+    <div class="clist" id="clist"></div>
+    <div class="cfoot"><span>↑↓ เลื่อน</span><span>↵ เปิด</span><span>esc ปิด</span></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════ ตั้งค่า ═══════════
+   ไม่ต้องใส่ URL ของ Apps Script ตรงนี้ — Pages Function ที่ /api จัดการให้
+   เปิดไฟล์นี้จากเครื่อง (file://) = โหมดข้อมูลตัวอย่าง
+   deploy บน Cloudflare Pages = ต่อของจริงอัตโนมัติ                        */
+const API = (location.protocol === 'file:') ? '' : '/api';
+const KEY = '';
+const RULE = {
+  DEAD_DAYS: 2,        // ดับกี่วันติด = ขึ้น watchlist (1 วันอาจแค่ร้านปิด)
+  GRACE_DAYS: 1,       // ดับไม่เกินกี่วัน = ไม่นับเป็นความผิดทีม (ร้านปิดปกติ)
+  DROP_PCT: 0.6,       // รายได้ร่วงกี่ % จากปกติ = ผิดสังเกต
+  DROP_MIN: 100,       // ตู้ที่ปกติทำได้ต่ำกว่านี้ ไม่ต้องเตือน (noise)
+  DROP_WIN: 3,         // ดูรายได้ย้อนหลังกี่วันล่าสุด
+};
+/* ══════════════════════════════ */
+
+const $ = s => document.querySelector(s);
+const $$ = s => [].slice.call(document.querySelectorAll(s));
+const money = n => n == null ? '–' : Math.round(Number(n)).toLocaleString('en-US');
+const kb = n => n >= 1000 ? Math.round(n/1000)+'k' : Math.round(n||0);
+const esc = s => String(s||'').replace(/[<>&"]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[m]));
+const COL = {ONLINE:'var(--green)',OFFLINE:'var(--red)',ERROR:'var(--amber)',UNKNOWN:'var(--ink-4)'};
+const med = a => { if(!a.length) return 0; const s=a.slice().sort((x,y)=>x-y), h=s.length>>1;
+  return s.length%2 ? s[h] : (s[h-1]+s[h])/2; };
+let DATA=null, VIEW=null, DAY=null, M={}, SORT={k:'code',dir:1}, FILTER='', MODE='day', WTAB='down';
+let LIST=[], KBI=-1, SERIES=[];
+const HIST = {};
+
+/* ── theme ── */
+const setTheme = t => { document.documentElement.dataset.theme = t; try{localStorage.dealTheme=t}catch(e){} };
+try{ setTheme(localStorage.dealTheme || (matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')); }catch(e){}
+$('#theme').onclick = () => { setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+  if(VIEW) drawSpark(); toast(document.documentElement.dataset.theme==='dark'?'ธีมมืด':'ธีมสว่าง'); };
+
+/* ── toast ── */
+let tt;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'), 1800); }
+
+/* ── segmented knob ── */
+function knob(sc){
+  const on = sc.querySelector('button[aria-pressed="true"]'); if(!on) return;
+  const k = sc.querySelector('.knob');
+  k.style.width = on.offsetWidth+'px';
+  k.style.transform = 'translateX('+(on.offsetLeft - 2)+'px)';
+}
+const knobAll = () => $$('.sc').forEach(knob);
+
+/* ── nav shrink ── */
+addEventListener('scroll', ()=> $('#nav').classList.toggle('small', scrollY>40), {passive:true});
+addEventListener('resize', knobAll);
+
+/* ── api ── */
+async function api(p){
+  const q = new URLSearchParams(Object.assign({}, p, KEY?{key:KEY}:{}));
+  const j = await (await fetch(API+'?'+q)).json();
+  if(!j.ok) throw new Error(j.error); return j.data;
+}
+async function boot(){
+  if(!API){ DATA=demo(); $('#month').innerHTML='<option>'+DATA.month+'</option>'; build(); return; }
+  try{
+    const r = await api({action:'months'});
+    $('#month').innerHTML = r.months.map(m=>'<option>'+m+'</option>').join('');
+    await load($('#month').value);
+  }catch(e){ fail(e.message); }
+}
+async function load(month, fresh){
+  $('#rows').innerHTML = Array(8).fill('<div class="skel"></div>').join('');
+  if(fresh) $('#reload').classList.add('spin');
+  try{ DATA = await api(Object.assign({action:'month', month:month}, fresh?{fresh:'1'}:{})); build();
+       if(fresh) toast('ดึงข้อมูลสดจาก Lark แล้ว'); }
+  catch(e){ fail(e.message); }
+  finally{ $('#reload').classList.remove('spin'); }
+}
+const fail = m => { $('#rows').innerHTML = '<div class="empty"><b>ดึงข้อมูลไม่สำเร็จ</b>'+esc(m)+
+  '<br>ตรวจว่าใส่ URL ของ Web App ในตัวแปร API แล้ว และตั้ง Who has access = Anyone</div>';
+  $('#headline').textContent = 'เชื่อมต่อ Lark ไม่ได้'; };
+
+/* ══ ประกอบ view + คำนวณ metric ══ */
+function build(){
+  const slots = DATA.slots, idx = {};
+  slots.forEach((s,i)=> idx[s]=i);
+
+  /* รายวัน: ยึดรอบ 00:00 ของวันถัดไป (ปิดยอดเต็มวัน) ไม่มีค่อยใช้ 22:00 (ยังไม่ปิด) */
+  const days = []; const seen = {};
+  slots.forEach(s=>{ const d=s.split(' ')[0]; if(!seen[d]){seen[d]=1; days.push(d);} });
+  days.sort((a,b)=> (a.split('/')[1]+a.split('/')[0]).localeCompare(b.split('/')[1]+b.split('/')[0]));
+  const pick = days.map(d=>{
+    const dd = d.split('/')[0], mm = d.split('/')[1];
+    const next = String(Number(dd)+1).padStart(2,'0')+'/'+mm+' 00:00';
+    if(idx[next]!=null) return {i:idx[next], part:false};
+    if(idx[d+' 22:00']!=null) return {i:idx[d+' 22:00'], part:true};
+    if(idx[d+' 00:00']!=null) return {i:idx[d+' 00:00'], part:true};
+    return null;
+  });
+  DAY = { labels: days, part: pick.map(p=>p?p.part:true), cells: r => pick.map(p=> p ? r.cells[p.i] : null) };
+
+  VIEW = MODE==='round'
+    ? { labels: slots.slice(), part: slots.map(s=>/22:00$/.test(s)), cells: r => r.cells }
+    : DAY;
+
+  /* metric ต่อตู้ — คิดจาก "วันปิดยอดแล้ว" เท่านั้น */
+  M = {};
+  const upAll = [];
+  DATA.rows.forEach(r=>{
+    const cells = DAY.cells(r);
+    const closed = cells.map((c,i)=> DAY.part[i] ? null : c);
+    // ERROR = เข้าไปเช็คไม่ได้ (login พัง) ไม่ใช่สถานะของตู้ → ตัดออกจากการคิด uptime
+    const have = closed.filter(c=> c && c.s!=='ERROR' && c.s!=='UNKNOWN');
+    const on = have.filter(c=>c.s==='ONLINE');
+    const uptime = have.length ? on.length/have.length*100 : null;
+
+    let down = 0;
+    for(let i=closed.length-1;i>=0;i--){ const c=closed[i];
+      if(!c || c.s==='ERROR' || c.s==='UNKNOWN') continue;
+      if(c.s==='ONLINE') break; down++; }
+
+    let fault = 0, run = 0;
+    have.forEach(c=>{ if(c.s==='OFFLINE'){ run++; } else { if(run>RULE.GRACE_DAYS) fault += run; run=0; } });
+    if(run>RULE.GRACE_DAYS) fault += run;
+    const upx = have.length ? (have.length-fault)/have.length*100 : null;
+
+    const avg = on.length ? on.reduce((s,c)=>s+(c.d||0),0)/on.length : 0;
+    const lost = Math.round(avg * down);
+
+    const onIdx = []; closed.forEach((c,i)=> c&&c.s==='ONLINE'&&onIdx.push(i));
+    const recentIdx = onIdx.slice(-RULE.DROP_WIN);
+    const baseArr = onIdx.slice(0,-RULE.DROP_WIN).map(i=>closed[i].d||0);
+    const base = med(baseArr);
+    const recent = recentIdx.length ? recentIdx.reduce((s,i)=>s+(closed[i].d||0),0)/recentIdx.length : 0;
+    const dropPct = (base>=RULE.DROP_MIN && baseArr.length>=3 && recentIdx.length) ? 1 - recent/base : 0;
+    const last = lastOf(cells) || {s:'UNKNOWN'};
+
+    M[r.code] = { uptime, upx, down, avg, lost, base, recent, dropPct,
+      dropping: last.s==='ONLINE' && dropPct >= RULE.DROP_PCT, last, days: have.length };
+    if(uptime!=null) upAll.push(uptime);
+  });
+  M.__medUp = med(upAll);
+  render(); renderWatch(); renderLB(); headline(); knobAll();
+}
+
+/* ══ animated counters (ตัวเลขวิ่งขึ้น แบบ Apple) ══ */
+const RM = matchMedia('(prefers-reduced-motion:reduce)').matches;
+const NUMV = new WeakMap();
+function countTo(el, to, fmt, node){
+  node = node || el;
+  const from = NUMV.get(el) || 0;
+  NUMV.set(el, to);
+  if(RM || Math.abs(to-from) < 1){ node.textContent = fmt(to); return; }
+  const t0 = performance.now(), dur = 900;
+  (function step(t){
+    const p = Math.min((t-t0)/dur, 1);
+    const e = 1 - Math.pow(1-p, 4);          // easeOutQuart
+    node.textContent = fmt(from + (to-from)*e);
+    if(p<1) requestAnimationFrame(step);
+  })(t0);
+}
+const setNum = (sel, v, fmt) => { const el = $(sel);
+  const n = (el.firstChild && el.firstChild.nodeType===3) ? el.firstChild : el;
+  countTo(el, v, fmt||money, n); };
+
+/* ══ แถบสัดส่วนทั้งกอง — 1 แถบ อ่านจบใน 1 วิ ══ */
+function renderMix(tally, total){
+  const order = ['ONLINE','OFFLINE','ERROR','UNKNOWN'];
+  const lab = {ONLINE:'Online', OFFLINE:'Offline', ERROR:'เข้าเช็คไม่ได้', UNKNOWN:'Unknown'};
+  const cols = {ONLINE:'var(--green)', OFFLINE:'var(--red)', ERROR:'var(--amber)', UNKNOWN:'var(--ink-4)'};
+  const bar = $('#mix');
+  order.forEach((k,i)=>{
+    const el = bar.children[i];
+    const pct = total ? tally[k]/total*100 : 0;
+    requestAnimationFrame(()=> el.style.width = pct+'%');
+    el.title = lab[k]+' · '+tally[k]+' ตู้ ('+Math.round(pct)+'%)';
+  });
+  $('#mixleg').innerHTML = order.filter(k=>tally[k]).map(k=>
+    '<span><i class="dot" style="background:'+cols[k]+(k==='OFFLINE'?';opacity:.62':'')+'"></i>'+
+    lab[k]+' <b>'+tally[k]+'</b></span>').join('');
+}
+
+const lastOf = c => { for(let i=c.length-1;i>=0;i--) if(c[i]) return c[i]; return null; };
+const isDead = r => M[r.code].down >= RULE.DEAD_DAYS && M[r.code].last.s!=='ERROR';
+
+/* ══ headline ภาษาคน ══ */
+function headline(){
+  const s = watchSets();
+  const lost = s.down.reduce((a,r)=> a + M[r.code].lost, 0);
+  const h = $('#headline');
+  if(!s.down.length && !s.drop.length){
+    h.innerHTML = 'ทุกตู้<em> ปกติดี</em><span class="g"> — ไม่มีอะไรต้องเข้าแก้วันนี้</span>';
+  } else {
+    h.innerHTML = 'วันนี้มี <em>'+s.down.length+' ตู้</em> ต้องเข้าแก้'+
+      (lost ? '<span class="g"> กระทบรายได้ราว </span><em>'+money(lost)+' บาท</em>' : '')+
+      (s.drop.length ? '<span class="g"> · อีก '+s.drop.length+' ตู้รายได้ร่วงผิดปกติ</span>' : '');
+  }
+  const on = DATA.rows.filter(r=>M[r.code].last.s==='ONLINE').length;
+  $('#livetxt').textContent = on+' / '+DATA.rows.length+' ตู้ออนไลน์';
+  $('#subtxt').textContent = DATA.rows.length+' ตู้ · เดือน '+DATA.month+
+    (s.err.length ? ' · '+s.err.length+' ตู้เข้าเช็คไม่ได้' : '');
+}
+
+/* ══ watchlist ══ */
+function watchSets(){
+  const rows = DATA.rows;
+  const down = rows.filter(r=> isDead(r))
+                   .sort((a,b)=> M[b.code].lost - M[a.code].lost || M[b.code].down - M[a.code].down);
+  const drop = rows.filter(r=> M[r.code].dropping).sort((a,b)=> M[b.code].dropPct - M[a.code].dropPct);
+  const err  = rows.filter(r=> M[r.code].last.s==='ERROR');
+  return {down, drop, err};
+}
+
+function renderWatch(){
+  const sets = watchSets();
+  $('#wtab [data-wc="down"]').textContent = sets.down.length;
+  $('#wtab [data-wc="drop"]').textContent = sets.drop.length;
+  $('#wtab [data-wc="err"]').textContent  = sets.err.length;
+  knob($('#wtab'));
+
+  const totalLost = sets.down.reduce((s,r)=> s + M[r.code].lost, 0);
+  $('#wl-lost').innerHTML = 'ประเมินเงินที่หายไป <b>' + money(totalLost) + '</b> บาท';
+
+  const list = sets[WTAB];
+  const maxD = Math.max.apply(null, DATA.rows.flatMap(r=>DAY.cells(r).filter(Boolean).map(c=>c.d||0)).concat([1]));
+
+  if(!list.length){
+    $('#wl-rows').innerHTML = '<div class="wl-empty"><b>ไม่มีอะไรต้องทำ</b>'+
+      (WTAB==='down'?'ไม่มีตู้ดับเกิน '+RULE.DEAD_DAYS+' วัน':
+       WTAB==='drop'?'ไม่มีตู้ที่รายได้ร่วงผิดสังเกต':'เข้าเช็คได้ทุกตู้')+'</div>';
+    return;
+  }
+  $('#wl-rows').innerHTML = list.slice(0,12).map((r,i)=>{
+    const m = M[r.code];
+    const mini = DAY.cells(r).slice(-14).map(c=> !c ? '<i class="tick"></i>' :
+      '<i class="tick" data-s="'+c.s+'"><i style="height:'+Math.max(2,Math.round((c.d||0)/maxD*22))+'px"></i></i>').join('');
+    let mid, right;
+    if(WTAB==='drop'){
+      mid = '<div class="down d2">−'+Math.round(m.dropPct*100)+'%</div>';
+      right = '<div class="lost">'+money(m.recent)+'<small>จาก '+money(m.base)+'</small></div>';
+    } else if(WTAB==='err'){
+      mid = '<div class="down d1">Error</div>';
+      right = '<div class="lost" style="color:var(--amber)">เข้าไม่ได้<small>เช็ค login</small></div>';
+    } else {
+      mid = '<div class="down '+(m.down>=5?'d3':m.down>=3?'d2':'d1')+'">ดับ '+m.down+' วัน</div>';
+      right = '<div class="lost">−'+money(m.lost)+'<small>บาท</small></div>';
+    }
+    return '<div class="wrow" data-code="'+r.code+'">'+
+      '<div class="rank">'+(i+1)+'</div><div class="code">'+r.code+'</div>'+
+      '<div class="nm" title="'+esc(r.name)+'">'+esc(r.name)+'</div>'+ mid + right +
+      '<div class="mini">'+mini+'</div></div>';
+  }).join('');
+}
+
+/* ══ leaderboard ══ */
+function renderLB(){
+  const has = DATA.rows.some(r=>r.owner);
+  $('#lb').classList.toggle('on', has);
+  $('#lb-sect').style.display = has ? 'flex' : 'none';
+  if(!has) return;
+  $('#lb-field').textContent = DATA.ownerField ? 'ตามคอลัมน์ “'+DATA.ownerField+'”' : '';
+
+  const g = {};
+  DATA.rows.forEach(r=>{ const o = r.owner || '(ไม่ระบุ)'; (g[o] = g[o] || []).push(r); });
+  const teams = Object.keys(g).map(o=>{
+    const rs = g[o];
+    const avg = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
+    return { name:o, n:rs.length,
+      up:  avg(rs.map(r=>M[r.code].uptime).filter(v=>v!=null)),
+      upx: avg(rs.map(r=>M[r.code].upx).filter(v=>v!=null)),
+      dead: rs.filter(r=> isDead(r)).length,
+      lost: rs.reduce((s,r)=> s + (isDead(r) ? M[r.code].lost : 0), 0) };
+  }).sort((a,b)=> (b.upx==null?-1:b.upx) - (a.upx==null?-1:a.upx));
+
+  const medal = ['🥇','🥈','🥉'];
+  $('#lb-rows').innerHTML = teams.map((t,i)=>{
+    const v = t.upx==null?0:t.upx;
+    const col = v>=85?'var(--green)':v>=60?'var(--amber)':'var(--red)';
+    return '<div class="lbrow">'+
+      '<div class="medal">'+(medal[i]||'<span class="rank">'+(i+1)+'</span>')+'</div>'+
+      '<div class="lbname" title="'+esc(t.name)+'">'+esc(t.name)+'</div>'+
+      '<div class="lbnum dim">'+t.n+'</div>'+
+      '<div><div class="lbbar"><i style="width:'+v+'%;background:'+col+'"></i><u style="left:'+M.__medUp+'%"></u></div></div>'+
+      '<div class="lbnum" style="color:'+col+'">'+(t.upx==null?'–':Math.round(v)+'%')+'</div>'+
+      '<div class="lbnum dim">'+(t.up==null?'–':Math.round(t.up)+'%')+'</div>'+
+      '<div class="lbnum '+(t.dead?'bad':'dim')+'">'+t.dead+'</div>'+
+      '<div class="lbnum '+(t.lost?'bad':'dim')+'">'+(t.lost?'−'+money(t.lost):'0')+'</div></div>';
+  }).join('');
+}
+
+/* ══ ตารางหลัก ══ */
+function render(){
+  const rows = DATA.rows, labels = VIEW.labels;
+  const cache = new Map(); const CELLS = r => { if(!cache.has(r)) cache.set(r, VIEW.cells(r)); return cache.get(r); };
+
+  $('#stamp').textContent = DATA.slots.length+' รอบ · อัปเดต '+
+    new Date(DATA.updated).toLocaleString('th-TH',{dateStyle:'medium',timeStyle:'short'});
+  $('#chart-h').textContent = MODE==='day'?'รายวัน · ทุกตู้รวมกัน':'รายรอบ · ทุกตู้รวมกัน';
+  $('#th-strip').textContent = (MODE==='day'?'ไทม์ไลน์รายวัน →':'ไทม์ไลน์รายรอบ →');
+  $('#k-daylab').textContent = MODE==='day' ? 'รายได้วันล่าสุด' : 'รายได้รอบล่าสุด';
+  $('#foot-note').textContent = MODE==='day'
+    ? 'แท่งจาง = วันที่ยังไม่ปิดยอด · ขีดแดงซ้ายแถว = อยู่ใน watchlist'
+    : 'ความสูงแท่ง = รายได้ของรอบนั้น · 22:00 = ยังไม่ปิดวัน';
+
+  const li = labels.length-1;
+  const tally = {ONLINE:0,OFFLINE:0,ERROR:0,UNKNOWN:0};
+  let day=0, mon=0;
+  rows.forEach(r=>{ const cs = CELLS(r); const c = cs[li] || lastOf(cs); if(!c) return;
+    tally[c.s]++; day += c.d||0; mon += c.m||0; });
+  const n = rows.length || 1;
+  const ups  = rows.map(r=>M[r.code].uptime).filter(v=>v!=null);
+  const upxs = rows.map(r=>M[r.code].upx).filter(v=>v!=null);
+  const avgUp  = ups.length  ? ups.reduce((a,b)=>a+b,0)/ups.length   : 0;
+  const avgUpx = upxs.length ? upxs.reduce((a,b)=>a+b,0)/upxs.length : 0;
+  const bad = rows.filter(r=>M[r.code].uptime!=null && M[r.code].uptime < 60).length;
+
+  const onNow = rows.filter(r=>M[r.code].last.s==='ONLINE').length;
+  const onPct = onNow/n*100;
+  const lostTot = rows.reduce((s,r)=> s + (isDead(r) ? M[r.code].lost : 0), 0);
+  const keepPct = (mon+lostTot) ? mon/(mon+lostTot)*100 : 100;
+
+  setNum('#k-mon', mon);
+  setNum('#k-day', day);
+  setNum('#k-on', onPct, v=>Math.round(v));
+  setNum('#k-up', avgUp, v=>Math.round(v));
+  setNum('#k-upx', avgUpx, v=>Math.round(v));
+  setNum('#k-lost', lostTot);
+  $('#k-onsub').textContent = onNow+' จาก '+rows.length+' ตู้';
+  $('#k-daysub').textContent = 'เฉลี่ย '+money(day/n)+' บาท/ตู้';
+  $('#k-upsub').textContent = 'ค่ากลาง '+Math.round(M.__medUp)+'% · ต่ำกว่า 60% อยู่ '+bad+' ตู้';
+  $('#k-lostsub').textContent = 'รักษารายได้ไว้ได้ '+Math.round(keepPct)+'%';
+  renderMix(tally, rows.length);
+  $('#seg [data-c="all"]').textContent = rows.length;
+  Object.keys(tally).forEach(k => $('#seg [data-c="'+k+'"]').textContent = tally[k]);
+
+  drawSpark(CELLS);
+
+  const all = []; rows.forEach(r=> CELLS(r).forEach(c=> c && all.push(c.d||0)));
+  all.sort((a,b)=>a-b);
+  const p90 = all.length ? (all[Math.floor(all.length*.9)] || 1) : 1;
+
+  let list = rows.filter(r=>{
+    const c = lastOf(CELLS(r));
+    return !(FILTER && (!c || c.s!==FILTER));
+  });
+  const key = r => { const m = M[r.code], c = lastOf(CELLS(r))||{};
+    return SORT.k==='mon' ? (c.m||0) : SORT.k==='down' ? m.down
+         : SORT.k==='up' ? (m.uptime==null?-1:m.uptime) : (r[SORT.k]||''); };
+  list.sort((a,b)=>{ const x=key(a),y=key(b);
+    return (typeof x==='number' ? x-y : String(x).localeCompare(String(y),'th'))*SORT.dir; });
+  LIST = list; KBI = -1;
+
+  $('#count').textContent = list.length+' / '+rows.length+' ตู้';
+  $('#rows').innerHTML = list.length ? list.map((r,ri)=>{
+    const cs = CELLS(r), m = M[r.code], c = lastOf(cs) || {s:'UNKNOWN'};
+    const strip = cs.map((x,i)=> !x ? '<i class="tick"></i>' :
+      '<i class="tick'+(VIEW.part[i]?' part':'')+'" data-s="'+x.s+'" data-t="'+labels[i]+
+      (VIEW.part[i]&&MODE==='day'?' (ยังไม่ปิดวัน)':'')+' · '+x.s+' · '+money(x.d)+' บาท">'+
+      '<i style="height:'+Math.max(2, Math.min(30, Math.round((x.d||0)/p90*30)))+'px"></i></i>').join('');
+    const upc = m.uptime==null?'mid': m.uptime>=85?'good': m.uptime>=60?'mid':'bad';
+    return '<div class="row'+((isDead(r)||m.dropping)?' alert':'')+'" data-code="'+r.code+'" style="animation-delay:'+Math.min(ri*9,200)+'ms">'+
+      '<div class="code">'+r.code+'</div>'+
+      '<div class="nm" title="'+esc(r.name)+'">'+(m.dropping?'<span class="warn" title="รายได้ร่วงผิดสังเกต">▼</span>':'')+esc(r.name)+'</div>'+
+      '<div class="pulse">'+strip+'</div>'+
+      (m.down ? '<span class="chip c-OFFLINE">ดับ '+m.down+' วัน</span>'
+              : '<span class="chip c-'+c.s+'">'+(c.s==='ONLINE'?'ปกติ':c.s)+'</span>')+
+      '<div class="up '+upc+'">'+(m.uptime==null?'–':Math.round(m.uptime)+'%')+'</div>'+
+      '<div class="num'+(c.m?'':' zero')+'">'+money(c.m)+'</div></div>';
+  }).join('') : '<div class="empty"><b>ไม่พบตู้ที่ตรงเงื่อนไข</b>ลองเลือก “ทั้งหมด”</div>';
+}
+
+/* ══ chart + scrubbing ══ */
+const CW=600, CH=150;
+function drawSpark(CELLS){
+  const get = CELLS || (r=>VIEW.cells(r));
+  const labels = VIEW.labels, rows = DATA.rows;
+  SERIES = labels.map((_,i)=> rows.reduce((s,r)=>{ const c=get(r)[i]; return s + ((c&&c.d)||0); },0));
+  const max = Math.max.apply(null, SERIES.concat([1]));
+  const x = i => labels.length<2 ? CW/2 : i/(labels.length-1)*CW;
+  const y = v => CH - (v/max)*(CH-14);
+  const pts = SERIES.map((v,i)=>[x(i), y(v)]);
+  const line = pts.map((p,i)=> (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const cs = getComputedStyle(document.documentElement);
+  const red = cs.getPropertyValue('--red').trim();
+  const last = pts[pts.length-1];
+  $('#spark').setAttribute('viewBox','0 0 '+CW+' '+CH);
+  $('#spark').innerHTML =
+    '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">'+
+      '<stop offset="0" stop-color="'+red+'" stop-opacity=".2"/>'+
+      '<stop offset="1" stop-color="'+red+'" stop-opacity="0"/></linearGradient></defs>'+
+    '<path d="'+line+' L'+CW+' '+CH+' L0 '+CH+' Z" fill="url(#g)"/>'+
+    '<path d="'+line+'" fill="none" stroke="'+red+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'+
+    (last ? '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="3.5" fill="'+red+'"/>' : '');
+  $('#x0').textContent = labels[0]||'—';
+  $('#x1').textContent = labels[labels.length-1]||'—';
+  const a = SERIES[SERIES.length-2], b = SERIES[SERIES.length-1];
+  const unit = MODE==='day' ? 'วันก่อน' : 'รอบก่อน';
+  $('#k-delta').innerHTML = (a==null||b==null||!a) ? 'ล่าสุด '+money(b||0)+' บาท'
+    : 'เทียบ'+unit+' <b class="'+(b<a?'dn':'')+'">'+(b>=a?'↑ +':'↓ ')+Math.round((b-a)/a*100)+'%</b> · ล่าสุด '+money(b)+' บาท';
+}
+
+const cw = $('#cw');
+function scrub(e){
+  if(!SERIES.length) return;
+  const r = cw.getBoundingClientRect();
+  const px = Math.min(Math.max(e.clientX - r.left, 0), r.width);
+  const i = Math.round(px / r.width * (SERIES.length-1));
+  const max = Math.max.apply(null, SERIES.concat([1]));
+  const left = SERIES.length<2 ? r.width/2 : i/(SERIES.length-1)*r.width;
+  const yPct = (CH - (SERIES[i]/max)*(CH-14)) / CH;
+  cw.classList.add('scrub');
+  const c = $('#cross'); c.style.left = left+'px'; c.style.setProperty('--y', (yPct*$('#spark').clientHeight)+'px');
+  const ro = $('#readout');
+  ro.textContent = VIEW.labels[i]+' · '+money(SERIES[i])+' บาท';
+  ro.style.left = Math.min(Math.max(left, 60), r.width-60)+'px';
+}
+cw.addEventListener('mousemove', scrub);
+cw.addEventListener('mouseleave', ()=> cw.classList.remove('scrub'));
+cw.addEventListener('touchmove', e=>{ scrub(e.touches[0]); }, {passive:true});
+cw.addEventListener('touchend', ()=> cw.classList.remove('scrub'));
+
+/* ══ tooltip ══ */
+const tip = $('#tip');
+document.addEventListener('mouseover', e=>{
+  const t = e.target.closest('.tick[data-t]'); if(!t) return;
+  tip.textContent = t.dataset.t; tip.classList.add('on');
+  const r = t.getBoundingClientRect();
+  tip.style.left = (r.left+r.width/2)+'px'; tip.style.top = r.top+'px';
+});
+document.addEventListener('mouseout', e=>{ if(e.target.closest('.tick')) tip.classList.remove('on'); });
+
+/* ══ sheet ══ */
+function open(code){
+  const r = DATA.rows.find(x=>x.code===code); if(!r) return;
+  const m = M[code];
+  const cs = VIEW.cells(r).filter(Boolean);
+  const tot = cs.reduce((s,c)=>Math.max(s,c.m||0),0);
+  const body = VIEW.labels.map((s,i)=>{ const c=VIEW.cells(r)[i];
+    return '<tr><td>'+s+(VIEW.part[i]&&MODE==='day'?' <span class="muted">ยังไม่ปิด</span>':'')+
+      '</td><td>'+(c?'<i class="dot" style="background:'+COL[c.s]+'"></i>'+c.s:'–')+
+      '</td><td>'+(c?money(c.d):'–')+'</td><td>'+(c?money(c.m):'–')+'</td></tr>';
+  }).reverse().join('');
+  const upv = m.uptime==null?0:m.uptime;
+  const diff = Math.round(upv - M.__medUp);
+  const upCol = upv>=85?'var(--green)':upv>=60?'var(--amber)':'var(--red)';
+
+  $('#dbody').innerHTML =
+    '<div class="dhead"><button class="dclose" id="dclose" aria-label="ปิด">✕</button>'+
+      '<div class="code">'+r.code+(r.owner?' · '+esc(r.owner):'')+'</div><h2>'+esc(r.name)+'</h2>'+
+      '<div class="dstats">'+
+        '<div><div class="k">สะสมเดือนนี้</div><div class="v">'+money(tot)+'</div></div>'+
+        '<div><div class="k">เฉลี่ย/วันตอน Online</div><div class="v">'+money(m.avg)+'</div></div>'+
+        '<div><div class="k">สถานะ</div><div class="v" style="color:'+(m.down?'var(--red)':'var(--green)')+'">'+
+          (m.down? 'ดับ '+m.down+' วัน' : 'ปกติ')+'</div></div>'+
+      '</div></div>'+
+    '<div class="dsec"><h3>Uptime เทียบทั้งกอง</h3>'+
+      '<div class="bench"><div class="lbl"><span>Uptime ดิบ</span><b style="color:'+upCol+'">'+
+        (m.uptime==null?'–':Math.round(upv)+'%')+'</b></div>'+
+        '<div class="bmark"><i style="width:'+upv+'%;background:'+upCol+'"></i>'+
+        '<u style="left:'+M.__medUp+'%" data-l="ค่ากลาง '+Math.round(M.__medUp)+'%"></u></div></div>'+
+      '<div class="bench" style="margin-top:28px"><div class="lbl"><span>Uptime ที่นับผิด <span class="muted">ตัดวันร้านปิด</span></span>'+
+        '<b>'+(m.upx==null?'–':Math.round(m.upx)+'%')+'</b></div>'+
+        '<div class="bmark"><i style="width:'+(m.upx||0)+'%;background:var(--amber)"></i></div></div>'+
+      '<div class="note" style="margin-top:10px">'+
+        (m.uptime==null ? 'ยังไม่มีวันที่ปิดยอด' :
+         diff >= 0 ? 'ดีกว่าค่ากลางทั้งกอง <b>'+diff+' จุด</b> — ตู้นี้ไม่ใช่ปัญหา'
+                   : 'ต่ำกว่าค่ากลางทั้งกอง <b>'+Math.abs(diff)+' จุด</b> — ถ้า “ที่นับผิด” ต่ำด้วย แปลว่าดับยาวจริง ไม่ใช่ร้านปิดตามปกติ')+
+      '</div></div>'+
+    (m.dropping ? '<div class="dsec"><h3>รายได้ร่วงผิดสังเกต</h3><div class="note">'+
+      'ตู้ยัง Online แต่ '+RULE.DROP_WIN+' วันล่าสุดทำได้เฉลี่ย <b>'+money(m.recent)+'</b> บาท '+
+      'จากปกติ <b>'+money(m.base)+'</b> บาท (ร่วง '+Math.round(m.dropPct*100)+'%) — '+
+      'ตู้ไม่ได้พัง แต่คนเล่นน้อยลง ลองเช็คว่าโดนย้ายมุม หรือมีอะไรบัง</div></div>' : '')+
+    '<div class="dsec"><h3>ประวัติรายเดือน · ยอดรวม</h3><div id="hist"><div class="muted">กำลังโหลด…</div></div></div>'+
+    '<table class="dtable"><thead><tr><th>'+(MODE==='day'?'วันที่':'รอบเช็ค')+'</th><th>สถานะ</th>'+
+      '<th>รายได้'+(MODE==='day'?'/วัน':'')+'</th><th>สะสม/เดือน</th></tr></thead><tbody>'+body+'</tbody></table>';
+  $('#dclose').onclick = close;
+  $('#drawer').classList.add('on'); $('#scrim').classList.add('on'); $('#drawer').setAttribute('aria-hidden','false');
+  loadHistory(code);
+}
+
+async function loadHistory(code){
+  let h = HIST[code];
+  if(!h){
+    if(!API){ h = demoHist(); }
+    else{
+      try{ h = (await api({action:'history', code:code})).history; }
+      catch(e){ const el=$('#hist'); if(el) el.innerHTML = '<div class="muted">โหลดประวัติไม่ได้: '+esc(e.message)+'</div>'; return; }
+    }
+    HIST[code] = h;
+  }
+  const el = $('#hist'); if(!el) return;
+  if(!h.length){ el.innerHTML = '<div class="muted">ยังไม่มีเดือนอื่นให้เทียบ</div>'; return; }
+  const max = Math.max.apply(null, h.map(x=>x.total).concat([1]));
+  el.innerHTML = '<div class="hist">'+ h.map(x=>
+      '<div class="hcol'+(x.month===DATA.month?' now':'')+'" title="'+x.month+' · '+money(x.total)+' บาท · uptime '+x.uptime+'%">'+
+      '<i class="hb" style="height:'+Math.max(3, Math.round(x.total/max*58))+'px"></i>'+
+      '<span class="hl">'+x.month.split('-')[0]+'</span></div>').join('') +'</div>'+
+    '<div class="hvals">'+ h.map(x=>'<span>'+kb(x.total)+'</span>').join('') +'</div>';
+}
+function close(){ $('#drawer').classList.remove('on'); $('#scrim').classList.remove('on'); $('#drawer').setAttribute('aria-hidden','true'); }
+
+/* ══ command palette ══ */
+let CSEL = 0, CRES = [];
+function openCmd(){ $('#cmdk').classList.add('on'); $('#cin').value=''; $('#cin').focus(); cmdRender(''); }
+function closeCmd(){ $('#cmdk').classList.remove('on'); }
+const ACTIONS = [
+  {t:'สลับเป็นรายวัน', run:()=>{ setMode('day'); }},
+  {t:'สลับเป็นรายรอบ', run:()=>{ setMode('round'); }},
+  {t:'ดาวน์โหลด CSV', run:()=>csv()},
+  {t:'สลับธีมมืด / สว่าง', run:()=>$('#theme').click()},
+  {t:'ดึงข้อมูลสดจาก Lark', run:()=>$('#reload').click()},
+  {t:'ดูเฉพาะตู้ที่ Offline', run:()=>setFilter('OFFLINE')},
+  {t:'ดูตู้ทั้งหมด', run:()=>setFilter('')},
+];
+function cmdRender(q){
+  q = q.trim().toLowerCase();
+  const machines = (DATA ? DATA.rows : []).filter(r=> !q || (r.code+' '+r.name+' '+(r.owner||'')).toLowerCase().indexOf(q)>=0).slice(0,7);
+  const acts = ACTIONS.filter(a=> !q || a.t.toLowerCase().indexOf(q)>=0).slice(0,4);
+  CRES = machines.map(r=>({type:'m', code:r.code})).concat(acts.map(a=>({type:'a', run:a.run})));
+  CSEL = 0;
+  let html = '';
+  if(machines.length){ html += '<div class="cgroup">ตู้</div>' + machines.map((r,i)=>{
+    const m = M[r.code]||{}; const st = (m.last&&m.last.s)||'UNKNOWN';
+    return '<div class="citem'+(i===0?' sel':'')+'" data-i="'+i+'">'+
+      '<span class="cc">'+r.code+'</span><span class="cn">'+esc(r.name)+'</span>'+
+      '<span class="cs" style="color:'+COL[st]+'">'+(m.down?'ดับ '+m.down+' วัน':st==='ONLINE'?'ปกติ':st)+'</span></div>';
+  }).join(''); }
+  if(acts.length){ html += '<div class="cgroup">คำสั่ง</div>' + acts.map((a,i)=>
+    '<div class="citem" data-i="'+(machines.length+i)+'"><span class="cc">⌘</span><span class="cn">'+a.t+'</span></div>').join(''); }
+  $('#clist').innerHTML = html || '<div class="cgroup">ไม่พบ</div>';
+}
+function cmdMove(d){
+  const items = $$('#clist .citem'); if(!items.length) return;
+  CSEL = (CSEL + d + items.length) % items.length;
+  items.forEach((el,i)=> el.classList.toggle('sel', i===CSEL));
+  if(items[CSEL].scrollIntoView) items[CSEL].scrollIntoView({block:'nearest'});
+}
+function cmdRun(){
+  const r = CRES[CSEL]; if(!r) return;
+  closeCmd();
+  if(r.type==='m') open(r.code); else r.run();
+}
+$('#cin').oninput = e => cmdRender(e.target.value);
+$('#clist').onclick = e => { const it = e.target.closest('.citem'); if(!it) return; CSEL = +it.dataset.i; cmdRun(); };
+$('#cmdk').onclick = e => { if(e.target.id==='cmdk') closeCmd(); };
+$('#cmd').onclick = openCmd;
+
+/* ══ CSV ══ */
+function csv(){
+  const L = VIEW.labels;
+  const head = ['รหัสโลเคชั่น','ชื่อโลเคชั่น','ผู้ดูแล','Uptime %','Uptime ที่นับผิด %','ดับมา (วัน)','เฉลี่ย/วัน','เงินที่หายไป']
+    .concat(L.reduce((a,s)=>a.concat([s+' สถานะ', s+' รายได้', s+' สะสม/เดือน']),[]));
+  const lines = [head].concat(DATA.rows.map(r=>{ const m=M[r.code];
+    return [r.code, r.name, r.owner||'', m.uptime==null?'':Math.round(m.uptime), m.upx==null?'':Math.round(m.upx),
+            m.down, Math.round(m.avg), m.lost]
+      .concat(VIEW.cells(r).reduce((a,c)=> a.concat(c?[c.s, c.d==null?'':c.d, c.m==null?'':c.m]:['','','']), []));
+  }));
+  const txt = '\uFEFF'+lines.map(l=>l.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([txt],{type:'text/csv'}));
+  a.download = 'สถานะตู้ '+DATA.month+' ('+(MODE==='day'?'รายวัน':'รายรอบ')+').csv'; a.click();
+  toast('ดาวน์โหลด CSV แล้ว');
+}
+
+/* ══ state setters ══ */
+function setMode(m){
+  MODE = m;
+  $$('#mode button').forEach(x=>x.setAttribute('aria-pressed', x.dataset.m===m));
+  knob($('#mode'));
+  if(DATA) build();
+}
+function setFilter(f){
+  FILTER = f;
+  $$('#seg button').forEach(x=>x.setAttribute('aria-pressed', x.dataset.f===f));
+  knob($('#seg'));
+  render();
+}
+
+/* ══ events ══ */
+$('#month').onchange = e => { if(API) load(e.target.value); };
+$('#reload').onclick = () => API ? load($('#month').value, true) : build();
+$('#csv').onclick = () => VIEW&&csv();
+$('#scrim').onclick = close;
+$('#rows').onclick = e => { const r = e.target.closest('.row'); if(r) open(r.dataset.code); };
+$('#wl-rows').onclick = e => { const r = e.target.closest('.wrow'); if(r) open(r.dataset.code); };
+$('#mode').onclick = e => { const b = e.target.closest('button'); if(b) setMode(b.dataset.m); };
+$('#seg').onclick  = e => { const b = e.target.closest('button'); if(b) setFilter(b.dataset.f); };
+$('#wtab').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+  WTAB = b.dataset.w;
+  $$('#wtab button').forEach(x=>x.setAttribute('aria-pressed', x===b));
+  renderWatch(); };
+$$('.thead [data-sort]').forEach(el=>{
+  el.onclick = () => { const k = el.dataset.sort;
+    SORT = {k, dir: SORT.k===k ? -SORT.dir : (k==='code'||k==='name'?1:-1)};
+    $$('.thead [data-sort]').forEach(x=>x.className='');
+    el.className = 'on' + (SORT.dir<0?' desc':''); render(); };
+});
+
+/* keyboard */
+document.addEventListener('keydown', e=>{
+  const cmdOpen = $('#cmdk').classList.contains('on');
+  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); cmdOpen?closeCmd():openCmd(); return; }
+  if(cmdOpen){
+    if(e.key==='Escape') closeCmd();
+    if(e.key==='ArrowDown'){ e.preventDefault(); cmdMove(1); }
+    if(e.key==='ArrowUp'){ e.preventDefault(); cmdMove(-1); }
+    if(e.key==='Enter'){ e.preventDefault(); cmdRun(); }
+    return;
+  }
+  if(e.key==='Escape'){ close(); return; }
+  if(e.key==='/'){ e.preventDefault(); openCmd(); return; }
+  if(e.target.tagName==='INPUT') return;
+  if(e.key==='ArrowDown'||e.key==='j'){ e.preventDefault(); kbMove(1); }
+  if(e.key==='ArrowUp'||e.key==='k'){ e.preventDefault(); kbMove(-1); }
+  if(e.key==='Enter' && KBI>=0 && LIST[KBI]) open(LIST[KBI].code);
+});
+function kbMove(d){
+  const els = $$('#rows .row'); if(!els.length) return;
+  KBI = Math.min(Math.max(KBI+d, 0), els.length-1);
+  els.forEach((el,i)=> el.classList.toggle('kb', i===KBI));
+  if(els[KBI].scrollIntoView) els[KBI].scrollIntoView({block:'nearest'});
+}
+
+/* ══ demo ══ */
+function demo(){
+  const names=['บ้านหม้อ พลาซ่า','โรงเหล้าแสงจันทร์ ราชพฤกษ์','ป.กุ้งเผา หลักสี่','Lism เชียงใหม่','Chalui Bar เชียงใหม่','REST (รังสิต)','THE REELS นนทบุรี','หลบมุม เชียงราย','เฮ้าส์ คลอง 6','ท่าช้างเชียงใหม่','Doogu Dak ดูกุแดก','Balance จันทบุรี','Say Yes Bkk','Claro นิมมาน','12Bar โชว์ระบบ','เวลา-ริญ Welarin','Flick TU มธ.','อุ่นไอดิน','The Story อยุธยา','ตั๊กคาเฟ่ อุบล'];
+  const owners=['โซนกลาง','โซนเหนือ','โซนอีสาน','โซนตะวันออก'];
+  const slots=[]; for(let d=1;d<=14;d++){ const dd=String(d).padStart(2,'0');
+    slots.push(dd+'/07 22:00'); slots.push(dd+'/07 00:00'); }
+  return {month:'07-2026', slots:slots, updated:new Date().toISOString(), ownerField:'โซน',
+    rows: names.map((nm,i)=>{
+      let acc=0; const roll=Math.random();
+      const kind = roll<.2?'dead' : roll<.35?'drop' : roll<.42?'err' : 'ok';
+      const lvl = Math.round(Math.random()*400+120);
+      return {code:'LO_'+String(i+1).padStart(4,'0'), name:nm, owner:owners[i%owners.length],
+        cells: slots.map(function(_lbl,si){
+          const dayN = Math.floor(si/2);
+          if(kind==='err') return {s:'ERROR', d:null, m:null};
+          var s, d;
+          if(kind==='dead' && dayN >= 9){ s='OFFLINE'; d=0; }
+          else if(Math.random()<.12){ s='OFFLINE'; d=0; }
+          else { s='ONLINE'; d = Math.round((lvl*(kind==='drop'&&dayN>=11?.2:1))*(.6+Math.random()*.8)/20)*20; }
+          acc += d||0; return {s:s, d:d, m:acc};
+        })};
+    })};
+}
+function demoHist(){
+  return ['02-2026','03-2026','04-2026','05-2026','06-2026','07-2026'].map(m=>({
+    month:m, total:Math.round(Math.random()*40+8)*1000, uptime:Math.round(Math.random()*40+58), rounds:60 }));
+}
+boot();
+</script>
+</body>
+</html>
