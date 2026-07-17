@@ -4,8 +4,8 @@
   "main": "src/index.js",
   "compatibility_date": "2025-06-01",
 
-  // เสิร์ฟไฟล์หน้าเว็บจากโฟลเดอร์ public/ เท่านั้น
-  // (สำคัญ: ห้ามชี้ไปที่ "." หรือ "/" ไม่งั้น .git จะโดนอัปขึ้นเป็นไฟล์สาธารณะ)
+  // เสิร์ฟหน้าเว็บจาก public/ เท่านั้น
+  // ห้ามชี้ "." หรือ "/" — .git ทั้งโฟลเดอร์จะโดนอัปเป็นไฟล์สาธารณะ
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
@@ -14,11 +14,11 @@
 
   "observability": { "enabled": true },
 
-  // ปิด Preview URL สาธารณะ — กันคนเจอ URL เก่าแล้วเข้าดูข้อมูลได้
+  // ปิด Preview URL สาธารณะ — กัน URL ของ build เก่าลอยแบบไม่มีใครล็อก
   "preview_urls": false
 
-  // GAS_URL และ GAS_TOKEN ห้ามใส่ที่นี่ — ตั้งเป็น Secret แทน:
+  // GAS_URL / GAS_TOKEN ห้ามใส่ที่นี่ — ตั้งเป็น Secret:
   //   npx wrangler secret put GAS_URL
   //   npx wrangler secret put GAS_TOKEN
-  // หรือที่ Dashboard > Workers > incomepeday > Settings > Variables and Secrets
+  // หรือ Dashboard > Workers > incomepeday > Settings > Variables and Secrets
 }
