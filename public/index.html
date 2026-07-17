@@ -235,6 +235,8 @@ svg.spark{display:block;width:100%;height:150px;overflow:visible}
 .code{font-family:var(--mono);font-size:10.5px;color:var(--ink-4)}
 .nm{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:6px}
 .warn{font-size:9px;color:var(--red);flex:none}
+.noname{color:var(--ink-4);font-family:var(--mono);font-size:11.5px;font-weight:400}
+.noname i{font-style:normal;font-size:10px;opacity:.75}
 .num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-family:var(--disp);letter-spacing:-.015em}
 .num.zero{color:var(--ink-4);font-weight:400}
 .up{font-family:var(--mono);font-size:11px;font-variant-numeric:tabular-nums;text-align:right}
@@ -583,6 +585,9 @@ const $ = s => document.querySelector(s);
 const $$ = s => [].slice.call(document.querySelectorAll(s));
 const money = n => n == null ? '–' : Math.round(Number(n)).toLocaleString('en-US');
 const kb = n => n >= 1000 ? Math.round(n/1000)+'k' : Math.round(n||0);
+/** ตู้ที่ยังไม่ได้กรอกชื่อใน Lark — อย่าปล่อยแถวว่าง ให้เห็นว่าเป็นตัวไหนและต้องไปกรอก */
+const nameOf = r => r.name && r.name.trim() ? esc(r.name) :
+  '<span class="noname">'+r.code+' <i>ยังไม่ได้ตั้งชื่อ</i></span>';
 const esc = s => String(s||'').replace(/[<>&"]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[m]));
 const COL = {ONLINE:'var(--green)',OFFLINE:'var(--red)',ERROR:'var(--amber)',UNKNOWN:'var(--ink-4)'};
 const med = a => { if(!a.length) return 0; const s=a.slice().sort((x,y)=>x-y), h=s.length>>1;
@@ -813,7 +818,7 @@ function renderWatch(){
     }
     return '<div class="wrow" data-code="'+r.code+'">'+
       '<div class="rank">'+(i+1)+'</div><div class="code">'+r.code+'</div>'+
-      '<div class="nm" title="'+esc(r.name)+'">'+esc(r.name)+'</div>'+ mid + right +
+      '<div class="nm" title="'+esc(r.name||r.code)+'">'+nameOf(r)+'</div>'+ mid + right +
       '<div class="mini">'+mini+'</div></div>';
   }).join('');
 }
@@ -926,7 +931,7 @@ function render(){
     const upc = m.uptime==null?'mid': m.uptime>=85?'good': m.uptime>=60?'mid':'bad';
     return '<div class="row'+((isDead(r)||m.dropping)?' alert':'')+'" data-code="'+r.code+'" style="animation-delay:'+Math.min(ri*9,200)+'ms">'+
       '<div class="code">'+r.code+'</div>'+
-      '<div class="nm" title="'+esc(r.name)+'">'+(m.dropping?'<span class="warn" title="รายได้ร่วงผิดสังเกต">▼</span>':'')+esc(r.name)+'</div>'+
+      '<div class="nm" title="'+esc(r.name||r.code)+'">'+(m.dropping?'<span class="warn" title="รายได้ร่วงผิดสังเกต">▼</span>':'')+nameOf(r)+'</div>'+
       '<div class="pulse">'+strip+'</div>'+
       (m.down ? '<span class="chip c-OFFLINE">ดับ '+m.down+' วัน</span>'
               : '<span class="chip c-'+c.s+'">'+(c.s==='ONLINE'?'ปกติ':c.s)+'</span>')+
@@ -1013,7 +1018,7 @@ function open(code){
   $('#dbody').innerHTML =
     '<div class="dhead"><button class="dclose" id="dclose" aria-label="ปิด">✕</button>'+
       '<div class="code">'+r.code+(r.owner?' · '+esc(r.owner):'')+'</div>'+
-      '<h2 id="dname">'+esc(r.name)+' <button class="pen" id="rename" title="แก้ชื่อตู้">✎</button></h2>'+
+      '<h2 id="dname">'+(r.name&&r.name.trim()?esc(r.name):'<span class="noname">ยังไม่ได้ตั้งชื่อ</span>')+' <button class="pen" id="rename" title="แก้ชื่อตู้">✎</button></h2>'+
       '<div class="dstats">'+
         '<div><div class="k">สะสมเดือนนี้</div><div class="v">'+money(tot)+'</div></div>'+
         '<div><div class="k">เฉลี่ย/วันตอน Online</div><div class="v">'+money(m.avg)+'</div></div>'+
