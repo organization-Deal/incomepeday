@@ -1360,9 +1360,9 @@ function demoHist(){
 boot();
 </script>
 <script>
-/* ===== ป้ายประเภทตู้ (ชกมวย/น้ำแข็ง/น้ำหอม/วัดความไว/ลาว) — โมดูลแยก non-invasive ===== */
+/* ===== ป้ายประเภทตู้ (แก้ไขได้) — non-invasive ===== */
 (function(){
-  var LO2TYPE = {"LO_0123":"ice","LO_0124":"ice","LO_0125":"ice","LO_0126":"ice","LO_0127":"ice","LO_0128":"ice","LO_0129":"ice","LO_0130":"ice","LO_0131":"ice","LO_0132":"ice","LO_0133":"ice","LO_0134":"ice","LO_0135":"ice","LO_0136":"ice","LO_0137":"ice","LO_0138":"ice","LO_0139":"ice","LO_0140":"ice","LO_0141":"ice","LO_0142":"ice","LO_0143":"ice","LO_0144":"ice","LO_0145":"ice","LO_0146":"ice","LO_0147":"ice","LO_0148":"ice","LO_0149":"ice","LO_0150":"ice","LO_0151":"ice","LO_0152":"ice","LO_0153":"ice","LO_0154":"ice","LO_0237":"ice","LO_0238":"ice","LO_0160":"ice","LO_0239":"ice","LO_0240":"ice","LO_0156":"ice","LO_0241":"ice","LO_0242":"ice","LO_0248":"ice","LO_0243":"ice","LO_0244":"ice","LO_0163":"ice","LO_0245":"ice","LO_0246":"ice","LO_0247":"ice","LO_0265":"ice","LO_0249":"ice","LO_0250":"ice","LO_0251":"ice","LO_0155":"ice","LO_0159":"ice","LO_0161":"ice","LO_0162":"ice","LO_0164":"ice","LO_0165":"perfume","LO_0166":"perfume","LO_0167":"perfume","LO_0168":"perfume","LO_0169":"perfume","LO_0170":"perfume","LO_0171":"perfume","LO_0172":"perfume","LO_0173":"perfume","LO_0174":"perfume","LO_0175":"perfume","LO_0176":"perfume","LO_0177":"perfume","LO_0178":"perfume","LO_0179":"perfume","LO_0180":"perfume","LO_0181":"perfume","LO_0182":"perfume","LO_0183":"perfume","LO_0184":"perfume","LO_0185":"perfume","LO_0186":"perfume","LO_0187":"perfume","LO_0188":"perfume","LO_0189":"perfume","LO_0190":"perfume","LO_0191":"perfume","LO_0192":"perfume","LO_0193":"perfume","LO_0194":"perfume","LO_0195":"perfume","LO_0196":"perfume","LO_0198":"perfume","LO_0199":"perfume","LO_0200":"perfume","LO_0201":"perfume","LO_0252":"perfume","LO_0202":"perfume","LO_0203":"perfume","LO_0204":"perfume","LO_0205":"perfume","LO_0206":"perfume","LO_0207":"perfume","LO_0208":"perfume","LO_0209":"perfume","LO_0210":"perfume","LO_0211":"perfume","LO_0212":"perfume","LO_0213":"perfume","LO_0214":"perfume","LO_0215":"perfume","LO_0216":"perfume","LO_0001":"boxing","LO_0004":"boxing","LO_0019":"boxing","LO_0005":"boxing","LO_0003":"boxing","LO_0007":"boxing","LO_0008":"boxing","LO_0009":"boxing","LO_0011":"boxing","LO_0012":"boxing","LO_0002":"boxing","LO_0017":"boxing","LO_0014":"boxing","LO_0025":"boxing","LO_0013":"boxing","LO_0021":"boxing","LO_0018":"boxing","LO_0023":"boxing","LO_0022":"boxing","LO_0015":"boxing","LO_0006":"boxing","LO_0010":"boxing","LO_0020":"boxing","LO_0029":"boxing","LO_0046":"boxing","LO_0030":"boxing","LO_0041":"boxing","LO_0024":"boxing","LO_0051":"boxing","LO_0032":"boxing","LO_0016":"boxing","LO_0026":"boxing","LO_0033":"boxing","LO_0034":"boxing","LO_0036":"boxing","LO_0048":"boxing","LO_0031":"boxing","LO_0049":"boxing","LO_0043":"boxing","LO_0047":"boxing","LO_0068":"boxing","LO_0055":"boxing","LO_0054":"boxing","LO_0057":"boxing","LO_0052":"boxing","LO_0037":"boxing","LO_0056":"boxing","LO_0058":"boxing","LO_0050":"boxing","LO_0027":"boxing","LO_0035":"boxing","LO_0059":"boxing","LO_0045":"boxing","LO_0119":"boxing","LO_0067":"boxing","LO_0062":"boxing","LO_0066":"boxing","LO_0060":"boxing","LO_0063":"boxing","LO_0061":"boxing","LO_0038":"boxing","LO_0071":"boxing","LO_0069":"boxing","LO_0074":"boxing","LO_0073":"boxing","LO_0078":"boxing","LO_0079":"boxing","LO_0080":"boxing","LO_0042":"boxing","LO_0075":"boxing","LO_0088":"boxing","LO_0081":"boxing","LO_0086":"boxing","LO_0084":"boxing","LO_0083":"boxing","LO_0089":"boxing","LO_0077":"boxing","LO_0085":"boxing","LO_0102":"boxing","LO_0072":"boxing","LO_0091":"boxing","LO_0094":"boxing","LO_0087":"boxing","LO_0082":"boxing","LO_0092":"boxing","LO_0117":"boxing","LO_0096":"boxing","LO_0093":"boxing","LO_0100":"boxing","LO_0099":"boxing","LO_0101":"boxing","LO_0103":"boxing","LO_0098":"boxing","LO_0104":"boxing","LO_0111":"boxing","LO_0110":"boxing","LO_0114":"boxing","LO_0105":"boxing","LO_0115":"boxing","LO_0076":"boxing","LO_0109":"boxing","LO_0113":"boxing","LO_0116":"boxing","LO_0095":"boxing","LO_0112":"boxing","LO_0107":"boxing","LO_0106":"boxing","LO_0108":"boxing","LO_0118":"boxing","LO_0120":"boxing","LO_0121":"boxing","LO_0122":"boxing","LO_0218":"speed","LO_0219":"speed","LO_0220":"speed","LO_0221":"speed","LO_0223":"speed","LO_0224":"speed","LO_0225":"speed","LO_0226":"speed","LO_0227":"speed","LO_0228":"speed","LO_0229":"speed","LO_0230":"speed","LO_0231":"speed","LO_0232":"speed","LO_0259":"speed","LO_0234":"speed","LO_0235":"speed","LO_0236":"speed"};
+  var BASE = {"LO_0123":"ice","LO_0124":"ice","LO_0125":"ice","LO_0126":"ice","LO_0127":"ice","LO_0128":"ice","LO_0129":"ice","LO_0130":"ice","LO_0131":"ice","LO_0132":"ice","LO_0133":"ice","LO_0134":"ice","LO_0135":"ice","LO_0136":"ice","LO_0137":"ice","LO_0138":"ice","LO_0139":"ice","LO_0140":"ice","LO_0141":"ice","LO_0142":"ice","LO_0143":"ice","LO_0144":"ice","LO_0145":"ice","LO_0146":"ice","LO_0147":"ice","LO_0148":"ice","LO_0149":"ice","LO_0150":"ice","LO_0151":"ice","LO_0152":"ice","LO_0153":"ice","LO_0154":"ice","LO_0237":"ice","LO_0238":"ice","LO_0160":"ice","LO_0239":"ice","LO_0240":"ice","LO_0156":"ice","LO_0241":"ice","LO_0242":"ice","LO_0248":"ice","LO_0243":"ice","LO_0244":"ice","LO_0163":"ice","LO_0245":"ice","LO_0246":"ice","LO_0247":"ice","LO_0265":"ice","LO_0249":"ice","LO_0250":"ice","LO_0251":"ice","LO_0155":"ice","LO_0159":"ice","LO_0161":"ice","LO_0162":"ice","LO_0164":"ice","LO_0165":"perfume","LO_0166":"perfume","LO_0167":"perfume","LO_0168":"perfume","LO_0169":"perfume","LO_0170":"perfume","LO_0171":"perfume","LO_0172":"perfume","LO_0173":"perfume","LO_0174":"perfume","LO_0175":"perfume","LO_0176":"perfume","LO_0177":"perfume","LO_0178":"perfume","LO_0179":"perfume","LO_0180":"perfume","LO_0181":"perfume","LO_0182":"perfume","LO_0183":"perfume","LO_0184":"perfume","LO_0185":"perfume","LO_0186":"perfume","LO_0187":"perfume","LO_0188":"perfume","LO_0189":"perfume","LO_0190":"perfume","LO_0191":"perfume","LO_0192":"perfume","LO_0193":"perfume","LO_0194":"perfume","LO_0195":"perfume","LO_0196":"perfume","LO_0198":"perfume","LO_0199":"perfume","LO_0200":"perfume","LO_0201":"perfume","LO_0252":"perfume","LO_0202":"perfume","LO_0203":"perfume","LO_0204":"perfume","LO_0205":"perfume","LO_0206":"perfume","LO_0207":"perfume","LO_0208":"perfume","LO_0209":"perfume","LO_0210":"perfume","LO_0211":"perfume","LO_0212":"perfume","LO_0213":"perfume","LO_0214":"perfume","LO_0215":"perfume","LO_0216":"perfume","LO_0001":"boxing","LO_0004":"boxing","LO_0019":"boxing","LO_0005":"boxing","LO_0003":"boxing","LO_0007":"boxing","LO_0008":"boxing","LO_0009":"boxing","LO_0011":"boxing","LO_0012":"boxing","LO_0002":"boxing","LO_0017":"boxing","LO_0014":"boxing","LO_0025":"boxing","LO_0013":"boxing","LO_0021":"boxing","LO_0018":"boxing","LO_0023":"boxing","LO_0022":"boxing","LO_0015":"boxing","LO_0006":"boxing","LO_0010":"boxing","LO_0020":"boxing","LO_0029":"boxing","LO_0046":"boxing","LO_0030":"boxing","LO_0041":"boxing","LO_0024":"boxing","LO_0051":"boxing","LO_0032":"boxing","LO_0016":"boxing","LO_0026":"boxing","LO_0033":"boxing","LO_0034":"boxing","LO_0036":"boxing","LO_0048":"boxing","LO_0031":"boxing","LO_0049":"boxing","LO_0043":"boxing","LO_0047":"boxing","LO_0068":"boxing","LO_0055":"boxing","LO_0054":"boxing","LO_0057":"boxing","LO_0052":"boxing","LO_0037":"boxing","LO_0056":"boxing","LO_0058":"boxing","LO_0050":"boxing","LO_0027":"boxing","LO_0035":"boxing","LO_0059":"boxing","LO_0045":"boxing","LO_0119":"boxing","LO_0067":"boxing","LO_0062":"boxing","LO_0066":"boxing","LO_0060":"boxing","LO_0063":"boxing","LO_0061":"boxing","LO_0038":"boxing","LO_0071":"boxing","LO_0069":"boxing","LO_0074":"boxing","LO_0073":"boxing","LO_0078":"boxing","LO_0079":"boxing","LO_0080":"boxing","LO_0042":"boxing","LO_0075":"boxing","LO_0088":"boxing","LO_0081":"boxing","LO_0086":"boxing","LO_0084":"boxing","LO_0083":"boxing","LO_0089":"boxing","LO_0077":"boxing","LO_0085":"boxing","LO_0102":"boxing","LO_0072":"boxing","LO_0091":"boxing","LO_0094":"boxing","LO_0087":"boxing","LO_0082":"boxing","LO_0092":"boxing","LO_0117":"boxing","LO_0096":"boxing","LO_0093":"boxing","LO_0100":"boxing","LO_0099":"boxing","LO_0101":"boxing","LO_0103":"boxing","LO_0098":"boxing","LO_0104":"boxing","LO_0111":"boxing","LO_0110":"boxing","LO_0114":"boxing","LO_0105":"boxing","LO_0115":"boxing","LO_0076":"boxing","LO_0109":"boxing","LO_0113":"boxing","LO_0116":"boxing","LO_0095":"boxing","LO_0112":"boxing","LO_0107":"boxing","LO_0106":"boxing","LO_0108":"boxing","LO_0118":"boxing","LO_0120":"boxing","LO_0121":"boxing","LO_0122":"boxing","LO_0218":"speed","LO_0219":"speed","LO_0220":"speed","LO_0221":"speed","LO_0223":"speed","LO_0224":"speed","LO_0225":"speed","LO_0226":"speed","LO_0227":"speed","LO_0228":"speed","LO_0229":"speed","LO_0230":"speed","LO_0231":"speed","LO_0232":"speed","LO_0259":"speed","LO_0234":"speed","LO_0235":"speed","LO_0236":"speed"};
   var META = {
     boxing:  {label:'\u0e0a\u0e01\u0e21\u0e27\u0e22',   emoji:'\ud83e\udd4a', c:'#c026d3'},
     ice:     {label:'\u0e19\u0e49\u0e33\u0e41\u0e02\u0e47\u0e07', emoji:'\u2744\ufe0f', c:'#0284c7'},
@@ -1370,51 +1370,101 @@ boot();
     speed:   {label:'\u0e27\u0e31\u0e14\u0e04\u0e27\u0e32\u0e21\u0e44\u0e27', emoji:'\u26a1', c:'#d97706'},
     laos:    {label:'\u0e25\u0e32\u0e27',    emoji:'\ud83c\uddf1\ud83c\udde6', c:'#059669'}
   };
-  function badgeHTML(t){
-    var m=META[t]; if(!m) return '';
-    return '<span class="type-badge" data-t="'+t+'" style="flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;'
+  var ORDER = ['boxing','ice','perfume','speed','laos'];
+  var OVKEY='dealTypeOverride';
+  function loadOv(){ try{ return JSON.parse(localStorage.getItem(OVKEY)||'{}'); }catch(e){ return {}; } }
+  function saveOv(o){ try{ localStorage.setItem(OVKEY, JSON.stringify(o)); }catch(e){} }
+  var OV = loadOv();
+  function getType(code){
+    if(Object.prototype.hasOwnProperty.call(OV,code)) return OV[code]; // '' = ตั้งใจล้าง
+    return BASE[code] || '';
+  }
+  function pill(t){
+    var m=META[t];
+    if(!m){
+      return '<span class="type-badge" data-t="" style="flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;cursor:pointer;'
+        +'font-size:10px;font-weight:600;line-height:1;padding:2px 7px;border-radius:99px;'
+        +'background:transparent;color:var(--ink-4,#999);border:1px dashed var(--line,#ccc)" title="\u0e41\u0e15\u0e30\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e15\u0e31\u0e49\u0e07\u0e1b\u0e23\u0e30\u0e40\u0e20\u0e17">'
+        +'\uff0b \u0e1b\u0e23\u0e30\u0e40\u0e20\u0e17</span>';
+    }
+    return '<span class="type-badge" data-t="'+t+'" style="flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;cursor:pointer;'
       +'font-size:10px;font-weight:600;line-height:1;padding:2px 6px;border-radius:99px;'
-      +'background:'+m.c+'1f;color:'+m.c+';border:1px solid '+m.c+'40;white-space:nowrap">'
+      +'background:'+m.c+'1f;color:'+m.c+';border:1px solid '+m.c+'40;white-space:nowrap" title="\u0e41\u0e15\u0e30\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e41\u0e01\u0e49\u0e1b\u0e23\u0e30\u0e40\u0e20\u0e17">'
       +m.emoji+' '+m.label+'</span>';
   }
-  function tagRows(root){
-    var rows=(root||document).querySelectorAll('[data-code]');
-    for(var i=0;i<rows.length;i++){
-      var el=rows[i];
-      var nm=el.querySelector('.nm');
-      if(!nm || nm.querySelector('.type-badge')) continue;
-      var code=el.getAttribute('data-code');
-      var t=LO2TYPE[code];
-      var b=badgeHTML(t);
-      if(b) nm.insertAdjacentHTML('afterbegin', b);
-    }
+  // ให้แถวมีป้ายตรงกับ type ปัจจุบัน (เพิ่ม/แทนที่เมื่อไม่ตรง)
+  function applyBadge(el){
+    var nm=el.querySelector('.nm'); if(!nm) return;
+    var code=el.getAttribute('data-code'); var t=getType(code);
+    var cur=nm.querySelector('.type-badge');
+    var want=(t||'');
+    if(cur && cur.getAttribute('data-t')===want) return; // ตรงแล้ว ไม่ต้องแตะ
+    if(cur) cur.remove();
+    nm.insertAdjacentHTML('afterbegin', pill(t));
   }
-  // เฝ้าดู: ตารางรีเฟรชเมื่อไร เติมป้ายให้ใหม่
-  var obs=new MutationObserver(function(muts){
-    var hit=false;
-    for(var i=0;i<muts.length;i++){ if(muts[i].addedNodes && muts[i].addedNodes.length){ hit=true; break; } }
-    if(hit) tagRows(document);
+  function tagAll(){ var r=document.querySelectorAll('[data-code]'); for(var i=0;i<r.length;i++) applyBadge(r[i]); }
+  function refreshCode(code){
+    var r=document.querySelectorAll('[data-code="'+(window.CSS&&CSS.escape?CSS.escape(code):code)+'"]');
+    for(var i=0;i<r.length;i++) applyBadge(r[i]);
+  }
+
+  // ---- ตัวเลือกประเภท ----
+  function picker(code){
+    var cur=getType(code);
+    var ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px';
+    var opts=ORDER.map(function(k){
+      var m=META[k]; var on=(k===cur);
+      return '<button class="tp-opt" data-k="'+k+'" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;'
+        +'padding:10px 12px;border:1px solid '+(on?m.c:'rgba(0,0,0,.12)')+';border-radius:10px;margin-bottom:8px;cursor:pointer;'
+        +'background:'+(on?m.c+'14':'transparent')+';color:inherit;font:inherit;font-size:14px">'
+        +'<span style="font-size:16px">'+m.emoji+'</span><span style="flex:1">'+m.label+'</span>'
+        +(on?'<span style="color:'+m.c+';font-weight:700">\u2713</span>':'')+'</button>';
+    }).join('');
+    ov.innerHTML='<div style="background:var(--card,#fff);color:var(--ink,#111);max-width:340px;width:100%;padding:18px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);font:inherit">'
+      +'<h2 style="margin:0 0 2px;font-size:16px">\u0e15\u0e31\u0e49\u0e07\u0e1b\u0e23\u0e30\u0e40\u0e20\u0e17\u0e15\u0e39\u0e49</h2>'
+      +'<p style="margin:0 0 14px;font-size:11.5px;opacity:.55;font-family:monospace">'+code+'</p>'
+      +opts
+      +'<button class="tp-clear" style="width:100%;padding:9px 12px;border:1px dashed rgba(0,0,0,.2);border-radius:10px;margin-bottom:10px;cursor:pointer;background:transparent;color:var(--ink-3,#888);font:inherit;font-size:13px">\u2716 \u0e44\u0e21\u0e48\u0e21\u0e35\u0e1b\u0e23\u0e30\u0e40\u0e20\u0e17</button>'
+      +'<button class="tp-cancel" style="width:100%;padding:9px 12px;border:0;border-radius:10px;cursor:pointer;background:rgba(0,0,0,.06);color:inherit;font:inherit;font-size:13px">\u0e1b\u0e34\u0e14</button></div>';
+    document.body.appendChild(ov);
+    function close(){ov.remove();}
+    function set(v){ OV[code]=v; saveOv(OV); refreshCode(code); close(); }
+    ov.addEventListener('click',function(e){if(e.target===ov)close();});
+    ov.querySelectorAll('.tp-opt').forEach(function(b){ b.onclick=function(){ set(b.getAttribute('data-k')); }; });
+    ov.querySelector('.tp-clear').onclick=function(){ set(''); };
+    ov.querySelector('.tp-cancel').onclick=close;
+  }
+
+  // คลิกที่ป้าย = เปิดตัวเลือก (กันไม่ให้ไปโดน onclick ของแถว)
+  document.addEventListener('click', function(e){
+    var b=e.target.closest ? e.target.closest('.type-badge') : null;
+    if(!b) return;
+    var row=b.closest('[data-code]'); if(!row) return;
+    e.stopPropagation(); e.preventDefault();
+    picker(row.getAttribute('data-code'));
+  }, true);
+
+  var obs=new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++){ if(m[i].addedNodes && m[i].addedNodes.length){ tagAll(); return; } }
   });
   document.addEventListener('DOMContentLoaded',function(){
-    tagRows(document);
-    obs.observe(document.body, {childList:true, subtree:true});
-
-    // ป้ายอธิบายสี (legend) ใต้แถบเมนู
+    tagAll();
+    obs.observe(document.body,{childList:true,subtree:true});
     var wrap=document.querySelector('.wrap');
     if(wrap && !document.getElementById('type-legend')){
-      var lg=document.createElement('div');
-      lg.id='type-legend';
-      lg.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin:0 0 4px;padding:0 2px';
-      var keys=['boxing','ice','perfume','speed','laos'];
-      lg.innerHTML='<span style="font-size:11px;opacity:.5;align-self:center;margin-right:2px">\u0e1b\u0e23\u0e30\u0e40\u0e20\u0e17\u0e15\u0e39\u0e49:</span>'
-        + keys.map(function(k){return badgeHTML(k);}).join('');
+      var lg=document.createElement('div'); lg.id='type-legend';
+      lg.style.cssText='display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 4px;padding:0 2px';
+      lg.innerHTML='<span style="font-size:11px;opacity:.5;margin-right:2px">\u0e1b\u0e23\u0e30\u0e40\u0e20\u0e17\u0e15\u0e39\u0e49 (\u0e41\u0e15\u0e30\u0e17\u0e35\u0e48\u0e1b\u0e49\u0e32\u0e22\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e41\u0e01\u0e49):</span>'
+        + ORDER.map(function(k){return pill(k);}).join('');
+      // legend ไม่ต้องคลิกได้ → เอา cursor ออกภายหลังก็ได้ แต่ไม่เป็นไร
       wrap.insertBefore(lg, wrap.firstChild);
     }
   });
 })();
 </script>
 <script>
-/* ===== ตู้น้ำหอม DKM — โมดูลแยก ไม่ยุ่งกับมอนิเตอร์เดิม ===== */
+/* ===== ตู้น้ำหอม DKM ===== */
 (function(){
   var PERF_MACHINES = [{"mid":794,"name":"เบลอ หญิง","cat":"หญิง"},{"mid":795,"name":"เบลอ ชาย","cat":"ชาย"},{"mid":967,"name":"ท่าช้าง บางกอก ข้าวสาร (หน้า)","cat":"ไม่ระบุ"},{"mid":968,"name":"The Trap ชาย","cat":"ชาย"},{"mid":969,"name":"บคศ By KK Bar (ช)","cat":"ชาย"},{"mid":970,"name":"โซเบอร์ นิมมาน หญิง","cat":"หญิง"},{"mid":971,"name":"บคศ By KK Bar (ญ)","cat":"หญิง"},{"mid":972,"name":"The Trap หญิง","cat":"หญิง"},{"mid":973,"name":"Sugar แม่โจ้","cat":"ไม่ระบุ"},{"mid":974,"name":"Stories Salaya (ญ)","cat":"หญิง"},{"mid":976,"name":"Wolf ชาย","cat":"ชาย"},{"mid":1037,"name":"จันทร์เจ้าขา หญิง","cat":"หญิง"},{"mid":1038,"name":"โซเบอร์ นิมมาน ชาย","cat":"ชาย"},{"mid":1039,"name":"Walk Man ชาย","cat":"ชาย"},{"mid":1040,"name":"SubScribe หญิง","cat":"หญิง"},{"mid":1041,"name":"ฟินิกซ์ ชาย","cat":"ชาย"},{"mid":1121,"name":"SubScribe ชาย","cat":"ชาย"},{"mid":1122,"name":"แฮชแทค ขอนแก่น หญิง","cat":"หญิง"},{"mid":1123,"name":"12 BAR โชว์ระบบ (ช)","cat":"ชาย"},{"mid":1124,"name":"Tunnel ชาย","cat":"ชาย"},{"mid":1125,"name":"Lism หญิง","cat":"หญิง"},{"mid":1126,"name":"Walk Man หญิง","cat":"หญิง"},{"mid":1128,"name":"ลาบหนองจันทร์นครพนม (ญ)","cat":"หญิง"},{"mid":1130,"name":"Sugar แม่โจ้ (ช)","cat":"ชาย"},{"mid":1210,"name":"เชลบี้ หญิง","cat":"หญิง"},{"mid":1211,"name":"รีรีข้าวสาร (ญ)","cat":"หญิง"},{"mid":1213,"name":"ป.กุ้งเผา หลักสี่ ขวา","cat":"ไม่ระบุ"},{"mid":1216,"name":"Lism ชาย","cat":"ชาย"},{"mid":1217,"name":"แสงจันทร์ พระราม 2 ชาย","cat":"ชาย"},{"mid":1218,"name":"เชลบี้ ชาย","cat":"ชาย"},{"mid":1219,"name":"12 Bar Show ระบบ Unisex","cat":"ไม่ระบุ"},{"mid":1325,"name":"ห้องสมุด มหาดไทย หญิง","cat":"หญิง"},{"mid":1326,"name":"ลานปิติ","cat":"ไม่ระบุ"},{"mid":1327,"name":"เฮ้าส์ คลอง 6 หญิง","cat":"หญิง"},{"mid":1328,"name":"โบตั๋น นิมมาน","cat":"ไม่ระบุ"},{"mid":1333,"name":"Station CMI หญิง","cat":"หญิง"},{"mid":1334,"name":"ร้าน Beyond club & live Music","cat":"ไม่ระบุ"},{"mid":1336,"name":"ป.กุ้งเผา หลักสี่ ซ้าย","cat":"ไม่ระบุ"},{"mid":1337,"name":"Fix club สกลนคร (ช)","cat":"ชาย"},{"mid":2097,"name":"ร้านอีสานลำเพลิน (เตาปูน)","cat":"ไม่ระบุ"},{"mid":2098,"name":"Rusty (ขอนแก่น)","cat":"ไม่ระบุ"},{"mid":2099,"name":"ร้านเอ้อระเหย (ขอนแก่น)","cat":"ไม่ระบุ"},{"mid":2117,"name":"เธอ หญิง (ภูเก็ต)","cat":"หญิง"},{"mid":2195,"name":"ห้องสมุด มหาดไทย ชาย","cat":"ชาย"},{"mid":2325,"name":"Story Salaya (ช)","cat":"ชาย"},{"mid":2326,"name":"เฮ้าส์คลอง 6 ชาย","cat":"ชาย"},{"mid":2436,"name":"Turr รัชโยธิน (ขาย)","cat":"ไม่ระบุ"},{"mid":2437,"name":"ตะวันแดง วาไรตี้ยะลา","cat":"ไม่ระบุ"},{"mid":2517,"name":"ร้านไปยานใหญ่ (ชาย)","cat":"ชาย"},{"mid":2572,"name":"Replaygound ขอนแก่น (ชาย)","cat":"ชาย"},{"mid":2573,"name":"Turr  รัชโยธิน (ญ)","cat":"หญิง"}];
   var CATS = [
@@ -1426,11 +1476,9 @@ boot();
   function fmtP(n){ return n==null ? '\u2013' : Math.round(Number(n)).toLocaleString('en-US'); }
   function escP(s){ return String(s||'').replace(/[<>&"]/g,function(m){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[m];}); }
   function toastP(m){ try{ if(typeof toast==='function'){toast(m);return;} }catch(e){} alert(m); }
-
   function pickRange(){
     return new Promise(function(res){
-      function iso(d){return d.toISOString().slice(0,10);}
-      var today=iso(new Date());
+      function iso(d){return d.toISOString().slice(0,10);} var today=iso(new Date());
       var ov=document.createElement('div');
       ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
       ov.innerHTML='<div style="background:var(--card,#fff);color:var(--ink,#111);max-width:400px;width:100%;padding:20px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);font:inherit">'
@@ -1447,98 +1495,60 @@ boot();
       function close(v){ov.remove();res(v);}
       ov.addEventListener('click',function(e){if(e.target===ov)close(null);});
       q('#pfc').onclick=function(){close(null);};
-      q('#pfg').onclick=function(){
-        var s=q('#pfs').value,e=q('#pfe').value;
+      q('#pfg').onclick=function(){var s=q('#pfs').value,e=q('#pfe').value;
         if(!s||!e){toastP('\u0e40\u0e25\u0e37\u0e2d\u0e01\u0e27\u0e31\u0e19\u0e43\u0e2b\u0e49\u0e04\u0e23\u0e1a');return;}
         if(s>e){toastP('\u0e27\u0e31\u0e19\u0e40\u0e23\u0e34\u0e48\u0e21\u0e15\u0e49\u0e2d\u0e07\u0e44\u0e21\u0e48\u0e40\u0e01\u0e34\u0e19\u0e27\u0e31\u0e19\u0e2a\u0e34\u0e49\u0e19\u0e2a\u0e38\u0e14');return;}
-        close({start:s,end:e});
-      };
+        close({start:s,end:e});};
     });
   }
-
   function showResult(range, rows, total, okCount){
     var ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
-
-    // สรุปหัวตาราง (นับตู้ + ยอดรวมย่อยต่อประเภท)
-    var chips = CATS.map(function(c){
-      var rs=rows.filter(function(r){return r.cat===c.key;});
-      var sub=rs.reduce(function(a,r){return a+(r.rev||0);},0);
-      if(!rs.length) return '';
-      return '<span style="display:inline-block;background:rgba(0,0,0,.05);border-radius:99px;padding:3px 10px;margin:0 6px 6px 0;font-size:12px">'
-        +c.label+' \u00b7 '+rs.length+' \u0e15\u0e39\u0e49 \u00b7 <b>'+fmtP(sub)+'</b> \u0e1a\u0e32\u0e17</span>';
-    }).join('');
-
-    // ตารางแยกกลุ่ม
-    var sections = CATS.map(function(c){
-      var rs=rows.filter(function(r){return r.cat===c.key;})
-                 .sort(function(a,b){return (b.rev||0)-(a.rev||0);});
-      if(!rs.length) return '';
-      var sub=rs.reduce(function(a,r){return a+(r.rev||0);},0);
+    var chips=CATS.map(function(c){var rs=rows.filter(function(r){return r.cat===c.key;});
+      var sub=rs.reduce(function(a,r){return a+(r.rev||0);},0); if(!rs.length) return '';
+      return '<span style="display:inline-block;background:rgba(0,0,0,.05);border-radius:99px;padding:3px 10px;margin:0 6px 6px 0;font-size:12px">'+c.label+' \u00b7 '+rs.length+' \u0e15\u0e39\u0e49 \u00b7 <b>'+fmtP(sub)+'</b> \u0e1a\u0e32\u0e17</span>';}).join('');
+    var sections=CATS.map(function(c){
+      var rs=rows.filter(function(r){return r.cat===c.key;}).sort(function(a,b){return (b.rev||0)-(a.rev||0);});
+      if(!rs.length) return ''; var sub=rs.reduce(function(a,r){return a+(r.rev||0);},0);
       var okN=rs.filter(function(r){return r.rev!=null;}).length;
-      var body=rs.map(function(r){return '<tr style="border-top:1px solid rgba(0,0,0,.06)">'
-        +'<td style="padding:6px 8px">'+escP(r.name)+'</td>'
-        +'<td style="padding:6px 8px;text-align:right;font-weight:600;'+(r.rev==null?'opacity:.35':'')+'">'
-        +(r.rev==null?'\u0e14\u0e36\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49':fmtP(r.rev))+'</td></tr>';}).join('');
-      return '<div style="margin-top:16px">'
-        +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">'
+      var body=rs.map(function(r){return '<tr style="border-top:1px solid rgba(0,0,0,.06)"><td style="padding:6px 8px">'+escP(r.name)+'</td>'
+        +'<td style="padding:6px 8px;text-align:right;font-weight:600;'+(r.rev==null?'opacity:.35':'')+'">'+(r.rev==null?'\u0e14\u0e36\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49':fmtP(r.rev))+'</td></tr>';}).join('');
+      return '<div style="margin-top:16px"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">'
         +'<div style="font-weight:700;font-size:14px">'+c.label+' <span style="opacity:.5;font-weight:400;font-size:12px">('+okN+'/'+rs.length+' \u0e15\u0e39\u0e49)</span></div>'
         +'<div style="font-weight:700;font-size:14px">'+fmtP(sub)+' <span style="font-size:11px;font-weight:400;opacity:.6">\u0e1a\u0e32\u0e17</span></div></div>'
-        +'<div style="border:1px solid rgba(0,0,0,.1);border-radius:10px;overflow:hidden">'
-        +'<table style="width:100%;border-collapse:collapse;font-size:13px"><tbody>'+body+'</tbody></table></div></div>';
-    }).join('');
-
+        +'<div style="border:1px solid rgba(0,0,0,.1);border-radius:10px;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:13px"><tbody>'+body+'</tbody></table></div></div>';}).join('');
     ov.innerHTML='<div style="background:var(--card,#fff);color:var(--ink,#111);max-width:600px;width:100%;max-height:86vh;overflow:auto;padding:20px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);font:inherit">'
       +'<h2 style="margin:0 0 4px;font-size:18px">\ud83c\udf38 \u0e23\u0e32\u0e22\u0e44\u0e14\u0e49\u0e15\u0e39\u0e49\u0e19\u0e49\u0e33\u0e2b\u0e2d\u0e21 \u0e41\u0e22\u0e01\u0e15\u0e32\u0e21\u0e1b\u0e23\u0e30\u0e40\u0e20\u0e17</h2>'
       +'<p style="margin:0 0 8px;font-size:12.5px;opacity:.65">'+escP(range.start===range.end?range.start:range.start+' \u2192 '+range.end)+' \u00b7 \u0e2d\u0e48\u0e32\u0e19\u0e44\u0e14\u0e49 '+okCount+'/'+rows.length+' \u0e15\u0e39\u0e49</p>'
       +'<div style="font-size:26px;font-weight:800;margin:6px 0 4px">'+fmtP(total)+' <span style="font-size:14px;font-weight:500;opacity:.6">\u0e1a\u0e32\u0e17 (\u0e23\u0e27\u0e21\u0e17\u0e38\u0e01\u0e1b\u0e23\u0e30\u0e40\u0e20\u0e17)</span></div>'
-      +'<div style="margin:8px 0 2px">'+chips+'</div>'
-      +sections
-      +'<div style="display:flex;justify-content:flex-end;margin-top:18px">'
-      +'<button id="pfclose" style="padding:9px 16px;border:0;border-radius:9px;background:#e11d48;color:#fff;cursor:pointer;font:inherit;font-weight:600">\u0e1b\u0e34\u0e14</button></div></div>';
+      +'<div style="margin:8px 0 2px">'+chips+'</div>'+sections
+      +'<div style="display:flex;justify-content:flex-end;margin-top:18px"><button id="pfclose" style="padding:9px 16px;border:0;border-radius:9px;background:#e11d48;color:#fff;cursor:pointer;font:inherit;font-weight:600">\u0e1b\u0e34\u0e14</button></div></div>';
     document.body.appendChild(ov);
     function close(){ov.remove();}
     ov.addEventListener('click',function(e){if(e.target===ov)close();});
     ov.querySelector('#pfclose').onclick=close;
   }
-
   async function pull(){
     var btn=q('#perfBtn');
     var token=(localStorage.getItem('dkm_token')||'').trim();
-    if(!token){
-      token=(prompt('\u0e27\u0e32\u0e07 DKM token (\u0e08\u0e32\u0e01 dkmvending.com)\n\n\u0e2b\u0e32\u0e44\u0e14\u0e49\u0e17\u0e35\u0e48: F12 \u2192 Application \u2192 Local Storage \u2192 dkmvending.com \u2192 \u0e04\u0e31\u0e14\u0e25\u0e2d\u0e01\u0e04\u0e48\u0e32 "token"')||'').trim();
-      if(!token) return;
-      localStorage.setItem('dkm_token',token);
-    }
+    if(!token){ token=(prompt('\u0e27\u0e32\u0e07 DKM token (dkmvending.com)\n\nF12 \u2192 Application \u2192 Local Storage \u2192 dkmvending.com \u2192 "token"')||'').trim();
+      if(!token) return; localStorage.setItem('dkm_token',token); }
     var range=await pickRange(); if(!range) return;
-    var time=range.start+'~'+range.end;
-    var ids=PERF_MACHINES.map(function(m){return m.mid;});
+    var time=range.start+'~'+range.end; var ids=PERF_MACHINES.map(function(m){return m.mid;});
     var old=btn.textContent; btn.disabled=true; btn.textContent='\u23f3 \u0e01\u0e33\u0e25\u0e31\u0e07\u0e14\u0e36\u0e07...';
     var res;
-    try{
-      var r=await fetch('/api/perfume',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:token,time:time,ids:ids})});
-      res=await r.json();
-    }catch(e){ btn.disabled=false; btn.textContent=old; toastP('\u0e40\u0e23\u0e35\u0e22\u0e01 /api/perfume \u0e44\u0e21\u0e48\u0e44\u0e14\u0e49: '+e); return; }
+    try{ var r=await fetch('/api/perfume',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:token,time:time,ids:ids})}); res=await r.json(); }
+    catch(e){ btn.disabled=false; btn.textContent=old; toastP('\u0e40\u0e23\u0e35\u0e22\u0e01 /api/perfume \u0e44\u0e21\u0e48\u0e44\u0e14\u0e49: '+e); return; }
     btn.disabled=false; btn.textContent=old;
     if(!res||!res.ok){ toastP('\u0e14\u0e36\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49: '+((res&&res.error)||'unknown')); return; }
-    var rev=res.results||{};
-    var vals=Object.keys(rev).map(function(k){return rev[k];});
-    if(vals.length && vals.every(function(v){return v===null;})){
-      localStorage.removeItem('dkm_token');
-      toastP('token \u0e2b\u0e21\u0e14\u0e2d\u0e32\u0e22\u0e38/\u0e1c\u0e34\u0e14 \u2014 login dkmvending.com \u0e43\u0e2b\u0e21\u0e48 \u0e41\u0e25\u0e49\u0e27\u0e27\u0e32\u0e07 token \u0e2d\u0e35\u0e01\u0e04\u0e23\u0e31\u0e49\u0e07'); return;
-    }
+    var rev=res.results||{}; var vals=Object.keys(rev).map(function(k){return rev[k];});
+    if(vals.length && vals.every(function(v){return v===null;})){ localStorage.removeItem('dkm_token');
+      toastP('token \u0e2b\u0e21\u0e14\u0e2d\u0e32\u0e22\u0e38/\u0e1c\u0e34\u0e14 \u2014 login \u0e43\u0e2b\u0e21\u0e48\u0e41\u0e25\u0e49\u0e27\u0e27\u0e32\u0e07 token \u0e2d\u0e35\u0e01\u0e04\u0e23\u0e31\u0e49\u0e07'); return; }
     var total=0, ok=0;
-    var rows=PERF_MACHINES.map(function(m){
-      var v=rev[m.mid];
-      if(v!=null){ total+=(+v||0); ok++; }
-      return {name:m.name, cat:m.cat, rev:(v==null?null:+v)};
-    });
+    var rows=PERF_MACHINES.map(function(m){var v=rev[m.mid]; if(v!=null){total+=(+v||0);ok++;} return {name:m.name,cat:m.cat,rev:(v==null?null:+v)};});
     showResult(range, rows, total, ok);
   }
-
-  document.addEventListener('DOMContentLoaded',function(){
-    var b=q('#perfBtn'); if(b) b.onclick=pull;
-  });
+  document.addEventListener('DOMContentLoaded',function(){ var b=q('#perfBtn'); if(b) b.onclick=pull; });
 })();
 </script>
 </body>
