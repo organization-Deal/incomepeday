@@ -150,3 +150,9 @@ async function handleWrite(request, env) {
     return json({ ok: false, error: 'ต่อ Apps Script ไม่ได้: ' + err.message }, 502);
   }
 }
+if (url.pathname === '/api/perfume' && request.method === 'POST') {
+  return handlePerfume(request);
+}
+if (url.pathname === '/api/perfume' && request.method === 'GET') {
+  return json({ ok: true, msg: 'perfume proxy พร้อม' });
+}
