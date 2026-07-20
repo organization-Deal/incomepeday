@@ -1362,7 +1362,12 @@ boot();
 <script>
 /* ===== ตู้น้ำหอม DKM — โมดูลแยก ไม่ยุ่งกับมอนิเตอร์เดิม ===== */
 (function(){
-  var PERF_MACHINES = [{"mid":794,"name":"เบลอ หญิง"},{"mid":795,"name":"เบลอ ชาย"},{"mid":967,"name":"ท่าช้าง บางกอก ข้าวสาร (หน้า)"},{"mid":968,"name":"The Trap ชาย"},{"mid":969,"name":"บคศ By KK Bar (ช)"},{"mid":970,"name":"โซเบอร์ นิมมาน หญิง"},{"mid":971,"name":"บคศ By KK Bar (ญ)"},{"mid":972,"name":"The Trap หญิง"},{"mid":973,"name":"Sugar แม่โจ้"},{"mid":974,"name":"Stories Salaya (ญ)"},{"mid":976,"name":"Wolf ชาย"},{"mid":1037,"name":"จันทร์เจ้าขา หญิง"},{"mid":1038,"name":"โซเบอร์ นิมมาน ชาย"},{"mid":1039,"name":"Walk Man ชาย"},{"mid":1040,"name":"SubScribe หญิง"},{"mid":1041,"name":"ฟินิกซ์ ชาย"},{"mid":1121,"name":"SubScribe ชาย"},{"mid":1122,"name":"แฮชแทค ขอนแก่น หญิง"},{"mid":1123,"name":"12 BAR โชว์ระบบ (ช)"},{"mid":1124,"name":"Tunnel ชาย"},{"mid":1125,"name":"Lism หญิง"},{"mid":1126,"name":"Walk Man หญิง"},{"mid":1128,"name":"ลาบหนองจันทร์นครพนม (ญ)"},{"mid":1130,"name":"Sugar แม่โจ้ (ช)"},{"mid":1210,"name":"เชลบี้ หญิง"},{"mid":1211,"name":"รีรีข้าวสาร (ญ)"},{"mid":1213,"name":"ป.กุ้งเผา หลักสี่ ขวา"},{"mid":1216,"name":"Lism ชาย"},{"mid":1217,"name":"แสงจันทร์ พระราม 2 ชาย"},{"mid":1218,"name":"เชลบี้ ชาย"},{"mid":1219,"name":"12 Bar Show ระบบ Unisex"},{"mid":1325,"name":"ห้องสมุด มหาดไทย หญิง"},{"mid":1326,"name":"ลานปิติ"},{"mid":1327,"name":"เฮ้าส์ คลอง 6 หญิง"},{"mid":1328,"name":"โบตั๋น นิมมาน"},{"mid":1333,"name":"Station CMI หญิง"},{"mid":1334,"name":"ร้าน Beyond club & live Music"},{"mid":1336,"name":"ป.กุ้งเผา หลักสี่ ซ้าย"},{"mid":1337,"name":"Fix club สกลนคร (ช)"},{"mid":2097,"name":"ร้านอีสานลำเพลิน (เตาปูน)"},{"mid":2098,"name":"Rusty (ขอนแก่น)"},{"mid":2099,"name":"ร้านเอ้อระเหย (ขอนแก่น)"},{"mid":2117,"name":"เธอ หญิง (ภูเก็ต)"},{"mid":2195,"name":"ห้องสมุด มหาดไทย ชาย"},{"mid":2325,"name":"Story Salaya (ช)"},{"mid":2326,"name":"เฮ้าส์คลอง 6 ชาย"},{"mid":2436,"name":"Turr รัชโยธิน (ขาย)"},{"mid":2437,"name":"ตะวันแดง วาไรตี้ยะลา"},{"mid":2517,"name":"ร้านไปยานใหญ่ (ชาย)"},{"mid":2572,"name":"Replaygound ขอนแก่น (ชาย)"},{"mid":2573,"name":"Turr  รัชโยธิน (ญ)"}];
+  var PERF_MACHINES = [{"mid":794,"name":"เบลอ หญิง","cat":"หญิง"},{"mid":795,"name":"เบลอ ชาย","cat":"ชาย"},{"mid":967,"name":"ท่าช้าง บางกอก ข้าวสาร (หน้า)","cat":"ไม่ระบุ"},{"mid":968,"name":"The Trap ชาย","cat":"ชาย"},{"mid":969,"name":"บคศ By KK Bar (ช)","cat":"ชาย"},{"mid":970,"name":"โซเบอร์ นิมมาน หญิง","cat":"หญิง"},{"mid":971,"name":"บคศ By KK Bar (ญ)","cat":"หญิง"},{"mid":972,"name":"The Trap หญิง","cat":"หญิง"},{"mid":973,"name":"Sugar แม่โจ้","cat":"ไม่ระบุ"},{"mid":974,"name":"Stories Salaya (ญ)","cat":"หญิง"},{"mid":976,"name":"Wolf ชาย","cat":"ชาย"},{"mid":1037,"name":"จันทร์เจ้าขา หญิง","cat":"หญิง"},{"mid":1038,"name":"โซเบอร์ นิมมาน ชาย","cat":"ชาย"},{"mid":1039,"name":"Walk Man ชาย","cat":"ชาย"},{"mid":1040,"name":"SubScribe หญิง","cat":"หญิง"},{"mid":1041,"name":"ฟินิกซ์ ชาย","cat":"ชาย"},{"mid":1121,"name":"SubScribe ชาย","cat":"ชาย"},{"mid":1122,"name":"แฮชแทค ขอนแก่น หญิง","cat":"หญิง"},{"mid":1123,"name":"12 BAR โชว์ระบบ (ช)","cat":"ชาย"},{"mid":1124,"name":"Tunnel ชาย","cat":"ชาย"},{"mid":1125,"name":"Lism หญิง","cat":"หญิง"},{"mid":1126,"name":"Walk Man หญิง","cat":"หญิง"},{"mid":1128,"name":"ลาบหนองจันทร์นครพนม (ญ)","cat":"หญิง"},{"mid":1130,"name":"Sugar แม่โจ้ (ช)","cat":"ชาย"},{"mid":1210,"name":"เชลบี้ หญิง","cat":"หญิง"},{"mid":1211,"name":"รีรีข้าวสาร (ญ)","cat":"หญิง"},{"mid":1213,"name":"ป.กุ้งเผา หลักสี่ ขวา","cat":"ไม่ระบุ"},{"mid":1216,"name":"Lism ชาย","cat":"ชาย"},{"mid":1217,"name":"แสงจันทร์ พระราม 2 ชาย","cat":"ชาย"},{"mid":1218,"name":"เชลบี้ ชาย","cat":"ชาย"},{"mid":1219,"name":"12 Bar Show ระบบ Unisex","cat":"ไม่ระบุ"},{"mid":1325,"name":"ห้องสมุด มหาดไทย หญิง","cat":"หญิง"},{"mid":1326,"name":"ลานปิติ","cat":"ไม่ระบุ"},{"mid":1327,"name":"เฮ้าส์ คลอง 6 หญิง","cat":"หญิง"},{"mid":1328,"name":"โบตั๋น นิมมาน","cat":"ไม่ระบุ"},{"mid":1333,"name":"Station CMI หญิง","cat":"หญิง"},{"mid":1334,"name":"ร้าน Beyond club & live Music","cat":"ไม่ระบุ"},{"mid":1336,"name":"ป.กุ้งเผา หลักสี่ ซ้าย","cat":"ไม่ระบุ"},{"mid":1337,"name":"Fix club สกลนคร (ช)","cat":"ชาย"},{"mid":2097,"name":"ร้านอีสานลำเพลิน (เตาปูน)","cat":"ไม่ระบุ"},{"mid":2098,"name":"Rusty (ขอนแก่น)","cat":"ไม่ระบุ"},{"mid":2099,"name":"ร้านเอ้อระเหย (ขอนแก่น)","cat":"ไม่ระบุ"},{"mid":2117,"name":"เธอ หญิง (ภูเก็ต)","cat":"หญิง"},{"mid":2195,"name":"ห้องสมุด มหาดไทย ชาย","cat":"ชาย"},{"mid":2325,"name":"Story Salaya (ช)","cat":"ชาย"},{"mid":2326,"name":"เฮ้าส์คลอง 6 ชาย","cat":"ชาย"},{"mid":2436,"name":"Turr รัชโยธิน (ขาย)","cat":"ไม่ระบุ"},{"mid":2437,"name":"ตะวันแดง วาไรตี้ยะลา","cat":"ไม่ระบุ"},{"mid":2517,"name":"ร้านไปยานใหญ่ (ชาย)","cat":"ชาย"},{"mid":2572,"name":"Replaygound ขอนแก่น (ชาย)","cat":"ชาย"},{"mid":2573,"name":"Turr  รัชโยธิน (ญ)","cat":"หญิง"}];
+  var CATS = [
+    {key:'ชาย',    label:'\ud83d\udeb9 \u0e15\u0e39\u0e49\u0e0a\u0e32\u0e22'},
+    {key:'หญิง',   label:'\ud83d\udeba \u0e15\u0e39\u0e49\u0e2b\u0e0d\u0e34\u0e07'},
+    {key:'ไม่ระบุ', label:'\u2753 \u0e44\u0e21\u0e48\u0e23\u0e30\u0e1a\u0e38'}
+  ];
   function q(s){ return document.querySelector(s); }
   function fmtP(n){ return n==null ? '\u2013' : Math.round(Number(n)).toLocaleString('en-US'); }
   function escP(s){ return String(s||'').replace(/[<>&"]/g,function(m){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[m];}); }
@@ -1370,8 +1375,8 @@ boot();
 
   function pickRange(){
     return new Promise(function(res){
-      var t=new Date(); function iso(d){return d.toISOString().slice(0,10);}
-      var today=iso(t);
+      function iso(d){return d.toISOString().slice(0,10);}
+      var today=iso(new Date());
       var ov=document.createElement('div');
       ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
       ov.innerHTML='<div style="background:var(--card,#fff);color:var(--ink,#111);max-width:400px;width:100%;padding:20px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);font:inherit">'
@@ -1400,19 +1405,42 @@ boot();
   function showResult(range, rows, total, okCount){
     var ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
-    var sorted=rows.slice().sort(function(a,b){return (b.rev||0)-(a.rev||0);});
-    var body=sorted.map(function(r){return '<tr style="border-top:1px solid rgba(0,0,0,.06)">'
-      +'<td style="padding:7px 8px">'+escP(r.name)+'</td>'
-      +'<td style="padding:7px 8px;text-align:right;font-weight:600;'+(r.rev==null?'opacity:.35':'')+'">'+(r.rev==null?'\u0e14\u0e36\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49':fmtP(r.rev))+'</td></tr>';}).join('');
-    ov.innerHTML='<div style="background:var(--card,#fff);color:var(--ink,#111);max-width:560px;width:100%;max-height:86vh;overflow:auto;padding:20px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);font:inherit">'
-      +'<h2 style="margin:0 0 4px;font-size:18px">\ud83c\udf38 \u0e23\u0e32\u0e22\u0e44\u0e14\u0e49\u0e15\u0e39\u0e49\u0e19\u0e49\u0e33\u0e2b\u0e2d\u0e21</h2>'
-      +'<p style="margin:0 0 6px;font-size:12.5px;opacity:.65">'+escP(range.start===range.end?range.start:range.start+' \u2192 '+range.end)+' \u00b7 \u0e2d\u0e48\u0e32\u0e19\u0e44\u0e14\u0e49 '+okCount+'/'+rows.length+' \u0e15\u0e39\u0e49</p>'
-      +'<div style="font-size:26px;font-weight:800;margin:8px 0 14px">'+fmtP(total)+' <span style="font-size:14px;font-weight:500;opacity:.6">\u0e1a\u0e32\u0e17</span></div>'
-      +'<div style="border:1px solid rgba(0,0,0,.1);border-radius:10px;overflow:hidden">'
-      +'<table style="width:100%;border-collapse:collapse;font-size:13px">'
-      +'<thead><tr style="background:rgba(0,0,0,.04)"><th style="padding:7px 8px;text-align:left">\u0e15\u0e39\u0e49</th><th style="padding:7px 8px;text-align:right">\u0e23\u0e32\u0e22\u0e44\u0e14\u0e49</th></tr></thead>'
-      +'<tbody>'+body+'</tbody></table></div>'
-      +'<div style="display:flex;justify-content:flex-end;margin-top:16px">'
+
+    // สรุปหัวตาราง (นับตู้ + ยอดรวมย่อยต่อประเภท)
+    var chips = CATS.map(function(c){
+      var rs=rows.filter(function(r){return r.cat===c.key;});
+      var sub=rs.reduce(function(a,r){return a+(r.rev||0);},0);
+      if(!rs.length) return '';
+      return '<span style="display:inline-block;background:rgba(0,0,0,.05);border-radius:99px;padding:3px 10px;margin:0 6px 6px 0;font-size:12px">'
+        +c.label+' \u00b7 '+rs.length+' \u0e15\u0e39\u0e49 \u00b7 <b>'+fmtP(sub)+'</b> \u0e1a\u0e32\u0e17</span>';
+    }).join('');
+
+    // ตารางแยกกลุ่ม
+    var sections = CATS.map(function(c){
+      var rs=rows.filter(function(r){return r.cat===c.key;})
+                 .sort(function(a,b){return (b.rev||0)-(a.rev||0);});
+      if(!rs.length) return '';
+      var sub=rs.reduce(function(a,r){return a+(r.rev||0);},0);
+      var okN=rs.filter(function(r){return r.rev!=null;}).length;
+      var body=rs.map(function(r){return '<tr style="border-top:1px solid rgba(0,0,0,.06)">'
+        +'<td style="padding:6px 8px">'+escP(r.name)+'</td>'
+        +'<td style="padding:6px 8px;text-align:right;font-weight:600;'+(r.rev==null?'opacity:.35':'')+'">'
+        +(r.rev==null?'\u0e14\u0e36\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49':fmtP(r.rev))+'</td></tr>';}).join('');
+      return '<div style="margin-top:16px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">'
+        +'<div style="font-weight:700;font-size:14px">'+c.label+' <span style="opacity:.5;font-weight:400;font-size:12px">('+okN+'/'+rs.length+' \u0e15\u0e39\u0e49)</span></div>'
+        +'<div style="font-weight:700;font-size:14px">'+fmtP(sub)+' <span style="font-size:11px;font-weight:400;opacity:.6">\u0e1a\u0e32\u0e17</span></div></div>'
+        +'<div style="border:1px solid rgba(0,0,0,.1);border-radius:10px;overflow:hidden">'
+        +'<table style="width:100%;border-collapse:collapse;font-size:13px"><tbody>'+body+'</tbody></table></div></div>';
+    }).join('');
+
+    ov.innerHTML='<div style="background:var(--card,#fff);color:var(--ink,#111);max-width:600px;width:100%;max-height:86vh;overflow:auto;padding:20px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);font:inherit">'
+      +'<h2 style="margin:0 0 4px;font-size:18px">\ud83c\udf38 \u0e23\u0e32\u0e22\u0e44\u0e14\u0e49\u0e15\u0e39\u0e49\u0e19\u0e49\u0e33\u0e2b\u0e2d\u0e21 \u0e41\u0e22\u0e01\u0e15\u0e32\u0e21\u0e1b\u0e23\u0e30\u0e40\u0e20\u0e17</h2>'
+      +'<p style="margin:0 0 8px;font-size:12.5px;opacity:.65">'+escP(range.start===range.end?range.start:range.start+' \u2192 '+range.end)+' \u00b7 \u0e2d\u0e48\u0e32\u0e19\u0e44\u0e14\u0e49 '+okCount+'/'+rows.length+' \u0e15\u0e39\u0e49</p>'
+      +'<div style="font-size:26px;font-weight:800;margin:6px 0 4px">'+fmtP(total)+' <span style="font-size:14px;font-weight:500;opacity:.6">\u0e1a\u0e32\u0e17 (\u0e23\u0e27\u0e21\u0e17\u0e38\u0e01\u0e1b\u0e23\u0e30\u0e40\u0e20\u0e17)</span></div>'
+      +'<div style="margin:8px 0 2px">'+chips+'</div>'
+      +sections
+      +'<div style="display:flex;justify-content:flex-end;margin-top:18px">'
       +'<button id="pfclose" style="padding:9px 16px;border:0;border-radius:9px;background:#e11d48;color:#fff;cursor:pointer;font:inherit;font-weight:600">\u0e1b\u0e34\u0e14</button></div></div>';
     document.body.appendChild(ov);
     function close(){ov.remove();}
@@ -1449,7 +1477,7 @@ boot();
     var rows=PERF_MACHINES.map(function(m){
       var v=rev[m.mid];
       if(v!=null){ total+=(+v||0); ok++; }
-      return {name:m.name, rev:(v==null?null:+v)};
+      return {name:m.name, cat:m.cat, rev:(v==null?null:+v)};
     });
     showResult(range, rows, total, ok);
   }
