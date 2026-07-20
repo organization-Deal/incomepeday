@@ -1360,6 +1360,60 @@ function demoHist(){
 boot();
 </script>
 <script>
+/* ===== ป้ายประเภทตู้ (ชกมวย/น้ำแข็ง/น้ำหอม/วัดความไว/ลาว) — โมดูลแยก non-invasive ===== */
+(function(){
+  var LO2TYPE = {"LO_0123":"ice","LO_0124":"ice","LO_0125":"ice","LO_0126":"ice","LO_0127":"ice","LO_0128":"ice","LO_0129":"ice","LO_0130":"ice","LO_0131":"ice","LO_0132":"ice","LO_0133":"ice","LO_0134":"ice","LO_0135":"ice","LO_0136":"ice","LO_0137":"ice","LO_0138":"ice","LO_0139":"ice","LO_0140":"ice","LO_0141":"ice","LO_0142":"ice","LO_0143":"ice","LO_0144":"ice","LO_0145":"ice","LO_0146":"ice","LO_0147":"ice","LO_0148":"ice","LO_0149":"ice","LO_0150":"ice","LO_0151":"ice","LO_0152":"ice","LO_0153":"ice","LO_0154":"ice","LO_0237":"ice","LO_0238":"ice","LO_0160":"ice","LO_0239":"ice","LO_0240":"ice","LO_0156":"ice","LO_0241":"ice","LO_0242":"ice","LO_0248":"ice","LO_0243":"ice","LO_0244":"ice","LO_0163":"ice","LO_0245":"ice","LO_0246":"ice","LO_0247":"ice","LO_0265":"ice","LO_0249":"ice","LO_0250":"ice","LO_0251":"ice","LO_0155":"ice","LO_0159":"ice","LO_0161":"ice","LO_0162":"ice","LO_0164":"ice","LO_0165":"perfume","LO_0166":"perfume","LO_0167":"perfume","LO_0168":"perfume","LO_0169":"perfume","LO_0170":"perfume","LO_0171":"perfume","LO_0172":"perfume","LO_0173":"perfume","LO_0174":"perfume","LO_0175":"perfume","LO_0176":"perfume","LO_0177":"perfume","LO_0178":"perfume","LO_0179":"perfume","LO_0180":"perfume","LO_0181":"perfume","LO_0182":"perfume","LO_0183":"perfume","LO_0184":"perfume","LO_0185":"perfume","LO_0186":"perfume","LO_0187":"perfume","LO_0188":"perfume","LO_0189":"perfume","LO_0190":"perfume","LO_0191":"perfume","LO_0192":"perfume","LO_0193":"perfume","LO_0194":"perfume","LO_0195":"perfume","LO_0196":"perfume","LO_0198":"perfume","LO_0199":"perfume","LO_0200":"perfume","LO_0201":"perfume","LO_0252":"perfume","LO_0202":"perfume","LO_0203":"perfume","LO_0204":"perfume","LO_0205":"perfume","LO_0206":"perfume","LO_0207":"perfume","LO_0208":"perfume","LO_0209":"perfume","LO_0210":"perfume","LO_0211":"perfume","LO_0212":"perfume","LO_0213":"perfume","LO_0214":"perfume","LO_0215":"perfume","LO_0216":"perfume","LO_0001":"boxing","LO_0004":"boxing","LO_0019":"boxing","LO_0005":"boxing","LO_0003":"boxing","LO_0007":"boxing","LO_0008":"boxing","LO_0009":"boxing","LO_0011":"boxing","LO_0012":"boxing","LO_0002":"boxing","LO_0017":"boxing","LO_0014":"boxing","LO_0025":"boxing","LO_0013":"boxing","LO_0021":"boxing","LO_0018":"boxing","LO_0023":"boxing","LO_0022":"boxing","LO_0015":"boxing","LO_0006":"boxing","LO_0010":"boxing","LO_0020":"boxing","LO_0029":"boxing","LO_0046":"boxing","LO_0030":"boxing","LO_0041":"boxing","LO_0024":"boxing","LO_0051":"boxing","LO_0032":"boxing","LO_0016":"boxing","LO_0026":"boxing","LO_0033":"boxing","LO_0034":"boxing","LO_0036":"boxing","LO_0048":"boxing","LO_0031":"boxing","LO_0049":"boxing","LO_0043":"boxing","LO_0047":"boxing","LO_0068":"boxing","LO_0055":"boxing","LO_0054":"boxing","LO_0057":"boxing","LO_0052":"boxing","LO_0037":"boxing","LO_0056":"boxing","LO_0058":"boxing","LO_0050":"boxing","LO_0027":"boxing","LO_0035":"boxing","LO_0059":"boxing","LO_0045":"boxing","LO_0119":"boxing","LO_0067":"boxing","LO_0062":"boxing","LO_0066":"boxing","LO_0060":"boxing","LO_0063":"boxing","LO_0061":"boxing","LO_0038":"boxing","LO_0071":"boxing","LO_0069":"boxing","LO_0074":"boxing","LO_0073":"boxing","LO_0078":"boxing","LO_0079":"boxing","LO_0080":"boxing","LO_0042":"boxing","LO_0075":"boxing","LO_0088":"boxing","LO_0081":"boxing","LO_0086":"boxing","LO_0084":"boxing","LO_0083":"boxing","LO_0089":"boxing","LO_0077":"boxing","LO_0085":"boxing","LO_0102":"boxing","LO_0072":"boxing","LO_0091":"boxing","LO_0094":"boxing","LO_0087":"boxing","LO_0082":"boxing","LO_0092":"boxing","LO_0117":"boxing","LO_0096":"boxing","LO_0093":"boxing","LO_0100":"boxing","LO_0099":"boxing","LO_0101":"boxing","LO_0103":"boxing","LO_0098":"boxing","LO_0104":"boxing","LO_0111":"boxing","LO_0110":"boxing","LO_0114":"boxing","LO_0105":"boxing","LO_0115":"boxing","LO_0076":"boxing","LO_0109":"boxing","LO_0113":"boxing","LO_0116":"boxing","LO_0095":"boxing","LO_0112":"boxing","LO_0107":"boxing","LO_0106":"boxing","LO_0108":"boxing","LO_0118":"boxing","LO_0120":"boxing","LO_0121":"boxing","LO_0122":"boxing","LO_0218":"speed","LO_0219":"speed","LO_0220":"speed","LO_0221":"speed","LO_0223":"speed","LO_0224":"speed","LO_0225":"speed","LO_0226":"speed","LO_0227":"speed","LO_0228":"speed","LO_0229":"speed","LO_0230":"speed","LO_0231":"speed","LO_0232":"speed","LO_0259":"speed","LO_0234":"speed","LO_0235":"speed","LO_0236":"speed"};
+  var META = {
+    boxing:  {label:'\u0e0a\u0e01\u0e21\u0e27\u0e22',   emoji:'\ud83e\udd4a', c:'#c026d3'},
+    ice:     {label:'\u0e19\u0e49\u0e33\u0e41\u0e02\u0e47\u0e07', emoji:'\u2744\ufe0f', c:'#0284c7'},
+    perfume: {label:'\u0e19\u0e49\u0e33\u0e2b\u0e2d\u0e21',   emoji:'\ud83c\udf38', c:'#e11d48'},
+    speed:   {label:'\u0e27\u0e31\u0e14\u0e04\u0e27\u0e32\u0e21\u0e44\u0e27', emoji:'\u26a1', c:'#d97706'},
+    laos:    {label:'\u0e25\u0e32\u0e27',    emoji:'\ud83c\uddf1\ud83c\udde6', c:'#059669'}
+  };
+  function badgeHTML(t){
+    var m=META[t]; if(!m) return '';
+    return '<span class="type-badge" data-t="'+t+'" style="flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;'
+      +'font-size:10px;font-weight:600;line-height:1;padding:2px 6px;border-radius:99px;'
+      +'background:'+m.c+'1f;color:'+m.c+';border:1px solid '+m.c+'40;white-space:nowrap">'
+      +m.emoji+' '+m.label+'</span>';
+  }
+  function tagRows(root){
+    var rows=(root||document).querySelectorAll('[data-code]');
+    for(var i=0;i<rows.length;i++){
+      var el=rows[i];
+      var nm=el.querySelector('.nm');
+      if(!nm || nm.querySelector('.type-badge')) continue;
+      var code=el.getAttribute('data-code');
+      var t=LO2TYPE[code];
+      var b=badgeHTML(t);
+      if(b) nm.insertAdjacentHTML('afterbegin', b);
+    }
+  }
+  // เฝ้าดู: ตารางรีเฟรชเมื่อไร เติมป้ายให้ใหม่
+  var obs=new MutationObserver(function(muts){
+    var hit=false;
+    for(var i=0;i<muts.length;i++){ if(muts[i].addedNodes && muts[i].addedNodes.length){ hit=true; break; } }
+    if(hit) tagRows(document);
+  });
+  document.addEventListener('DOMContentLoaded',function(){
+    tagRows(document);
+    obs.observe(document.body, {childList:true, subtree:true});
+
+    // ป้ายอธิบายสี (legend) ใต้แถบเมนู
+    var wrap=document.querySelector('.wrap');
+    if(wrap && !document.getElementById('type-legend')){
+      var lg=document.createElement('div');
+      lg.id='type-legend';
+      lg.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin:0 0 4px;padding:0 2px';
+      var keys=['boxing','ice','perfume','speed','laos'];
+      lg.innerHTML='<span style="font-size:11px;opacity:.5;align-self:center;margin-right:2px">\u0e1b\u0e23\u0e30\u0e40\u0e20\u0e17\u0e15\u0e39\u0e49:</span>'
+        + keys.map(function(k){return badgeHTML(k);}).join('');
+      wrap.insertBefore(lg, wrap.firstChild);
+    }
+  });
+})();
+</script>
+<script>
 /* ===== ตู้น้ำหอม DKM — โมดูลแยก ไม่ยุ่งกับมอนิเตอร์เดิม ===== */
 (function(){
   var PERF_MACHINES = [{"mid":794,"name":"เบลอ หญิง","cat":"หญิง"},{"mid":795,"name":"เบลอ ชาย","cat":"ชาย"},{"mid":967,"name":"ท่าช้าง บางกอก ข้าวสาร (หน้า)","cat":"ไม่ระบุ"},{"mid":968,"name":"The Trap ชาย","cat":"ชาย"},{"mid":969,"name":"บคศ By KK Bar (ช)","cat":"ชาย"},{"mid":970,"name":"โซเบอร์ นิมมาน หญิง","cat":"หญิง"},{"mid":971,"name":"บคศ By KK Bar (ญ)","cat":"หญิง"},{"mid":972,"name":"The Trap หญิง","cat":"หญิง"},{"mid":973,"name":"Sugar แม่โจ้","cat":"ไม่ระบุ"},{"mid":974,"name":"Stories Salaya (ญ)","cat":"หญิง"},{"mid":976,"name":"Wolf ชาย","cat":"ชาย"},{"mid":1037,"name":"จันทร์เจ้าขา หญิง","cat":"หญิง"},{"mid":1038,"name":"โซเบอร์ นิมมาน ชาย","cat":"ชาย"},{"mid":1039,"name":"Walk Man ชาย","cat":"ชาย"},{"mid":1040,"name":"SubScribe หญิง","cat":"หญิง"},{"mid":1041,"name":"ฟินิกซ์ ชาย","cat":"ชาย"},{"mid":1121,"name":"SubScribe ชาย","cat":"ชาย"},{"mid":1122,"name":"แฮชแทค ขอนแก่น หญิง","cat":"หญิง"},{"mid":1123,"name":"12 BAR โชว์ระบบ (ช)","cat":"ชาย"},{"mid":1124,"name":"Tunnel ชาย","cat":"ชาย"},{"mid":1125,"name":"Lism หญิง","cat":"หญิง"},{"mid":1126,"name":"Walk Man หญิง","cat":"หญิง"},{"mid":1128,"name":"ลาบหนองจันทร์นครพนม (ญ)","cat":"หญิง"},{"mid":1130,"name":"Sugar แม่โจ้ (ช)","cat":"ชาย"},{"mid":1210,"name":"เชลบี้ หญิง","cat":"หญิง"},{"mid":1211,"name":"รีรีข้าวสาร (ญ)","cat":"หญิง"},{"mid":1213,"name":"ป.กุ้งเผา หลักสี่ ขวา","cat":"ไม่ระบุ"},{"mid":1216,"name":"Lism ชาย","cat":"ชาย"},{"mid":1217,"name":"แสงจันทร์ พระราม 2 ชาย","cat":"ชาย"},{"mid":1218,"name":"เชลบี้ ชาย","cat":"ชาย"},{"mid":1219,"name":"12 Bar Show ระบบ Unisex","cat":"ไม่ระบุ"},{"mid":1325,"name":"ห้องสมุด มหาดไทย หญิง","cat":"หญิง"},{"mid":1326,"name":"ลานปิติ","cat":"ไม่ระบุ"},{"mid":1327,"name":"เฮ้าส์ คลอง 6 หญิง","cat":"หญิง"},{"mid":1328,"name":"โบตั๋น นิมมาน","cat":"ไม่ระบุ"},{"mid":1333,"name":"Station CMI หญิง","cat":"หญิง"},{"mid":1334,"name":"ร้าน Beyond club & live Music","cat":"ไม่ระบุ"},{"mid":1336,"name":"ป.กุ้งเผา หลักสี่ ซ้าย","cat":"ไม่ระบุ"},{"mid":1337,"name":"Fix club สกลนคร (ช)","cat":"ชาย"},{"mid":2097,"name":"ร้านอีสานลำเพลิน (เตาปูน)","cat":"ไม่ระบุ"},{"mid":2098,"name":"Rusty (ขอนแก่น)","cat":"ไม่ระบุ"},{"mid":2099,"name":"ร้านเอ้อระเหย (ขอนแก่น)","cat":"ไม่ระบุ"},{"mid":2117,"name":"เธอ หญิง (ภูเก็ต)","cat":"หญิง"},{"mid":2195,"name":"ห้องสมุด มหาดไทย ชาย","cat":"ชาย"},{"mid":2325,"name":"Story Salaya (ช)","cat":"ชาย"},{"mid":2326,"name":"เฮ้าส์คลอง 6 ชาย","cat":"ชาย"},{"mid":2436,"name":"Turr รัชโยธิน (ขาย)","cat":"ไม่ระบุ"},{"mid":2437,"name":"ตะวันแดง วาไรตี้ยะลา","cat":"ไม่ระบุ"},{"mid":2517,"name":"ร้านไปยานใหญ่ (ชาย)","cat":"ชาย"},{"mid":2572,"name":"Replaygound ขอนแก่น (ชาย)","cat":"ชาย"},{"mid":2573,"name":"Turr  รัชโยธิน (ญ)","cat":"หญิง"}];
