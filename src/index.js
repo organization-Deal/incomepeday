@@ -23,6 +23,13 @@ export default {
       return json({ ok: false, error: 'method not allowed' }, 405);
     }
 
+    // ตู้น้ำหอม DKM — proxy กัน CORS
+    if (url.pathname === '/api/perfume') {
+      if (request.method === 'POST') return handlePerfume(request);
+      if (request.method === 'GET')  return json({ ok: true, msg: 'perfume proxy พร้อม — ใช้ POST {token,time,ids}' });
+      return json({ ok: false, error: 'method not allowed' }, 405);
+    }
+
     // ไฟล์หน้าเว็บ
     return env.ASSETS.fetch(request);
   },
@@ -150,9 +157,52 @@ async function handleWrite(request, env) {
     return json({ ok: false, error: 'ต่อ Apps Script ไม่ได้: ' + err.message }, 502);
   }
 }
-if (url.pathname === '/api/perfume' && request.method === 'POST') {
-  return handlePerfume(request);
+
+/* ────────────────────────────────────────────────────────────
+ * ตู้น้ำหอม DKM (dkmvending.com) — proxy กัน CORS
+ * ฝั่งเว็บยิง POST /api/perfume {token, time:"YYYY-MM-DD~YYYY-MM-DD", ids:[mid,...]}
+ * คืน {ok:true, results:{mid: ยอดรวมช่วงนั้น(number)|null}}
+ * ──────────────────────────────────────────────────────────── */
+const DKM = 'https://dkmvending.com';
+
+async function oneMachine(token, id, time) {
+  try {
+    const r = await fetch(DKM + '/system/data.index/singleMachineAnalysis', {
+      method: 'POST',
+      headers: { 'token': token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, time }),
+    });
+    if (!r.ok) return [id, null];
+    const j = await r.json();
+    const d = j && j.data;
+    if (!d) return [id, null];
+    // รวม dateList[].salePrice = ยอดเฉพาะวันในช่วง time (allsales = ยอดสะสม lifetime ไม่เอา)
+    const dl = Array.isArray(d.dateList) ? d.dateList : [];
+    const sum = dl.reduce((s, x) => s + (Number(x && x.salePrice) || 0), 0);
+    return [id, Math.round(sum * 100) / 100];
+  } catch (e) {
+    return [id, null];
+  }
 }
-if (url.pathname === '/api/perfume' && request.method === 'GET') {
-  return json({ ok: true, msg: 'perfume proxy พร้อม' });
+
+async function handlePerfume(request) {
+  let body;
+  try { body = await request.json(); }
+  catch { return json({ ok: false, error: 'body ไม่ใช่ JSON' }, 400); }
+
+  const token = (body.token || '').trim();
+  const time = (body.time || '').trim();
+  const ids = Array.isArray(body.ids) ? body.ids : [];
+  if (!token) return json({ ok: false, error: 'ไม่มี token' }, 400);
+  if (!time || !time.includes('~')) return json({ ok: false, error: 'time ต้องเป็น YYYY-MM-DD~YYYY-MM-DD' }, 400);
+  if (!ids.length) return json({ ok: false, error: 'ไม่มี machine ids' }, 400);
+
+  // ดึงทีละชุด 8 ตัว กัน rate-limit / timeout
+  const results = {};
+  const B = 8;
+  for (let i = 0; i < ids.length; i += B) {
+    const part = await Promise.all(ids.slice(i, i + B).map((id) => oneMachine(token, id, time)));
+    part.forEach(([id, v]) => { results[id] = v; });
+  }
+  return json({ ok: true, time, count: ids.length, results });
 }
