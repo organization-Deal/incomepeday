@@ -424,6 +424,64 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
     width:38px;height:4px;border-radius:99px;background:var(--ink-4)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ══════════════ operations dashboard v2 (preserves all legacy features) ══════════════ */
+.hero.ops-hero{max-width:none;padding:34px 0 20px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px}
+.ops-title h1{font-size:clamp(28px,4vw,44px)}
+.ops-title p{margin-top:8px;color:var(--ink-2);font-size:14px}
+.ops-updated{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);white-space:nowrap}
+.ops-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.ops-kpi{padding:18px 20px;min-width:0;position:relative;overflow:hidden}
+.ops-kpi::after{content:"";position:absolute;width:90px;height:90px;border-radius:50%;right:-35px;top:-45px;background:var(--sel)}
+.ops-kpi.online{background:linear-gradient(145deg,var(--surface),color-mix(in srgb,var(--green) 8%,var(--surface)))}
+.ops-kpi.offline{background:linear-gradient(145deg,var(--surface),color-mix(in srgb,var(--red) 8%,var(--surface)))}
+.ops-kpi.attention{background:linear-gradient(145deg,var(--surface),color-mix(in srgb,var(--amber) 10%,var(--surface)))}
+.ops-kpi .k{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.ops-kpi .v{font-family:var(--disp);font-size:34px;font-weight:800;letter-spacing:-.04em;line-height:1.1;margin-top:8px;font-variant-numeric:tabular-nums}
+.ops-kpi .v small{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--ink-3);letter-spacing:0}
+.ops-kpi.online .v{color:var(--green)} .ops-kpi.offline .v{color:var(--red)}
+.ops-deltas{display:flex;gap:5px;flex-wrap:wrap;margin-top:11px}
+.ops-delta{font-family:var(--mono);font-size:9.5px;padding:3px 7px;border-radius:99px;background:var(--track);color:var(--ink-3)}
+.ops-delta.good{background:color-mix(in srgb,var(--green) 12%,transparent);color:var(--green)}
+.ops-delta.bad{background:color-mix(in srgb,var(--red) 11%,transparent);color:var(--red)}
+.ops-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(310px,.75fr);gap:16px;margin-bottom:34px}
+.ops-chart{padding:20px 22px 16px}
+.ops-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.ops-head h2{font-family:var(--disp);font-size:17px;letter-spacing:-.02em}
+.ops-head p{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:3px}
+.ops-range{display:flex;background:var(--track);border-radius:9px;padding:2px}
+.ops-range button{border:0;background:transparent;color:var(--ink-3);font:inherit;font-size:10.5px;padding:5px 9px;border-radius:7px;cursor:pointer}
+.ops-range button.on{background:var(--surface);color:var(--ink);box-shadow:var(--e1)}
+#healthChart{width:100%;height:220px;display:block}
+.ops-legend{display:flex;gap:15px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:7px}
+.ops-legend span{display:flex;align-items:center;gap:6px}
+.ops-side{padding:20px}
+.ops-side h2{font-family:var(--disp);font-size:17px;margin-bottom:4px}
+.ops-side>p{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-bottom:14px}
+.ops-side-grid{display:grid;gap:8px}
+.ops-side-item{display:flex;align-items:center;gap:10px;padding:11px 12px;border:.5px solid var(--hair);border-radius:12px;background:var(--surface-2);cursor:pointer}
+.ops-side-item:hover{background:var(--sel)}
+.ops-side-item i{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-style:normal;font-family:var(--disp);font-weight:800}
+.ops-side-item.red i{background:color-mix(in srgb,var(--red) 12%,transparent);color:var(--red)}
+.ops-side-item.amber i{background:color-mix(in srgb,var(--amber) 14%,transparent);color:var(--amber)}
+.ops-side-item.gray i{background:var(--track);color:var(--ink-3)}
+.ops-side-item b{display:block;font-size:12.5px}.ops-side-item small{font-family:var(--mono);font-size:9.5px;color:var(--ink-3)}
+.ops-side-item strong{margin-left:auto;font-family:var(--disp);font-size:22px}
+.ops-secondary{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:14px;border-top:.5px solid var(--hair);padding-top:16px}
+.ops-secondary .hc{padding:0 16px}.ops-secondary .hc:first-child{padding-left:0}
+.health.legacy-health{padding:0;background:transparent;border:0;box-shadow:none;margin:0}
+.health.legacy-health .hmain{display:none}
+@media(max-width:1000px){
+  .ops-kpis{grid-template-columns:1fr 1fr}.ops-layout{grid-template-columns:1fr}
+  .hero.ops-hero{align-items:flex-start;flex-direction:column}
+  .ops-secondary{grid-template-columns:1fr 1fr;gap:18px 0}
+  .ops-secondary .hc:nth-child(odd){padding-left:0;border-left:0}
+}
+@media(max-width:560px){
+  .ops-kpis{gap:8px}.ops-kpi{padding:14px}.ops-kpi .v{font-size:27px}
+  .ops-chart,.ops-side{padding:15px}#healthChart{height:190px}.ops-updated{display:none}
+}
+
 </style>
 </head>
 <body>
@@ -447,50 +505,43 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
 
 <div class="wrap">
 
-  <header class="hero">
-    <div class="eyebrow" id="eyebrow">ภาพรวมทั้งกอง</div>
-    <h1 id="headline">กำลังโหลด…</h1>
-    <div class="herosub">
-      <span class="live"><i class="blip"></i><span id="livetxt">—</span></span>
-      <span id="subtxt"></span>
+  <header class="hero ops-hero">
+    <div class="ops-title">
+      <div class="eyebrow">OPERATIONS · ภาพรวมทั้งกอง</div>
+      <h1>สถานะตู้วันนี้</h1>
+      <p id="headline">กำลังโหลดข้อมูลล่าสุด…</p>
+      <div class="herosub"><span class="live"><i class="blip"></i><span id="livetxt">—</span></span><span id="subtxt"></span></div>
     </div>
+    <div class="ops-updated" id="ops-updated">—</div>
   </header>
 
-  <div class="health card">
-    <div class="hmain">
-      <div class="hbig">
-        <div class="k">ออนไลน์ตอนนี้</div>
-        <div class="v tab" id="k-on">—<small>%</small></div>
-        <div class="sub" id="k-onsub">—</div>
-      </div>
-      <div class="hbar">
-        <div class="mix" id="mix">
-          <i class="mx-ONLINE" title="Online"></i><i class="mx-OFFLINE" title="Offline"></i>
-          <i class="mx-ERROR" title="Error"></i><i class="mx-UNKNOWN" title="Unknown"></i>
-        </div>
-        <div class="mixleg" id="mixleg"></div>
-      </div>
-    </div>
-    <div class="hgrid">
-      <div class="hc">
-        <div class="k">Uptime ที่นับผิด</div><div class="v2 tab" id="k-upx">—<small>%</small></div>
-        <div class="sub">ตัดวันร้านปิดออก · ใช้วัดทีม</div>
-      </div>
-      <div class="hc">
-        <div class="k">Uptime ดิบ</div><div class="v2 tab" id="k-up">—<small>%</small></div>
-        <div class="sub" id="k-upsub">—</div>
-      </div>
-      <div class="hc">
-        <div class="k" id="k-daylab">รายได้วันล่าสุด</div><div class="v2 tab" id="k-day">—<small>บาท</small></div>
-        <div class="sub" id="k-daysub">—</div>
-      </div>
-      <div class="hc">
-        <div class="k">รายได้ 7 วันล่าสุด</div><div class="v2 tab" id="k-week">—<small>บาท</small></div>
-        <div class="sub" id="k-weeksub">—</div>
+  <section class="ops-kpis">
+    <div class="card ops-kpi"><div class="k">ตู้ทั้งหมด</div><div class="v tab"><span id="ops-total">—</span><small> ตู้</small></div><div class="ops-deltas"><span class="ops-delta" id="ops-known">—</span></div></div>
+    <div class="card ops-kpi online"><div class="k">ออนไลน์วันนี้</div><div class="v tab"><span id="ops-online">—</span><small> ตู้ · </small><span id="k-on">—</span><small>%</small></div><div class="ops-deltas"><span class="ops-delta" id="on-d1">เมื่อวาน —</span><span class="ops-delta" id="on-d7">7 วัน —</span><span class="ops-delta" id="on-dm">เดือน —</span></div><div id="k-onsub" style="display:none"></div></div>
+    <div class="card ops-kpi offline"><div class="k">ออฟไลน์วันนี้</div><div class="v tab"><span id="ops-offline">—</span><small> ตู้ · </small><span id="ops-offline-pct">—</span><small>%</small></div><div class="ops-deltas"><span class="ops-delta" id="off-d1">เมื่อวาน —</span><span class="ops-delta" id="off-d7">7 วัน —</span><span class="ops-delta" id="off-dm">เดือน —</span></div></div>
+    <div class="card ops-kpi attention"><div class="k">ต้องตรวจสอบ</div><div class="v tab"><span id="ops-attention">—</span><small> ตู้</small></div><div class="ops-deltas"><span class="ops-delta bad">ดับ ≥ 2 วัน หรือเช็กไม่ได้</span></div></div>
+  </section>
+
+  <section class="ops-layout">
+    <div class="card ops-chart">
+      <div class="ops-head"><div><h2>แนวโน้มออนไลน์ / ออฟไลน์</h2><p>เทียบสถานะรายวัน · เป้าหมายออนไลน์ 95%</p></div><div class="ops-range" id="healthRange"><button data-days="7">7 วัน</button><button data-days="30" class="on">30 วัน</button><button data-days="90">3 เดือน</button></div></div>
+      <svg id="healthChart" viewBox="0 0 800 220" preserveAspectRatio="none"></svg>
+      <div class="ops-legend"><span><i class="dot" style="background:var(--green)"></i>Online %</span><span><i class="dot" style="background:var(--red)"></i>Offline %</span><span><i style="width:13px;border-top:1px dashed var(--green)"></i>เป้าหมาย 95%</span></div>
+      <div class="health legacy-health"><div class="hmain"><div class="hbar"><div class="mix" id="mix"><i class="mx-ONLINE"></i><i class="mx-OFFLINE"></i><i class="mx-ERROR"></i><i class="mx-UNKNOWN"></i></div><div class="mixleg" id="mixleg"></div></div></div>
+        <div class="ops-secondary">
+          <div class="hc"><div class="k">Uptime ที่นับผิด</div><div class="v2 tab" id="k-upx">—<small>%</small></div><div class="sub">ตัดวันร้านปิดออก · ใช้วัดทีม</div></div>
+          <div class="hc"><div class="k">Uptime ดิบ</div><div class="v2 tab" id="k-up">—<small>%</small></div><div class="sub" id="k-upsub">—</div></div>
+          <div class="hc"><div class="k" id="k-daylab">รายได้วันล่าสุด</div><div class="v2 tab" id="k-day">—<small>บาท</small></div><div class="sub" id="k-daysub">—</div></div>
+          <div class="hc"><div class="k">รายได้ 7 วันล่าสุด</div><div class="v2 tab" id="k-week">—<small>บาท</small></div><div class="sub" id="k-weeksub">—</div></div>
+        </div><span id="bar-up" style="display:none"></span><span id="bar-upx" style="display:none"></span>
       </div>
     </div>
-    <span id="bar-up" style="display:none"></span><span id="bar-upx" style="display:none"></span>
-  </div>
+    <div class="card ops-side"><h2>ต้องจัดการวันนี้</h2><p>กดเพื่อเปิดรายการเดิมด้านล่าง</p><div class="ops-side-grid">
+      <div class="ops-side-item red" data-ops-watch="long"><i>!</i><div><b>ดับเกิน 7 วัน</b><small>ควรติดต่อร้านหรือส่งช่าง</small></div><strong id="ops-long">0</strong></div>
+      <div class="ops-side-item amber" data-ops-watch="short"><i>3</i><div><b>ดับ 2–6 วัน</b><small>ติดตามก่อนเป็นปัญหายาว</small></div><strong id="ops-short">0</strong></div>
+      <div class="ops-side-item gray" data-ops-watch="err"><i>?</i><div><b>เช็กไม่ได้ / ไม่มีข้อมูล</b><small>ตรวจระบบล็อกอินและ API</small></div><strong id="ops-error">0</strong></div>
+    </div></div>
+  </section>
 
   <div class="sect"><h2>ต้องทำวันนี้</h2><div class="cap">เรียงตามเงินที่กำลังเสียไป</div></div>
   <div class="card wl">
@@ -608,7 +659,7 @@ const COL = {ONLINE:'var(--green)',OFFLINE:'var(--red)',ERROR:'var(--amber)',UNK
 const med = a => { if(!a.length) return 0; const s=a.slice().sort((x,y)=>x-y), h=s.length>>1;
   return s.length%2 ? s[h] : (s[h-1]+s[h])/2; };
 let DATA=null, VIEW=null, DAY=null, M={}, SORT={k:'code',dir:1}, FILTER='', MODE='day', WTAB='down';
-let LIST=[], KBI=-1, SERIES=[];
+let LIST=[], KBI=-1, SERIES=[], HEALTH_DAYS=30;
 const HIST = {};
 const NOTES = {};
 const DEMO_NOTES = { LO_0001:[
@@ -775,6 +826,40 @@ function renderMix(tally, total){
     lab[k]+' <b>'+tally[k]+'</b></span>').join('');
 }
 
+/* ══ กราฟสถานะรายวัน + comparison cards ══ */
+function fleetSeries(){
+  if(!DATA || !DAY) return [];
+  return DAY.labels.map((label,i)=>{
+    const t={ONLINE:0,OFFLINE:0,ERROR:0,UNKNOWN:0};
+    DATA.rows.forEach(r=>{ const c=DAY.cells(r)[i]; if(c && t[c.s]!=null) t[c.s]++; });
+    const known=t.ONLINE+t.OFFLINE;
+    return {label,on:t.ONLINE,off:t.OFFLINE,err:t.ERROR,unknown:t.UNKNOWN,onPct:known?t.ONLINE/known*100:0,offPct:known?t.OFFLINE/known*100:0};
+  });
+}
+function cmpText(el,label,now,prev,invert){
+  if(!el)return;if(prev==null||!isFinite(prev)){el.textContent=label+' —';el.className='ops-delta';return;}
+  const d=Math.round((now-prev)*10)/10;el.textContent=label+' '+(d>0?'+':'')+d+'%';
+  const good=invert?d<0:d>0,bad=invert?d>0:d<0;el.className='ops-delta'+(good?' good':bad?' bad':'');
+}
+function drawHealthChart(){
+  const svg=$('#healthChart');if(!svg)return;const all=fleetSeries(),data=all.slice(-HEALTH_DAYS),W=800,H=220,p={l:42,r:10,t:14,b:30};
+  if(!data.length){svg.innerHTML='';return;}const x=i=>p.l+(data.length<2?0:i/(data.length-1))*(W-p.l-p.r),y=v=>p.t+(100-v)/100*(H-p.t-p.b);
+  const path=k=>data.map((d,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(d[k]).toFixed(1)).join(' ');let g='';
+  [0,25,50,75,100].forEach(v=>{g+='<line x1="'+p.l+'" y1="'+y(v)+'" x2="'+(W-p.r)+'" y2="'+y(v)+'" stroke="var(--hair)"/><text x="4" y="'+(y(v)+4)+'" fill="var(--ink-4)" font-size="10">'+v+'%</text>';});
+  g+='<line x1="'+p.l+'" y1="'+y(95)+'" x2="'+(W-p.r)+'" y2="'+y(95)+'" stroke="var(--green)" stroke-dasharray="6 6" opacity=".45"/>';
+  g+='<path d="'+path('onPct')+'" fill="none" stroke="var(--green)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>';
+  g+='<path d="'+path('offPct')+'" fill="none" stroke="var(--red)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>';
+  g+='<text x="'+p.l+'" y="'+(H-7)+'" fill="var(--ink-4)" font-size="10">'+esc(data[0].label)+'</text><text x="'+(W-p.r)+'" y="'+(H-7)+'" text-anchor="end" fill="var(--ink-4)" font-size="10">'+esc(data[data.length-1].label)+'</text>';svg.innerHTML=g;
+}
+function renderOpsDashboard(){
+  const s=fleetSeries(),now=s[s.length-1]||{on:0,off:0,err:0,unknown:0,onPct:0,offPct:0},total=DATA.rows.length,known=now.on+now.off;
+  const attention=DATA.rows.filter(r=>M[r.code].down>=RULE.DEAD_DAYS||['ERROR','UNKNOWN'].includes(M[r.code].last.s)).length;
+  $('#ops-total').textContent=total;$('#ops-online').textContent=now.on;$('#ops-offline').textContent=now.off;$('#ops-offline-pct').textContent=Math.round(now.offPct);$('#ops-attention').textContent=attention;$('#ops-known').textContent='สถานะชัดเจน '+known+' จาก '+total+' ตู้';
+  const d1=s[s.length-2],d7=s[s.length-8],dm=s[0];cmpText($('#on-d1'),'เมื่อวาน',now.onPct,d1&&d1.onPct,false);cmpText($('#on-d7'),'7 วัน',now.onPct,d7&&d7.onPct,false);cmpText($('#on-dm'),'เดือน',now.onPct,dm&&dm.onPct,false);cmpText($('#off-d1'),'เมื่อวาน',now.offPct,d1&&d1.offPct,true);cmpText($('#off-d7'),'7 วัน',now.offPct,d7&&d7.offPct,true);cmpText($('#off-dm'),'เดือน',now.offPct,dm&&dm.offPct,true);
+  $('#ops-long').textContent=DATA.rows.filter(r=>M[r.code].down>=7).length;$('#ops-short').textContent=DATA.rows.filter(r=>M[r.code].down>=RULE.DEAD_DAYS&&M[r.code].down<7).length;$('#ops-error').textContent=DATA.rows.filter(r=>['ERROR','UNKNOWN'].includes(M[r.code].last.s)).length;
+  $('#ops-updated').textContent='อัปเดตล่าสุด '+new Date(DATA.updated).toLocaleString('th-TH',{dateStyle:'medium',timeStyle:'short'});drawHealthChart();
+}
+
 const lastOf = c => { for(let i=c.length-1;i>=0;i--) if(c[i]) return c[i]; return null; };
 const isDead = r => M[r.code].down >= RULE.DEAD_DAYS && M[r.code].last.s!=='ERROR';
 
@@ -923,6 +1008,7 @@ function render(){
   $('#k-upsub').textContent = 'ค่ากลาง '+Math.round(M.__medUp)+'% · ต่ำกว่า 60% อยู่ '+bad+' ตู้';
   $('#k-weeksub').textContent = 'เฉลี่ย '+money(weekTot/7)+' บาท/วัน';
   renderMix(tally, rows.length);
+  renderOpsDashboard();
   $('#seg [data-c="all"]').textContent = rows.length;
   Object.keys(tally).forEach(k => $('#seg [data-c="'+k+'"]').textContent = tally[k]);
 
@@ -1357,6 +1443,12 @@ function demoHist(){
   return ['02-2026','03-2026','04-2026','05-2026','06-2026','07-2026'].map(m=>({
     month:m, total:Math.round(Math.random()*40+8)*1000, uptime:Math.round(Math.random()*40+58), rounds:60 }));
 }
+
+/* dashboard v2 controls — ไม่แตะฟีเจอร์เดิม */
+const hr=$('#healthRange');
+if(hr)hr.onclick=e=>{const b=e.target.closest('button');if(!b)return;HEALTH_DAYS=Number(b.dataset.days)||30;$$('#healthRange button').forEach(x=>x.classList.toggle('on',x===b));drawHealthChart();};
+$$('[data-ops-watch]').forEach(el=>el.onclick=()=>{const k=el.dataset.opsWatch;WTAB=k==='err'?'err':'down';$$('#wtab button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.w===WTAB));renderWatch();const target=$('#wl-rows');if(target)target.scrollIntoView({behavior:'smooth',block:'start'});});
+
 boot();
 </script>
 <script>
