@@ -8,7 +8,7 @@ const data = month => ({ month, updated: '2026-09-16T00:00:00Z', ownerField: '�
   slots: ['01/09 22:00', '02/09 00:00', '02/09 22:00', '03/09 00:00'],
   rows: [1, 2].map(n => ({ code: 'LO_000' + n, name: month + ' ร้าน ' + n, owner: 'โซนกลาง',
     cells: [1, 2, 3, 4].map(x => ({ s: 'ONLINE', d: x * 100, m: x * 200 })) })) });
-async function setup(page, { baseline = false, onApi } = {}) {
+async function setup(page, { baseline = false, onApi, expectedRows=2 } = {}) {
   await page.clock.install({ time: new Date('2026-09-16T12:00:00Z') });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.route('**/*', async route => {
@@ -30,7 +30,7 @@ async function setup(page, { baseline = false, onApi } = {}) {
     return route.fulfill({ contentType: 'text/html', body: baseline ? original : readFileSync('public/index.html', 'utf8') });
   });
   await page.goto('https://dashboard.test/');
-  await expect(page.locator('#rows .row')).toHaveCount(2);
+  await expect(page.locator('#rows .row')).toHaveCount(expectedRows);
 }
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -236,4 +236,26 @@ test('EQLink daily totals replace old revenues, preserve rows and use current st
   await page.evaluate(()=>{close();setMode('round');});
   await expect(page.locator('#rows .row[data-code="LO_0001"]')).toContainText('340');
   await expect(page.locator('#k-mon')).toHaveText('1,140บาท สะสมเดือนนี้');
+});
+
+test('full fleet displays 186 machines across 26 CEM batches and unavailable revenue is not zero',async({page})=>{
+ const codes=Array.from({length:126},(_,i)=>'CEM_'+i.toString(16).toUpperCase().padStart(12,'0'));
+ await setup(page,{expectedRows:186,onApi:async(route,url)=>{
+  if(url.searchParams.get('action')==='month'){
+   const d={month:'09-2026',slots:['02/09 00:00'],rows:Array.from({length:60},(_,i)=>({code:'EQ_'+i.toString(16).toUpperCase().padStart(12,'0'),name:'EQ '+i,cells:[]})),cem:{batches:26,version:'fleet',codes}};
+   await route.fulfill({json:{ok:true,data:d}});return true;
+  }
+  if(url.pathname==='/api/cem'){
+   const batch=Number(url.searchParams.get('batch')),partCodes=codes.slice(batch*5,(batch+1)*5);
+   const part={batch,version:'fleet',codes:partCodes,dates:['2026-09-01'],today:'2026-09-16',current:true,
+    status:Object.fromEntries(partCodes.map(c=>[c,'ONLINE'])),totals:[Object.fromEntries(partCodes.map(c=>[c,c===codes[0]?null:10000]))],
+    machines:partCodes.map(c=>({code:c,name:'CEM test',append:true,currency:c===codes[0]?'USD':'THB',unavailable:c===codes[0]?'สกุลเงิน USD':''}))};
+   await route.fulfill({json:{ok:true,data:part}});return true;
+  }return false;
+ }});
+ await expect(page.locator('#count')).toHaveText('186 / 186 ตู้');
+ const foreign=page.locator('[data-code="'+codes[0]+'"].row');await expect(foreign).toContainText('USD');
+ expect(await foreign.locator('.num').allTextContents()).toEqual(['–','–','–']);
+ expect(await page.evaluate(code=>M[code].month,codes[1])).toBe(100);
+ await foreign.click();await expect(page.locator('#dbody')).toContainText('CEM test');
 });

@@ -1,3 +1,4 @@
+import { readMapping } from './fleet.js';
 import { HttpError, requestJson } from './http.js';
 
 const HOST = 'https://laundromat-th.eqlink.top';
@@ -8,11 +9,11 @@ export function eqlinkConfig(env) {
   if (!fields.some(key => env[key])) return null;
   if (!fields.every(key => typeof env[key] === 'string' && env[key].trim())) throw fail();
   let mapping;
-  try { mapping = JSON.parse(env.EQLINK_MAPPING); } catch { throw fail(); }
+  try { mapping = readMapping(env,'EQLINK_MAPPING'); } catch { throw fail(); }
   if (!Array.isArray(mapping) || !mapping.length || mapping.length > 100) throw fail();
   const codes = new Set(), devices = new Set();
   for (const item of mapping) {
-    if (!item || !/^LO_\d{4,10}$/.test(item.code) || typeof item.device !== 'string' ||
+    if (!item || !/^(?:LO_\d{4,10}|EQ_[A-F0-9]{12})$/.test(item.code) || typeof item.device !== 'string' ||
         !/^[A-Za-z0-9_-]{1,80}$/.test(item.device) || codes.has(item.code) || devices.has(item.device)) throw fail();
     codes.add(item.code); devices.add(item.device);
   }
@@ -100,7 +101,7 @@ async function mapBounded(items, fn) {
 
 export async function readMonth(config, month, now = new Date()) {
   const dates = monthDates(month, now);
-  if (!dates.length) return { dates, totals: [], status: {}, current: false };
+  if (!dates.length) return { dates, totals: [], status: {}, current: false, machines:config.mapping.filter(m=>m.append).map(({code,name,append})=>({code,name,append})) };
   const post = await session(config);
   const devices = rows(await post('/api/v3/Device/get_devicelist', { type: '1', limit: 100, offset: 0 }), 'devicelist');
   const status = {};
@@ -111,7 +112,7 @@ export async function readMonth(config, month, now = new Date()) {
       row.status === 'online' ? 'ONLINE' : row.status === 'offline' ? 'OFFLINE' : 'UNKNOWN';
   }
   const totals = await mapBounded(dates, date => report(post, date, date, config.mapping));
-  return { dates, totals, status, current: dates.includes(today(now)), today: today(now) };
+  return { dates, totals, status, current: dates.includes(today(now)), today: today(now), machines: config.mapping.filter(m=>m.append).map(({code,name,append})=>({code,name,append})) };
 }
 
 export { mergeMonth } from '../public/revenue-model.js';
@@ -130,4 +131,10 @@ export async function replaceHistory(data, code, config, now = new Date()) {
     return { ...entry, total: total[code] / 100 };
   });
   return { ...data, history };
+}
+
+export async function eqlinkInventory(config){
+  const post=await session(config);
+  return rows(await post('/api/v3/Device/get_devicelist',{type:'1',limit:100,offset:0}),'devicelist')
+    .map(row=>({device:row.devicename,name:String(row.shop_name||row.labelname||'EQLink').slice(0,200),currency:'THB'}));
 }

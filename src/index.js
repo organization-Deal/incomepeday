@@ -60,9 +60,22 @@ async function gasRequest(url, env, retry) {
 }
 
 async function handleApi(url, env, ctx) {
-  const target = gasUrl(env);
   const action = url.searchParams.get('action') || 'month';
   if (!ALLOWED.includes(action)) throw new HttpError('action ไม่ถูกต้อง', 400);
+  const code=url.searchParams.get('code');
+  const providerOnly=/^(?:CEM|EQ)_[A-F0-9]{12}$/.test(code||'');
+  if(providerOnly&&action==='notes')return json({ok:true,data:{notes:[],statuses:[]}});
+  if(providerOnly&&action==='history'){
+    const cem=cemConfig(env),boxing=eqlinkConfig(env);
+    const now=Date.now();
+    const history=Array.from({length:12},(_,i)=>{const d=new Date(now+7*3600000);d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()-i);return {month:String(d.getUTCMonth()+1).padStart(2,'0')+'-'+d.getUTCFullYear(),total:null,uptime:null};});
+    let data={history};
+    if(cem?.mapping.some(m=>m.code===code))data=await (await cemCoordinator(env,cem)).history(data,code);
+    else if(boxing?.mapping.some(m=>m.code===code))data=await replaceHistory(data,code,boxing);
+    else throw new HttpError('ไม่พบตู้',404);
+    return json({ok:true,data});
+  }
+  const target = gasUrl(env);
   const params = new URLSearchParams({ action });
   for (const key of ['month', 'code']) {
     const value = url.searchParams.get(key);
@@ -81,7 +94,7 @@ async function handleApi(url, env, ctx) {
   const boxing = ['month', 'history'].includes(action) ? eqlinkConfig(env) : null;
   const cem = ['month', 'history'].includes(action) ? cemConfig(env) : null;
   validateProviders(boxing,cem);
-  keyUrl.searchParams.set('_cache', 'v4-' + await configFingerprint(boxing||cem?{boxing,cem}:null));
+  keyUrl.searchParams.set('_cache', 'v5-' + await configFingerprint(boxing||cem?{boxing,cem}:null));
   const cacheKey = new Request(keyUrl);
   const cache = globalThis.caches?.default;
   if (cache && !fresh) {
@@ -127,8 +140,9 @@ function bkkMonth() {
 }
 
 async function handleWrite(request, env) {
-  const url = gasUrl(env);
   const body = await requestBody(request);
+  if(/^(?:CEM|EQ)_/.test(typeof body.code==='string'?body.code.trim():''))throw new HttpError('ตู้นี้ยังไม่มีรหัส LO สำหรับบันทึกหรือเปลี่ยนชื่อ กรุณาจับคู่ทะเบียนก่อน',400);
+  const url = gasUrl(env);
   if (!WRITE.includes(body.action)) throw new HttpError('action ไม่ถูกต้อง', 400);
   if (typeof body.code !== 'string' || !body.code.trim() || body.code.length > 40) {
     throw new HttpError('รหัสตู้ไม่ถูกต้อง', 400);

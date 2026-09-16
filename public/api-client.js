@@ -50,7 +50,7 @@ globalThis.DealApi = (() => {
   async function cemMonth(data, api, params){
     const manifest=data.cem;
     const invalid=()=>new Error('ข้อมูล CEM ไม่ครบหรือเปลี่ยนระหว่างโหลด กรุณารีเฟรช');
-    if(!Number.isInteger(manifest.batches)||manifest.batches<1||manifest.batches>20||
+    if(!Number.isInteger(manifest.batches)||manifest.batches<1||manifest.batches>100||
       typeof manifest.version!=='string'||!Array.isArray(manifest.codes)||
       new Set(manifest.codes).size!==manifest.codes.length)throw invalid();
     const endpoint=new URL(api,location.href);endpoint.pathname=endpoint.pathname.replace(/\/$/,'')+'/cem';
@@ -69,7 +69,7 @@ globalThis.DealApi = (() => {
         (day&&day!==part.today))throw invalid();
       day=part.today;
       for(const code of part.codes){
-        if(seen.has(code)||!manifest.codes.includes(code)||part.totals.some(t=>!Number.isSafeInteger(t[code])||t[code]<0))throw invalid();
+        if(seen.has(code)||!manifest.codes.includes(code)||part.totals.some(t=>t[code]===null?!(part.machines||[]).some(m=>m.code===code&&m.unavailable):!Number.isSafeInteger(t[code])||t[code]<0))throw invalid();
         seen.add(code);
       }
     }

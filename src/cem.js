@@ -1,3 +1,4 @@
+import { readMapping } from './fleet.js';
 import { HttpError, requestJson, json } from './http.js';
 import { monthDates, configFingerprint } from './eqlink.js';
 
@@ -7,12 +8,12 @@ const fail=()=>new HttpError('อ่านข้อมูล CEM ไม่สำ
 export function cemConfig(env){
   if(!env.CEM_REFRESH_TOKEN && !env.CEM_MAPPING)return null;
   if(typeof env.CEM_REFRESH_TOKEN!=='string'||!env.CEM_REFRESH_TOKEN.trim())throw fail();
-  let mapping;try{mapping=JSON.parse(env.CEM_MAPPING);}catch{throw fail();}
-  if(!Array.isArray(mapping)||!mapping.length||mapping.length>100)throw fail();
+  let mapping;try{mapping=readMapping(env,'CEM_MAPPING');}catch{throw fail();}
+  if(!Array.isArray(mapping)||!mapping.length||mapping.length>500)throw fail();
   const codes=new Set(),branches=new Set(),devices=new Set();
   for(const m of mapping){
-    if(!m||!/^LO_\d{4,10}$/.test(m.code)||!Number.isSafeInteger(m.branch)||m.branch<=0||
-      !Number.isSafeInteger(m.device)||m.device<=0||codes.has(m.code)||branches.has(m.branch)||devices.has(m.device))throw fail();
+    if(!m||!/^(?:LO_\d{4,10}|CEM_[A-F0-9]{12})$/.test(m.code)||!Number.isSafeInteger(m.branch)||m.branch<=0||
+      !Number.isSafeInteger(m.device)||m.device<=0||codes.has(m.code)||devices.has(m.device))throw fail();
     codes.add(m.code);branches.add(m.branch);devices.add(m.device);
   }
   return {refresh:env.CEM_REFRESH_TOKEN,mapping};
@@ -51,11 +52,18 @@ async function session(config,accessToken,deadline=Date.now()+45000){
 }
 async function machine(call,m){
   const data=await call('/api/restrict/machine/qrbox/branch_info?id='+m.branch);
-  const row=data?.qr_box_machine?.[0];
+  const row=data?.qr_box_machine?.find(r=>r.id===m.device);
+  if(m.append){
+    if(data?.id!==m.branch||!row)throw fail();
+    const unavailable=data.qr_box_machine.length!==1?'รายงานรวมหลายตู้ในสาขา':
+      data.currency_type!=='THB'||row.currency_type!=='THB'?'สกุลเงินสาขา '+String(data.currency_type||'UNKNOWN')+' / ตู้ '+String(row.currency_type||'UNKNOWN'):
+      data.is_time_close!==false||row.is_time_to_close!==false?'รอบปิดยอดพิเศษ':'';
+    return {status:['ONLINE','OFFLINE'].includes(row.status)?row.status:'UNKNOWN',unavailable,currency:String(row.currency_type||data.currency_type)};
+  }
   if(data?.id!==m.branch||data.currency_type!=='THB'||data.is_time_close!==false||
-    !Array.isArray(data.qr_box_machine)||data.qr_box_machine.length!==1||row.id!==m.device||
+    !Array.isArray(data.qr_box_machine)||data.qr_box_machine.length!==1||!row||row.id!==m.device||
     row.currency_type!=='THB'||row.is_time_to_close!==false)throw fail();
-  return ['ONLINE','OFFLINE'].includes(row.status)?row.status:'UNKNOWN';
+  return {status:['ONLINE','OFFLINE'].includes(row.status)?row.status:'UNKNOWN'};
 }
 function daily(data,closed){
   if(!Array.isArray(data?.details)||data.details.length!==closed.length)throw fail();
@@ -82,15 +90,26 @@ async function bounded(items,fn){
 export async function readCemBatch(config,month,batch,now=new Date(),accessToken,deadline){
   if(!config||!Number.isInteger(batch)||batch<0||batch>=Math.ceil(config.mapping.length/SIZE))throw new HttpError('ชุดข้อมูล CEM ไม่ถูกต้อง',400);
   const mapping=config.mapping.slice(batch*SIZE,(batch+1)*SIZE),dates=datesFor(month,now),day=today(now);
-  const source={dates,totals:dates.map(()=>({})),status:{},today:day,current:dates.includes(day),codes:mapping.map(m=>m.code)};
+  const source={dates,totals:dates.map(()=>({})),status:{},today:day,current:dates.includes(day),codes:mapping.map(m=>m.code),machines:mapping.filter(m=>m.append).map(({code,name,append,currency,unavailable})=>({code,name,append,currency,unavailable}))};
   if(!dates.length)return source;
   const call=await session(config,accessToken,deadline),closed=dates.filter(date=>date<day),[mm,year]=month.split('-');
   const result=await bounded(mapping,async m=>{
-    const status=await machine(call,m);
+    let status='UNKNOWN',metadata=m.append?{code:m.code,name:m.name,append:true,currency:m.currency}:null;
+    try{
+    const info=await machine(call,m);
+    status=info.status;
+    metadata=m.append?{code:m.code,name:m.name,append:true,currency:info.currency,unavailable:info.unavailable}:null;
+    if(info.unavailable)return {m,status,amounts:dates.map(()=>null),metadata};
     const amounts=daily(await call(`/api/restrict/machine/qrbox/daily_summary/${year}/${Number(mm)}/${m.branch}`),closed);
     if(source.current)amounts.push(current(await call(`/api/restrict/machine/qrbox/summary_report?id=${m.branch}&date_type=day&is_toggle_summary_card=false`),day));
-    return {m,status,amounts};
+    return {m,status,amounts,metadata};
+    }catch(error){
+      if(!m.append)throw error;
+      return {m,status,amounts:dates.map(()=>null),metadata:{...metadata,unavailable:'อ่านรายงานไม่สำเร็จ'},transient:true};
+    }
   });
+  source.partial=result.some(r=>r.transient);
+  source.machines=result.map(r=>r.metadata).filter(Boolean);
   for(const {m,status,amounts} of result){source.status[m.code]=status;amounts.forEach((value,i)=>{source.totals[i][m.code]=value;});}
   return source;
 }
@@ -109,7 +128,7 @@ export async function handleCem(url,env,ctx){
   const stub=await cemCoordinator(env,config);
   let source;try{source=await stub.readBatch(month,batch);}catch{throw fail();}
   const res=json({ok:true,data:{...source,version:manifest.version,batch}});
-  if(cache){const stored=res.clone();stored.headers.set('cache-control',`public, max-age=${source.current?600:21600}`);ctx.waitUntil(cache.put(key,stored).catch(()=>{}));}
+  if(cache&&!source.partial){const stored=res.clone();stored.headers.set('cache-control',`public, max-age=${source.current?600:21600}`);ctx.waitUntil(cache.put(key,stored).catch(()=>{}));}
   return res;
 }
 export async function cemHistory(data,code,config,now=new Date(),accessToken,deadline){
@@ -117,7 +136,8 @@ export async function cemHistory(data,code,config,now=new Date(),accessToken,dea
   if(!Array.isArray(data.history)||data.history.length>36)throw fail();
   for(const h of data.history)datesFor(h.month,now);
   if(!data.history.length)return data;
-  const call=await session(config,accessToken,deadline);await machine(call,m);
+  const call=await session(config,accessToken,deadline);const info=await machine(call,m);
+  if(info.unavailable)return {...data,history:data.history.map(h=>({...h,total:null}))};
   const years=[...new Set(data.history.map(h=>h.month.split('-')[1]))];
   const reports=await bounded(years,async year=>{
     const j=await call(`/api/restrict/machine/qrbox/monthly_summary/${year}/${m.branch}`);

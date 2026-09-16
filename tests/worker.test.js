@@ -176,3 +176,28 @@ test('perfume deduplicates IDs and bounds simultaneous requests to six', async (
   assert.equal(h.calls.length, 9);
   assert.ok(peak <= 6);
 });
+
+test('provider-only identities never send writes to GAS, including whitespace',async()=>{
+ const h=setup(()=>{throw new Error('must not contact GAS');});
+ for(const code of ['CEM_ABCDEF123456',' EQ_ABCDEF123456 ']){
+  const res=await h.request('/api',{action:'rename',code,name:'New'});assert.equal(res.status,400);
+ }
+ assert.equal(h.calls.length,0);
+});
+test('provider-only history follows Bangkok month at the UTC month boundary',async()=>{
+ const original=Date.now;Date.now=()=>Date.parse('2026-09-30T18:00:00Z');
+ try{
+  const h=setup(()=>{throw new Error('must not contact GAS');},{CEM_REFRESH_TOKEN:'seed',CEM_MAPPING:'[{"code":"CEM_ABCDEF123456","branch":10,"device":100}]',CEM_SESSION:{getByName:()=>({history:async data=>data})}});
+  const result=await(await h.request('/api?action=history&code=CEM_ABCDEF123456')).json();
+  assert.equal(result.data.history[0].month,'10-2026');assert.equal(result.data.history[11].month,'11-2025');
+ }finally{Date.now=original;}
+});
+test('transient full-fleet report failures are visible but never cached',async()=>{
+ const extra={CEM_REFRESH_TOKEN:'test-refresh',CEM_MAPPING:'[{"code":"CEM_ABCDEF123456","branch":10,"device":100,"append":true}]'};
+ const {cemManifest}=await import('../src/cem.js');const manifest=await cemManifest(cemConfig(extra));
+ let calls=0;extra.CEM_SESSION={getByName:()=>({readBatch:async()=>{calls++;return {partial:true,current:false,codes:['CEM_ABCDEF123456']};}})};
+ const h=setup(()=>{throw new Error('must not contact GAS');},extra);
+ const url='/api/cem?month=08-2026&batch=0&version='+manifest.version;
+ assert.equal((await h.request(url)).status,200);assert.equal((await h.request(url)).status,200);
+ assert.equal(calls,2);assert.equal(h.entries.size,0);
+});

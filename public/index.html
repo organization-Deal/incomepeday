@@ -653,7 +653,7 @@ const $$ = s => [].slice.call(document.querySelectorAll(s));
 const money = n => n == null ? '–' : Math.round(Number(n)).toLocaleString('en-US');
 const kb = n => n >= 1000 ? Math.round(n/1000)+'k' : Math.round(n||0);
 /** ตู้ที่ยังไม่ได้กรอกชื่อใน Lark — อย่าปล่อยแถวว่าง ให้เห็นว่าเป็นตัวไหนและต้องไปกรอก */
-const nameOf = r => r.name && r.name.trim() ? esc(r.name) :
+const nameOf = r => r.name && r.name.trim() ? esc(r.name)+(r.revenueUnavailable?' <span class="noname">('+esc(r.revenueUnavailable)+')</span>':'') :
   '<span class="noname">'+r.code+' <i>ยังไม่ได้ตั้งชื่อ</i></span>';
 const esc = s => String(s||'').replace(/[<>&"]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[m]));
 const COL = {ONLINE:'var(--green)',OFFLINE:'var(--red)',ERROR:'var(--amber)',UNKNOWN:'var(--ink-4)'};
@@ -801,7 +801,7 @@ function build(){
     const month   = withData.reduce((s,c)=> Math.max(s, c.m||0), 0);
 
     M[r.code] = { uptime, upx, down, avg, lost, base, recent, dropPct,
-      dayRev, dayOpen, week, month,
+      dayRev:r.revenueUnavailable?null:dayRev, dayOpen, week:r.revenueUnavailable?null:week, month:r.revenueUnavailable?null:month,
       dropping: last.s==='ONLINE' && dropPct >= RULE.DROP_PCT, last, days: have.length };
     if(uptime!=null) upAll.push(uptime);
   });

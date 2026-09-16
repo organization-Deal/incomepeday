@@ -63,3 +63,19 @@ test('current history rejects a summary from another month',async()=>{
   mock((d,u)=>{if(u.searchParams.get('date_type')==='month')d.title='August 2026';});
   await assert.rejects(cemHistory({history:[{month:'09-2026',total:0}]},'LO_0001',cemConfig(env),now),/CEM/);
 });
+
+test('full fleet retains foreign currency and custom closing machines without summing their money',async()=>{
+ const config=cemConfig({...env,CEM_MAPPING:JSON.stringify([{code:'CEM_ABCDEF123456',branch:10,device:100,name:'Foreign',append:true}])});
+ for(const change of [(d)=>{if(d.qr_box_machine)d.currency_type='USD';},(d)=>{if(d.qr_box_machine)d.is_time_close=true;}]){
+  const calls=mock(change),s=await readCemBatch(config,'09-2026',0,now);
+  assert.equal(s.codes.length,1);assert.equal(s.status.CEM_ABCDEF123456,'ONLINE');
+  assert.equal(s.totals[0].CEM_ABCDEF123456,null);assert.ok(s.machines[0].unavailable);assert.equal(calls.length,2);
+ }
+});
+test('full fleet keeps a failed-report machine visible with unavailable money and status',async()=>{
+ const config=cemConfig({...env,CEM_MAPPING:JSON.stringify([{code:'CEM_ABCDEF123456',branch:10,device:100,append:true}])});
+ mock((d,u)=>{if(u.pathname.includes('daily_summary'))d.details=[];});
+ const s=await readCemBatch(config,'09-2026',0,now);
+ assert.equal(s.partial,true);assert.equal(s.machines[0].unavailable,'อ่านรายงานไม่สำเร็จ');assert.equal(s.totals[0].CEM_ABCDEF123456,null);
+ assert.equal(s.status.CEM_ABCDEF123456,'ONLINE');
+});
