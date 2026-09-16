@@ -30,3 +30,10 @@ test('collector rejects oversized fleets before any provider or ledger call',asy
  const env={ONLINE_TIME_ENABLED:'true',CEM_REFRESH_TOKEN:'test',CEM_MAPPING:JSON.stringify(Array.from({length:201},(_,i)=>({code:'LO_'+String(i+1).padStart(4,'0'),branch:i+1,device:i+1})))};
  await assert.rejects(collectOnlineTime(env),/at most 200/);
 });
+
+test('fleet daily summary uses one ledger call and only configured machine identities',async()=>{
+ let calls=0;
+ const env={CEM_REFRESH_TOKEN:'test',CEM_MAPPING:JSON.stringify([{code:'LO_0001',branch:1,device:1}]),ONLINE_TIME:{getByName:()=>({days:async(codes,date)=>{calls++;assert.deepEqual(codes,['LO_0001']);return codes.map(code=>({code,date,seenOnline:true,onlineMs:60000}));}})}};
+ const response=await handleOnlineTime(new Request('https://dashboard.test/api/online-time?date=2026-09-16'),env);
+ const body=await response.json();assert.equal(body.data.rows[0].seenOnline,true);assert.equal(calls,1);
+});

@@ -20,3 +20,7 @@ Operation:
 - Storage grows by at most one day record per machine per day plus latest-state records (~67,160 day records/year for 184 machines). No automatic deletion of history.
 
 Validation: midnight rollover, flapping, duplicate/concurrent writes, missing history, gaps/errors, current-day denominator, invalid timestamps/date/code, status-only provider reads, disabled/error collector, read-only API, browser date-race handling, existing regression suite, Worker dry run and local SQLite/RPC integration.
+
+## Daily activity summary clarification
+
+The machine table and popup list now lead with whether online activity was observed today and cumulative hours/minutes, followed by the separate latest snapshot. A single ONLINE observation establishes “seen online” but cannot establish duration; a later OFFLINE observation does not clear that fact. Missing history says unconfirmed, and offline-only observations say no online activity observed in the collected period, never “offline all day.” A shared 30-second browser cache loads configured fleet day summaries in one ledger RPC without calling provider APIs.

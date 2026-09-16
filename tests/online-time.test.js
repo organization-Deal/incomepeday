@@ -37,3 +37,10 @@ test('concurrent retries do not double count and independent machines remain iso
  assert.equal((await core.day(a.code,'2026-09-16')).onlineMs,300000);
  assert.equal((await core.day('LO_0002','2026-09-16')).onlineMs,0);
 });
+
+test('one online observation confirms online today without inventing a duration; offline later preserves it',async()=>{
+ const core=new OnlineTimeCore(store());await core.record([sample('2026-09-16T12:00:00')]);
+ let d=await core.day('LO_0001','2026-09-16');assert.equal(d.seenOnline,true);assert.equal(d.onlineMs,0);
+ await core.record([sample('2026-09-16T12:05:00','OFFLINE')]);d=await core.day('LO_0001','2026-09-16');assert.equal(d.seenOnline,true);assert.equal(d.onlineMs,300000);
+ assert.equal((await core.day('LO_0002','2026-09-16')).seenOnline,false);
+});

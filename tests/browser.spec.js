@@ -17,6 +17,7 @@ async function setup(page, { baseline = false, onApi, expectedRows=2, reducedMot
     if (url.hostname !== 'dashboard.test') return route.abort();
     if (['/api','/api/perfume','/api/cem','/api/daily-notes','/api/online-time'].includes(url.pathname)) {
       if (onApi && await onApi(route, url)) return;
+      if(url.pathname==='/api/online-time'&&!url.searchParams.has('code'))return route.fulfill({json:{ok:true,data:{rows:[],collectorEnabled:false}}});
       if(url.pathname==='/api/online-time')return route.fulfill({json:{ok:true,data:{onlineMs:0,offlineMs:0,unknownMs:0,elapsedMs:0,observations:0,collectorEnabled:false}}});
       if(url.pathname==='/api/daily-notes'){
         if(route.request().method()==='POST'){const note=route.request().postDataJSON();if(!dailyNotes.some(n=>n.id===note.id))dailyNotes.unshift({...note,at:'2026-09-16T12:00:00Z'});return route.fulfill({json:{ok:true,data:{saved:true,storage:'shared'}}});}
@@ -359,4 +360,19 @@ test('daily online hours show Bangkok date, unknown gaps and ignore late date re
  await expect(target).toContainText('ข้อมูลขาดหาย');await expect(target).toContainText('00:00–23:59');
  await target.locator('input').fill('2026-09-15');await target.locator('input').fill('2026-09-16');
  await page.waitForTimeout(350);await expect(target.locator('.ot-values>div').first()).toContainText('2 ชม. 0 นาที');
+});
+
+
+test('offline now still shows online today and accumulated hours in table and popup',async({page})=>{
+ await setup(page,{onApi:async(route,url)=>{
+  if(url.pathname!=='/api/online-time')return false;
+  const d={code:'LO_0001',seenOnline:true,onlineMs:12300000,offlineMs:300000,unknownMs:600000,elapsedMs:13200000,observations:3};
+  await route.fulfill({json:{ok:true,data:url.searchParams.has('code')?d:{rows:[d]}}});return true;
+ }});
+ await page.evaluate(()=>{DATA.rows[0].currentStatus='OFFLINE';render();});
+ const row=page.locator('#rows .row[data-code="LO_0001"]');
+ await expect(row).toContainText('วันนี้ · เคยออนไลน์แล้ว');await expect(row).toContainText('3 ชม. 25 นาที');await expect(row).toContainText('ณ ตอนเช็ค: OFFLINE');
+ await page.evaluate(()=>Workspace.openMachine('LO_0001'));
+ await expect(page.locator('#fp-online-time')).toContainText('วันนี้ · เคยออนไลน์แล้ว');
+ await expect(page.locator('#fp-list [data-machine="LO_0001"]')).toContainText('3 ชม. 25 นาที');
 });

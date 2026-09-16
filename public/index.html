@@ -617,7 +617,7 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
       <span data-sort="code" class="on">รหัส</span>
       <span data-sort="name">โลเคชั่น</span>
       <span id="th-strip">ไทม์ไลน์ →</span>
-      <span data-sort="down">สถานะ</span>
+      <span data-sort="down" title="เรียงตามสถานะล่าสุด">ออนไลน์สะสมวันนี้</span>
       <span data-sort="day" style="text-align:right">วันนี้</span>
       <span data-sort="week" style="text-align:right">7 วัน</span>
       <span data-sort="mon" style="text-align:right">เดือนนี้</span>
@@ -1134,12 +1134,12 @@ function render(){
       '<div class="code">'+r.code+'</div>'+
       '<div class="nm" title="'+esc(r.name||r.code)+'">'+(m.dropping?'<span class="warn" title="รายได้ร่วงผิดสังเกต">▼</span>':'')+nameOf(r)+'</div>'+
       '<div class="pulse">'+strip+'</div>'+
-      (m.down ? '<span class="chip c-OFFLINE">ดับ '+m.down+' วัน</span>'
-              : '<span class="chip c-'+c.s+'">'+(c.s==='ONLINE'?'ปกติ':c.s)+'</span>')+
+      '<div class="daily-status"><div class="online-summary" data-online-summary="'+esc(r.code)+'">วันนี้ · กำลังอ่านเวลาสะสม…</div><small>ณ ตอนเช็ค: '+esc(c.s)+'</small></div>'+
       '<div class="num sm'+(m.dayRev?'':' zero')+'">'+money(m.dayRev)+(m.dayOpen&&m.dayRev?'<i class="op">·</i>':'')+'</div>'+
       '<div class="num sm'+(m.week?'':' zero')+'">'+money(m.week)+'</div>'+
       '<div class="num'+(m.month?'':' zero')+'">'+money(m.month)+'</div></div>';
   }).join('') : '<div class="empty"><b>ไม่พบตู้ที่ตรงเงื่อนไข</b>ลองเลือก “ทั้งหมด”</div>';
+  DealOnlineTime.fillSummaries($('#rows'));
 }
 
 /* ══ chart + scrubbing ══ */

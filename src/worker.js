@@ -21,4 +21,5 @@ export class OnlineTime extends DurableObject {
  constructor(ctx,env){super(ctx,env);this.ledger=new OnlineTimeCore(ctx.storage);}
  async record(samples){return this.ledger.record(samples);}
  async day(code,date){return this.ledger.day(code,date);}
+ async days(codes,date){return this.ledger.days(codes,date);}
 }
