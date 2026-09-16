@@ -1,5 +1,6 @@
 import { HttpError, json, requestJson, requestBody } from './http.js';
 import { handlePerfume } from './perfume.js';
+import { eqlinkConfig, configFingerprint, readMonth, mergeMonth, replaceHistory } from './eqlink.js';
 
 const ALLOWED = ['months', 'month', 'history', 'notes'];
 const WRITE = ['note', 'rename'];
@@ -71,7 +72,8 @@ async function handleApi(url, env, ctx) {
 
   const keyUrl = new URL('/api', url.origin);
   keyUrl.search = params.toString();
-  keyUrl.searchParams.set('_cache', 'v2'); // Exclude legacy cached errors/HTML.
+  const boxing = ['month', 'history'].includes(action) ? eqlinkConfig(env) : null;
+  keyUrl.searchParams.set('_cache', 'v3-' + await configFingerprint(boxing));
   const cacheKey = new Request(keyUrl);
   const cache = globalThis.caches?.default;
   if (cache && !fresh) {
@@ -85,7 +87,12 @@ async function handleApi(url, env, ctx) {
       }
     } catch { /* Cache failure must not prevent an origin read. */ }
   }
-  const data = await gasRequest(target, env, true);
+  const [data, source] = await Promise.all([
+    gasRequest(target, env, true),
+    boxing && action === 'month' ? readMonth(boxing, params.get('month')) : null,
+  ]);
+  if (source) data.data = mergeMonth(data.data, source, boxing);
+  if (boxing && action === 'history') data.data = await replaceHistory(data.data, params.get('code'), boxing);
   const res = json(data);
   res.headers.set('x-cache', live ? 'BYPASS' : 'MISS');
   if (cache && !live) {

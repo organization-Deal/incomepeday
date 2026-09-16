@@ -725,7 +725,7 @@ async function load(month, fresh){
   try{ const data = await api(Object.assign({action:'month', month:month}, (fresh||Date.now()<monthFreshUntil)?{fresh:'1'}:{}));
        if(version!==loadRequest) return;
        DATA = data; build();
-       if(fresh) toast('ดึงข้อมูลสดจาก Lark แล้ว'); }
+       if(fresh) toast('ดึงข้อมูลล่าสุดแล้ว'); }
   catch(e){ if(version===loadRequest) fail(e.message); }
   finally{ if(version===loadRequest) $('#reload').classList.remove('spin'); }
 }
@@ -741,6 +741,7 @@ function build(){
   /* รายวัน: ยึดรอบ 00:00 ของวันถัดไป (ปิดยอดเต็มวัน) ไม่มีค่อยใช้ 22:00 (ยังไม่ปิด) */
   const days = []; const seen = {};
   slots.forEach(s=>{ const d=s.split(' ')[0]; if(!seen[d]){seen[d]=1; days.push(d);} });
+  (DATA.dailyLabels||[]).forEach(d=>{ if(!seen[d]){seen[d]=1; days.push(d);} });
   days.sort((a,b)=> (a.split('/')[1]+a.split('/')[0]).localeCompare(b.split('/')[1]+b.split('/')[0]));
   const pick = days.map(d=>{
     const dd = d.split('/')[0], mm = d.split('/')[1];
@@ -750,7 +751,8 @@ function build(){
     if(idx[d+' 00:00']!=null) return {i:idx[d+' 00:00'], part:true};
     return null;
   });
-  DAY = { labels: days, part: pick.map(p=>p?p.part:true), cells: r => pick.map(p=> p ? r.cells[p.i] : null) };
+  DAY = { labels: days, part: pick.map(p=>p?p.part:true),
+    cells: r => r.daily ? days.map(d=>r.daily[d]||null) : pick.map(p=> p ? r.cells[p.i] : null) };
 
   VIEW = MODE==='round'
     ? { labels: slots.slice(), part: slots.map(s=>/22:00$/.test(s)), cells: r => r.cells }
@@ -761,7 +763,7 @@ function build(){
   const upAll = [];
   DATA.rows.forEach(r=>{
     const cells = DAY.cells(r);
-    const closed = cells.map((c,i)=> DAY.part[i] ? null : c);
+    const closed = cells.map((c,i)=> isPartial(c, DAY.part[i]) ? null : c);
     // ERROR = เข้าไปเช็คไม่ได้ (login พัง) ไม่ใช่สถานะของตู้ → ตัดออกจากการคิด uptime
     const have = closed.filter(c=> c && c.s!=='ERROR' && c.s!=='UNKNOWN');
     const on = have.filter(c=>c.s==='ONLINE');
@@ -771,6 +773,7 @@ function build(){
     for(let i=closed.length-1;i>=0;i--){ const c=closed[i];
       if(!c || c.s==='ERROR' || c.s==='UNKNOWN') continue;
       if(c.s==='ONLINE') break; down++; }
+    if(r.currentStatus && r.currentStatus!=='OFFLINE') down = 0;
 
     let fault = 0, run = 0;
     have.forEach(c=>{ if(c.s==='OFFLINE'){ run++; } else { if(run>RULE.GRACE_DAYS) fault += run; run=0; } });
@@ -786,13 +789,13 @@ function build(){
     const base = med(baseArr);
     const recent = recentIdx.length ? recentIdx.reduce((s,i)=>s+(closed[i].d||0),0)/recentIdx.length : 0;
     const dropPct = (base>=RULE.DROP_MIN && baseArr.length>=3 && recentIdx.length) ? 1 - recent/base : 0;
-    const last = lastOf(cells) || {s:'UNKNOWN'};
+    const last = currentCell(r, cells);
 
     // ── รายได้จริง: วัน / 7 วัน / เดือน (วัดได้ ไม่ใช่ประเมิน) ──
     const withData = cells.filter(Boolean);
     const lastClosed = closed.filter(Boolean).slice(-1)[0] || null;
     const dayRev  = lastClosed ? (lastClosed.d || 0) : (last.d || 0);
-    const dayOpen = !lastClosed || (cells.length && DAY.part[cells.length-1]);
+    const dayOpen = !lastClosed || (cells.length && isPartial(cells[cells.length-1], DAY.part[cells.length-1]));
     const week    = withData.slice(-7).reduce((s,c)=> s + (c.d||0), 0);
     const month   = withData.reduce((s,c)=> Math.max(s, c.m||0), 0);
 
@@ -804,6 +807,9 @@ function build(){
   M.__medUp = med(upAll);
   render(); renderWatch(); renderLB(); headline(); knobAll();
 }
+const isPartial = (cell, fallback) => typeof cell?.closed==='boolean' ? !cell.closed : fallback;
+const currentCell = (row, cells) => Object.assign({}, lastOf(cells)||{s:'UNKNOWN'},
+  row.currentStatus ? {s:row.currentStatus} : {});
 
 /* ══ animated counters (ตัวเลขวิ่งขึ้น แบบ Apple) ══ */
 const RM = matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -868,7 +874,14 @@ function drawHealthChart(){
   g+='<text x="'+p.l+'" y="'+(H-7)+'" fill="var(--ink-4)" font-size="10">'+esc(data[0].label)+'</text><text x="'+(W-p.r)+'" y="'+(H-7)+'" text-anchor="end" fill="var(--ink-4)" font-size="10">'+esc(data[data.length-1].label)+'</text>';svg.innerHTML=g;
 }
 function renderOpsDashboard(){
-  const s=fleetSeries(),now=s[s.length-1]||{on:0,off:0,err:0,unknown:0,onPct:0,offPct:0},total=DATA.rows.length,known=now.on+now.off;
+  const s=fleetSeries(),now=Object.assign({},s[s.length-1]||{on:0,off:0,err:0,unknown:0,onPct:0,offPct:0}),total=DATA.rows.length;
+  const statusKey={ONLINE:'on',OFFLINE:'off',ERROR:'err',UNKNOWN:'unknown'};
+  if(DATA.dailyLabels){
+    now.on=now.off=now.err=now.unknown=0;
+    DATA.rows.forEach(r=>{ const key=statusKey[currentCell(r,DAY.cells(r)).s]; if(key)now[key]++; });
+  }
+  const known=now.on+now.off;
+  now.onPct=known?now.on/known*100:0;now.offPct=known?now.off/known*100:0;
   const attention=DATA.rows.filter(r=>M[r.code].down>=RULE.DEAD_DAYS||['ERROR','UNKNOWN'].includes(M[r.code].last.s)).length;
   $('#ops-total').textContent=total;$('#ops-online').textContent=now.on;$('#ops-offline').textContent=now.off;$('#ops-offline-pct').textContent=Math.round(now.offPct);$('#ops-attention').textContent=attention;$('#ops-known').textContent='สถานะชัดเจน '+known+' จาก '+total+' ตู้';
   const d1=s[s.length-2],d7=s[s.length-8],dm=s[0];cmpText($('#on-d1'),'เมื่อวาน',now.onPct,d1&&d1.onPct,false);cmpText($('#on-d7'),'7 วัน',now.onPct,d7&&d7.onPct,false);cmpText($('#on-dm'),'เดือน',now.onPct,dm&&dm.onPct,false);cmpText($('#off-d1'),'เมื่อวาน',now.offPct,d1&&d1.offPct,true);cmpText($('#off-d7'),'7 วัน',now.offPct,d7&&d7.offPct,true);cmpText($('#off-dm'),'เดือน',now.offPct,dm&&dm.offPct,true);
@@ -1000,8 +1013,9 @@ function render(){
   const li = labels.length-1;
   const tally = {ONLINE:0,OFFLINE:0,ERROR:0,UNKNOWN:0};
   let day=0, mon=0;
-  rows.forEach(r=>{ const cs = CELLS(r); const c = cs[li] || lastOf(cs); if(!c) return;
-    tally[c.s]++; day += c.d||0; mon += c.m||0; });
+  rows.forEach(r=>{ const cs = CELLS(r); const c = cs[li] || lastOf(cs) || (r.revenueSource==='eqlink'?{s:'UNKNOWN'}:null); if(!c) return;
+    tally[currentCell(r,cs).s]++; day += c.d||0;
+    mon += r.revenueSource==='eqlink' ? M[r.code].month : (c.m||0); });
   const n = rows.length || 1;
   const ups  = rows.map(r=>M[r.code].uptime).filter(v=>v!=null);
   const upxs = rows.map(r=>M[r.code].upx).filter(v=>v!=null);
@@ -1035,7 +1049,7 @@ function render(){
   const p90 = all.length ? (all[Math.floor(all.length*.9)] || 1) : 1;
 
   let list = rows.filter(r=>{
-    const c = lastOf(CELLS(r));
+    const c = currentCell(r, CELLS(r));
     return !(FILTER && (!c || c.s!==FILTER));
   });
   const key = r => { const m = M[r.code], c = lastOf(CELLS(r))||{};
@@ -1048,10 +1062,10 @@ function render(){
 
   $('#count').textContent = list.length+' / '+rows.length+' ตู้';
   $('#rows').innerHTML = list.length ? list.map((r,ri)=>{
-    const cs = CELLS(r), m = M[r.code], c = lastOf(cs) || {s:'UNKNOWN'};
+    const cs = CELLS(r), m = M[r.code], c = currentCell(r, cs);
     const strip = cs.map((x,i)=> !x ? '<i class="tick"></i>' :
-      '<i class="tick'+(VIEW.part[i]?' part':'')+'" data-s="'+x.s+'" data-t="'+labels[i]+
-      (VIEW.part[i]&&MODE==='day'?' (ยังไม่ปิดวัน)':'')+' · '+x.s+' · '+money(x.d)+' บาท">'+
+      '<i class="tick'+(isPartial(x,VIEW.part[i])?' part':'')+'" data-s="'+x.s+'" data-t="'+labels[i]+
+      (isPartial(x,VIEW.part[i])&&MODE==='day'?' (ยังไม่ปิดวัน)':'')+' · '+x.s+' · '+money(x.d)+' บาท">'+
       '<i style="height:'+Math.max(2, Math.min(30, Math.round((x.d||0)/p90*30)))+'px"></i></i>').join('');
     const upc = m.uptime==null?'mid': m.uptime>=85?'good': m.uptime>=60?'mid':'bad';
     return '<div class="row'+((isDead(r)||m.dropping)?' alert':'')+'" data-code="'+r.code+'" style="animation-delay:'+Math.min(ri*9,200)+'ms">'+
@@ -1134,7 +1148,7 @@ function open(code){
   const cs = VIEW.cells(r).filter(Boolean);
   const tot = cs.reduce((s,c)=>Math.max(s,c.m||0),0);
   const body = VIEW.labels.map((s,i)=>{ const c=VIEW.cells(r)[i];
-    return '<tr><td>'+s+(VIEW.part[i]&&MODE==='day'?' <span class="muted">ยังไม่ปิด</span>':'')+
+    return '<tr><td>'+s+(isPartial(c,VIEW.part[i])&&MODE==='day'?' <span class="muted">ยังไม่ปิด</span>':'')+
       '</td><td>'+(c?'<i class="dot" style="background:'+COL[c.s]+'"></i>'+c.s:'–')+
       '</td><td>'+(c?money(c.d):'–')+'</td><td>'+(c?money(c.m):'–')+'</td></tr>';
   }).reverse().join('');

@@ -155,3 +155,34 @@ test('failed early save still lets pending notes finish and retains input', asyn
   await expect(page.locator('#tnote')).toHaveValue('keep this');
   await expect(page.locator('#tsave')).toBeEnabled();
 });
+
+test('EQLink daily totals replace old revenues, preserve rows and use current status without inventing uptime', async ({ page }) => {
+  await setup(page, { onApi: async (route, url) => {
+    if(url.searchParams.get('action')!=='month') return false;
+    const d=data('09-2026');
+    d.dailyLabels=['01/09','02/09','03/09'];
+    Object.assign(d.rows[0], { revenueSource:'eqlink', currentStatus:'ONLINE',
+      daily:{'01/09':{s:'UNKNOWN',d:320,m:320,closed:true},
+        '02/09':{s:'OFFLINE',d:20,m:340,closed:true},
+        '03/09':{s:'UNKNOWN',d:0,m:340,closed:false}},
+      cells:[{s:'UNKNOWN',d:null,m:null},{s:'UNKNOWN',d:320,m:320},
+        {s:'OFFLINE',d:null,m:null},{s:'OFFLINE',d:20,m:340}] });
+    await route.fulfill({json:{ok:true,data:d}}); return true;
+  } });
+  const metrics=await page.evaluate(()=>({m:M.LO_0001,days:DAY.labels,rows:DATA.rows.length}));
+  expect(metrics.rows).toBe(2); expect(metrics.m.month).toBe(340); expect(metrics.m.week).toBe(340);
+  expect(metrics.m.dayRev).toBe(20); expect(metrics.m.last.s).toBe('ONLINE');
+  expect(metrics.m.down).toBe(0); expect(metrics.m.uptime).toBe(0); expect(metrics.m.days).toBe(1);
+  // A new EQLink day must not erase the other fleet's most recent observed status.
+  await page.evaluate(()=>{ DATA.dailyLabels.push('04/09'); build(); });
+  await expect(page.locator('#ops-online')).toHaveText('2');
+  await page.evaluate(()=>setFilter('ONLINE'));
+  await expect(page.locator('#rows .row[data-code="LO_0001"]')).toHaveCount(1);
+  await page.evaluate(()=>open('LO_0001'));
+  await expect(page.locator('.dtable')).toContainText('320');
+  const closed=page.locator('.dtable tbody tr').filter({hasText:'02/09'});
+  await expect(closed).not.toContainText('ยังไม่ปิด');
+  await page.evaluate(()=>{close();setMode('round');});
+  await expect(page.locator('#rows .row[data-code="LO_0001"]')).toContainText('340');
+  await expect(page.locator('#k-mon')).toHaveText('1,140บาท สะสมเดือนนี้');
+});

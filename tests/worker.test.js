@@ -6,7 +6,7 @@ const realFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = realFetch; delete globalThis.caches; });
 const env = { GAS_URL: 'https://script.google.com/macros/s/test/exec', GAS_TOKEN: 'test-secret', ASSETS: { fetch: () => new Response('asset') } };
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status });
-function setup(upstream) {
+function setup(upstream, extraEnv = {}) {
   const entries = new Map(), calls = [], pending = [];
   globalThis.caches = { default: {
     async match(key) { return entries.get(key.url)?.clone(); },
@@ -17,7 +17,7 @@ function setup(upstream) {
     const req = new Request('https://dashboard.test' + path, body === undefined ? {} : {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
     });
-    const res = await worker.fetch(req, env, { waitUntil: p => pending.push(p) });
+    const res = await worker.fetch(req, { ...env, ...extraEnv }, { waitUntil: p => pending.push(p) });
     await Promise.all(pending.splice(0));
     return res;
   } };
@@ -29,6 +29,30 @@ test('GAS HTML becomes a JSON error and is never cached', async () => {
   assert.equal(res.status, 502);
   assert.equal((await res.json()).ok, false);
   assert.equal(h.entries.size, 0);
+});
+
+test('enabled EQLink merges before caching, fresh bypasses cache, and changed config cannot reuse it', async () => {
+  const extra = { EQLINK_USERNAME:'test-user', EQLINK_PASSWORD:'test-password', EQLINK_API_KEY:'test-key',
+    EQLINK_MAPPING:'[{"code":"LO_0001","device":"SERIAL1"}]' };
+  const h=setup((url, init)=>{
+    const path=new URL(url).pathname;
+    if(path.includes('/macros/')) return json({ok:true,data:{month:'02-2024',slots:['01/02 22:00','02/02 00:00'],
+      rows:[{code:'LO_0001',name:'same',cells:[{s:'ONLINE',d:999,m:999},{s:'ONLINE',d:999,m:999}]}]}});
+    if(path.endsWith('/login')) return json({status:200,token:'private-token',vendor_id:'vendor'});
+    if(path.endsWith('/get_vendor_info')) return json({status:200,vendor_info:{currency:'THB'}});
+    if(path.endsWith('/get_devicelist'))return json({status:200,count:1,devicelist:[{devicename:'SERIAL1',status:'online',device_type:'CT'}]});
+    return json({status:200,count:1,devices_rev_month:[{devicename:'SERIAL1',total:10}]});
+  },extra);
+  const path='/api?action=month&month=02-2024';
+  const result=await (await h.request(path)).json();
+  assert.equal(result.data.rows[0].daily['29/02'].m,290);
+  const calls=h.calls.length;
+  assert.equal((await h.request(path)).headers.get('x-cache'),'HIT');
+  assert.equal(h.calls.length,calls);
+  await h.request(path+'&fresh=1');assert.ok(h.calls.length>calls);
+  extra.EQLINK_PASSWORD='changed-password';
+  assert.equal((await h.request(path)).headers.get('x-cache'),'MISS');
+  assert.doesNotMatch(JSON.stringify(result),/private-token|SERIAL1|test-password/);
 });
 test('GAS application errors are never cached', async () => {
   const h = setup(() => json({ ok: false, error: 'unauthorized' }));
