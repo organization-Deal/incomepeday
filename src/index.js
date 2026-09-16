@@ -1,208 +1,136 @@
-/**
- * Cloudflare Worker — DEAL! สถานะตู้
- * ------------------------------------------------------------------
- *  /api?action=...  →  ต่อไป Apps Script (ซ่อน URL + token + แคชที่ขอบ)
- *  ที่เหลือ         →  เสิร์ฟไฟล์จาก public/ (index.html)
- *
- * Secrets ที่ต้องตั้ง (Dashboard > Settings > Variables and Secrets):
- *   GAS_URL    = https://script.google.com/macros/s/xxxxx/exec
- *   GAS_TOKEN  = ค่าเดียวกับ API_TOKEN ใน DEAL_MachineStatus_API.gs
- */
+import { HttpError, json, requestJson, requestBody } from './http.js';
+import { handlePerfume } from './perfume.js';
 
-const ALLOWED = ['months', 'month', 'history', 'notes'];   // อ่าน (GET)
-const WRITE   = ['note', 'rename'];                         // เขียน (POST)
-const PASS = ['month', 'code', 'fresh'];   // พารามิเตอร์ที่ยอมส่งต่อ นอกนั้นตัดทิ้ง
+const ALLOWED = ['months', 'month', 'history', 'notes'];
+const WRITE = ['note', 'rename'];
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-
-    if (url.pathname === '/api' || url.pathname === '/api/') {
-      if (request.method === 'GET')  return handleApi(request, url, env, ctx);
-      if (request.method === 'POST') return handleWrite(request, env);
-      return json({ ok: false, error: 'method not allowed' }, 405);
+    try {
+      if (url.pathname === '/api' || url.pathname === '/api/') {
+        if (request.method === 'GET') return await handleApi(url, env, ctx);
+        if (request.method === 'POST') return await handleWrite(request, env);
+        return json({ ok: false, error: 'method not allowed' }, 405);
+      }
+      if (url.pathname === '/api/perfume') {
+        if (request.method === 'POST') return await handlePerfume(request);
+        if (request.method === 'GET') return json({ ok: true, msg: 'perfume proxy พร้อม — ใช้ POST {token,time,ids}' });
+        return json({ ok: false, error: 'method not allowed' }, 405);
+      }
+      if (url.pathname.startsWith('/api/')) return json({ ok: false, error: 'ไม่พบ API' }, 404);
+      return env.ASSETS.fetch(request);
+    } catch (err) {
+      return json({ ok: false, error: err instanceof HttpError ? err.message : 'เกิดข้อผิดพลาดในการเชื่อมต่อ' },
+        err instanceof HttpError ? err.status : 500);
     }
-
-    // ตู้น้ำหอม DKM — proxy กัน CORS
-    if (url.pathname === '/api/perfume') {
-      if (request.method === 'POST') return handlePerfume(request);
-      if (request.method === 'GET')  return json({ ok: true, msg: 'perfume proxy พร้อม — ใช้ POST {token,time,ids}' });
-      return json({ ok: false, error: 'method not allowed' }, 405);
-    }
-
-    // ไฟล์หน้าเว็บ
-    return env.ASSETS.fetch(request);
   },
 };
 
-async function handleApi(request, url, env, ctx) {
-  if (!env.GAS_URL) {
-    return json({ ok: false, error: 'ยังไม่ได้ตั้ง secret GAS_URL ใน Worker' }, 500);
-  }
-
-  const action = url.searchParams.get('action') || 'month';
-  if (!ALLOWED.includes(action)) return json({ ok: false, error: 'action ไม่ถูกต้อง' }, 400);
-
-  const target = new URL(env.GAS_URL);
-  target.searchParams.set('action', action);
-  for (const k of PASS) {
-    const v = url.searchParams.get(k);
-    if (v) target.searchParams.set(k, v);
-  }
-  if (env.GAS_TOKEN) target.searchParams.set('key', env.GAS_TOKEN);
-
-  const fresh = url.searchParams.get('fresh') === '1';
-  const cache = caches.default;
-  const keyUrl = new URL(url.pathname + url.search.replace(/[?&]fresh=1/, ''), url.origin);
-  const cacheKey = new Request(keyUrl.toString(), { method: 'GET' });
-
-  if (!fresh) {
-    const hit = await cache.match(cacheKey);
-    if (hit) {
-      const r = new Response(hit.body, hit);
-      r.headers.set('x-cache', 'HIT');
-      return r;
-    }
-  }
-
-  try {
-    // Apps Script จะ redirect ไป script.googleusercontent.com — fetch ตามให้เอง
-    const up = await fetch(target.toString(), {
-      redirect: 'follow',
-      headers: { accept: 'application/json' },
-    });
-    const body = await up.text();
-
-    // เดือนปัจจุบันแคช 10 นาที (รอบเช็ควันละ 2 ครั้ง) / เดือนที่จบแล้วแคชยาว
-    const cur = bkkMonth();
-    const isCur = (url.searchParams.get('month') || cur) === cur;
-    const ttl = action === 'history' ? 1800 : (isCur ? 600 : 21600);
-
-    const res = new Response(body, {
-      status: up.status,
-      headers: {
-        'content-type': 'application/json; charset=utf-8',
-        'cache-control': `public, max-age=60, s-maxage=${ttl}`,
-        'x-cache': 'MISS',
-      },
-    });
-
-    if (up.ok) ctx.waitUntil(cache.put(cacheKey, res.clone()));
-    return res;
-  } catch (err) {
-    return json({ ok: false, error: 'ต่อ Apps Script ไม่ได้: ' + err.message }, 502);
-  }
+function gasUrl(env) {
+  if (!env.GAS_URL) throw new HttpError('ยังไม่ได้ตั้ง secret GAS_URL ใน Worker', 500);
+  let url;
+  try { url = new URL(env.GAS_URL); }
+  catch { throw new HttpError('secret GAS_URL ไม่ใช่ URL ที่ถูกต้อง', 500); }
+  if (url.protocol !== 'https:') throw new HttpError('GAS_URL ต้องใช้ HTTPS', 500);
+  return url;
 }
 
-/** "MM-YYYY" ตามเวลาไทย — ให้ตรงกับชื่อตารางใน Lark */
+async function gasRequest(url, env, retry) {
+  const data = await requestJson(url.toString(), {
+    redirect: 'follow', headers: { accept: 'application/json' },
+  }, { retry });
+  if (!data || typeof data !== 'object' || typeof data.ok !== 'boolean' ||
+      (data.ok && retry && !Object.hasOwn(data, 'data'))) {
+    throw new HttpError('รูปแบบข้อมูลจาก Apps Script ไม่ถูกต้อง');
+  }
+  if (!data.ok) {
+    let message = typeof data.error === 'string' ? data.error : 'Apps Script ทำรายการไม่สำเร็จ';
+    for (const secret of [env.GAS_URL, env.GAS_TOKEN]) if (secret) message = message.split(secret).join('[redacted]');
+    throw new HttpError(message.slice(0, 500));
+  }
+  return data;
+}
+
+async function handleApi(url, env, ctx) {
+  const target = gasUrl(env);
+  const action = url.searchParams.get('action') || 'month';
+  if (!ALLOWED.includes(action)) throw new HttpError('action ไม่ถูกต้อง', 400);
+  const params = new URLSearchParams({ action });
+  for (const key of ['month', 'code']) {
+    const value = url.searchParams.get(key);
+    if (value) params.set(key, value);
+  }
+  // Explicit month prevents the previous month's default response persisting.
+  if (action === 'month' && !params.has('month')) params.set('month', bkkMonth());
+  for (const [key, value] of params) target.searchParams.set(key, value);
+  if (env.GAS_TOKEN) target.searchParams.set('key', env.GAS_TOKEN);
+  const live = action === 'notes';
+  const fresh = live || url.searchParams.get('fresh') === '1';
+  if (fresh) target.searchParams.set('fresh', '1');
+
+  const keyUrl = new URL('/api', url.origin);
+  keyUrl.search = params.toString();
+  keyUrl.searchParams.set('_cache', 'v2'); // Exclude legacy cached errors/HTML.
+  const cacheKey = new Request(keyUrl);
+  const cache = globalThis.caches?.default;
+  if (cache && !fresh) {
+    try {
+      const hit = await cache.match(cacheKey);
+      if (hit) {
+        const res = new Response(hit.body, hit);
+        res.headers.set('cache-control', 'no-store');
+        res.headers.set('x-cache', 'HIT');
+        return res;
+      }
+    } catch { /* Cache failure must not prevent an origin read. */ }
+  }
+  const data = await gasRequest(target, env, true);
+  const res = json(data);
+  res.headers.set('x-cache', live ? 'BYPASS' : 'MISS');
+  if (cache && !live) {
+    const current = (params.get('month') || bkkMonth()) === bkkMonth();
+    const ttl = action === 'history' ? 1800 : (current ? 600 : 21600);
+    const stored = res.clone();
+    stored.headers.set('cache-control', `public, max-age=${ttl}`);
+    ctx.waitUntil(cache.put(cacheKey, stored).catch(() => {}));
+  }
+  return res;
+}
 function bkkMonth() {
-  const p = new Intl.DateTimeFormat('en-GB', {
+  const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Asia/Bangkok', month: '2-digit', year: 'numeric',
   }).formatToParts(new Date());
-  const g = (t) => p.find((x) => x.type === t).value;
-  return g('month') + '-' + g('year');
+  const get = type => parts.find(part => part.type === type).value;
+  return get('month') + '-' + get('year');
 }
 
-function json(obj, status = 200) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
-  });
-}
-
-/**
- * เขียนกลับ Lark ผ่าน Apps Script (POST เท่านั้น — กันคนเผลอกดลิงก์แล้วข้อมูลเปลี่ยน)
- *
- * ผู้บันทึก: ถ้าเปิด Cloudflare Access แล้ว จะได้อีเมลจริงจาก header ปลอมไม่ได้
- *            ถ้ายังไม่เปิด ใช้ชื่อที่กรอกเองในหน้าเว็บ (เชื่อถือได้น้อยกว่า)
- */
 async function handleWrite(request, env) {
-  if (!env.GAS_URL) return json({ ok: false, error: 'ยังไม่ได้ตั้ง secret GAS_URL ใน Worker' }, 500);
-
-  let body;
-  try { body = await request.json(); }
-  catch { return json({ ok: false, error: 'body ไม่ใช่ JSON' }, 400); }
-
-  if (!WRITE.includes(body.action)) return json({ ok: false, error: 'action ไม่ถูกต้อง' }, 400);
-
+  const url = gasUrl(env);
+  const body = await requestBody(request);
+  if (!WRITE.includes(body.action)) throw new HttpError('action ไม่ถูกต้อง', 400);
+  if (typeof body.code !== 'string' || !body.code.trim() || body.code.length > 40) {
+    throw new HttpError('รหัสตู้ไม่ถูกต้อง', 400);
+  }
+  const limits = { name: 200, status: 60, note: 2000, by: 100 };
+  for (const [key, max] of Object.entries(limits)) {
+    if (body[key] != null && (typeof body[key] !== 'string' || body[key].length > max)) {
+      throw new HttpError('ข้อมูล ' + key + ' ไม่ถูกต้องหรือยาวเกินกำหนด', 400);
+    }
+  }
+  if (body.action === 'rename' && !body.name?.trim()) throw new HttpError('ไม่มีชื่อตู้', 400);
+  if (body.action === 'note' && !body.note?.trim() && !body.status?.trim()) throw new HttpError('ไม่มีบันทึกหรือสถานะ', 400);
+  // Cloudflare Access must protect this origin; the header alone is not authentication.
   const email = request.headers.get('Cf-Access-Authenticated-User-Email');
   const payload = {
-    action: body.action,
-    code:   String(body.code   || '').slice(0, 40),
-    name:   String(body.name   || '').slice(0, 200),
-    status: String(body.status || '').slice(0, 60),
-    note:   String(body.note   || '').slice(0, 2000),
-    by:     (email || String(body.by || '')).slice(0, 100) || 'ไม่ระบุ',
-    key:    env.GAS_TOKEN || '',
+    action: body.action, code: body.code.trim(), name: body.name || '', status: body.status || '',
+    note: body.note || '', by: (email || body.by || 'ไม่ระบุ').slice(0, 100), key: env.GAS_TOKEN || '',
   };
-
-  // ยิงเป็น GET — Apps Script ตอบ POST ด้วย redirect 302 แล้ว body หายระหว่างทาง
-  // (มาตรฐานเว็บบังคับเปลี่ยน POST→GET ตอนตาม redirect) → ได้หน้า HTML กลับมาแทน JSON
-  const url = new URL(env.GAS_URL);
-  for (const [k, v] of Object.entries(payload)) if (v) url.searchParams.set(k, v);
-
-  try {
-    const up = await fetch(url.toString(), { redirect: 'follow', headers: { accept: 'application/json' } });
-    const text = await up.text();
-
-    // ถ้ายังได้ HTML กลับมา = Apps Script ไม่ได้รันโค้ดที่คิด — บอกให้ชัด อย่าให้ JSON.parse พังเงียบ ๆ
-    if (text.trim().startsWith('<')) {
-      return json({ ok: false, error: 'Apps Script ตอบเป็นหน้าเว็บ ไม่ใช่ JSON — ตรวจว่า Deploy เวอร์ชันใหม่แล้ว และ Access = Anyone' }, 502);
-    }
-    return new Response(text, {
-      status: up.status,
-      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
-    });
-  } catch (err) {
-    return json({ ok: false, error: 'ต่อ Apps Script ไม่ได้: ' + err.message }, 502);
+  // Preserve deployed GAS doGet contract. Never retry this GET: it mutates data.
+  for (const [key, value] of Object.entries(payload)) if (value) url.searchParams.set(key, value);
+  try { return json(await gasRequest(url, env, false)); }
+  catch (err) {
+    if (err instanceof HttpError) err.message += ' — หากส่งแล้ว กรุณาตรวจบันทึกก่อนส่งซ้ำ';
+    throw err;
   }
-}
-
-/* ────────────────────────────────────────────────────────────
- * ตู้น้ำหอม DKM (dkmvending.com) — proxy กัน CORS
- * ฝั่งเว็บยิง POST /api/perfume {token, time:"YYYY-MM-DD~YYYY-MM-DD", ids:[mid,...]}
- * คืน {ok:true, results:{mid: ยอดรวมช่วงนั้น(number)|null}}
- * ──────────────────────────────────────────────────────────── */
-const DKM = 'https://dkmvending.com';
-
-async function oneMachine(token, id, time) {
-  try {
-    const r = await fetch(DKM + '/system/data.index/singleMachineAnalysis', {
-      method: 'POST',
-      headers: { 'token': token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, time }),
-    });
-    if (!r.ok) return [id, null];
-    const j = await r.json();
-    const d = j && j.data;
-    if (!d) return [id, null];
-    // รวม dateList[].salePrice = ยอดเฉพาะวันในช่วง time (allsales = ยอดสะสม lifetime ไม่เอา)
-    const dl = Array.isArray(d.dateList) ? d.dateList : [];
-    const sum = dl.reduce((s, x) => s + (Number(x && x.salePrice) || 0), 0);
-    return [id, Math.round(sum * 100) / 100];
-  } catch (e) {
-    return [id, null];
-  }
-}
-
-async function handlePerfume(request) {
-  let body;
-  try { body = await request.json(); }
-  catch { return json({ ok: false, error: 'body ไม่ใช่ JSON' }, 400); }
-
-  const token = (body.token || '').trim();
-  const time = (body.time || '').trim();
-  const ids = Array.isArray(body.ids) ? body.ids : [];
-  if (!token) return json({ ok: false, error: 'ไม่มี token' }, 400);
-  if (!time || !time.includes('~')) return json({ ok: false, error: 'time ต้องเป็น YYYY-MM-DD~YYYY-MM-DD' }, 400);
-  if (!ids.length) return json({ ok: false, error: 'ไม่มี machine ids' }, 400);
-
-  // ดึงทีละชุด 8 ตัว กัน rate-limit / timeout
-  const results = {};
-  const B = 8;
-  for (let i = 0; i < ids.length; i += B) {
-    const part = await Promise.all(ids.slice(i, i + B).map((id) => oneMachine(token, id, time)));
-    part.forEach(([id, v]) => { results[id] = v; });
-  }
-  return json({ ok: true, time, count: ids.length, results });
 }

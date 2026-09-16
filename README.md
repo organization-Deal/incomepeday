@@ -30,10 +30,16 @@ Worker ถือ URL + token ไว้ฝั่ง server เว็บเห็�
 ```
 .
 ├── public/
-│   └── index.html      หน้าเว็บทั้งหมด ไฟล์เดียวจบ ไม่มี build step
+│   ├── index.html      หน้าตาและการคำนวณเดิม ไม่มี build step
+│   └── api-client.js   การเชื่อมต่อฝั่งเว็บและแบ่งชุดตู้น้ำหอม
 ├── src/
-│   └── index.js        Worker: /api = ส่งต่อไป Apps Script, ที่เหลือ = เสิร์ฟ public/
+│   ├── index.js        Worker: routing, Apps Script, cache
+│   ├── http.js         JSON validation, timeout, bounded reads
+│   └── perfume.js      DKM proxy (ใช้ implementation เดียว)
 ├── wrangler.jsonc
+├── package.json
+├── package-lock.json
+├── tests/
 ├── .gitignore
 └── README.md
 ```
@@ -116,7 +122,32 @@ Policy: `Allow` → `Include > Emails ending in` → `@โดเมนบริ�
 | ชั้น | อายุ | ล้างยังไง |
 |---|---|---|
 | Apps Script (`CacheService`) | 30 นาที (เดือนปัจจุบัน) / 6 ชม. (เดือนเก่า) | `clearApiCache()` |
-| Cloudflare edge | 10 นาที / 6 ชม. | ปุ่ม ↻ ในเว็บ (`?fresh=1` ทะลุทุกชั้น) |
+| Cloudflare edge | เดือนปัจจุบัน 10 นาที / เดือนเก่า 6 ชม. / history 30 นาที | ปุ่ม ↻ ในเว็บ (`?fresh=1`) |
+
+บันทึกงาน (`notes`) ไม่เข้า edge cache และส่ง `fresh=1` ไป Apps Script ทุกครั้ง ส่วน API ที่ส่งถึงเบราว์เซอร์ใช้ `no-store` เพื่อไม่เก็บข้อมูลซ้ำอีกชั้น แคชเฉพาะคำตอบ JSON ที่ระบุ `ok:true` เท่านั้น การตั้งค่า `fresh=1` ฝั่ง Apps Script ต้องยังรองรับตาม API เดิม
+
+หลังเปลี่ยนชื่อ ต้นทางของแท็บนั้นจะอ่านข้อมูลเดือนแบบ fresh เป็นเวลา 6 ชั่วโมง (จำใน sessionStorage เพื่อรองรับการ reload) ผู้ใช้อื่นยังอาจเห็นชื่อเดิมจนกว่า edge cache ของตนจะหมดอายุหรือกด ↻ ไม่มีการ purge ทุก Cloudflare location เพราะ repo นี้ไม่มี shared cache-version store
+
+## ทดสอบและพัฒนา
+
+ใช้ Node.js 22 ขึ้นไป:
+
+```bash
+npm ci
+npm test
+npx playwright install chromium --only-shell
+npm run test:browser
+npx wrangler deploy --dry-run
+npm run dev
+```
+
+การทดสอบใช้ข้อมูลจำลอง ไม่ส่งบันทึกเข้า Lark หรือเรียก DKM จริง และเทียบภาพหน้าจอกับ commit `a074f18` ที่ความกว้าง 390/1440 px ทั้งธีมสว่าง/มืดและหน้ารายละเอียด จึงต้องมี commit นี้ในประวัติ Git
+
+Apps Script มี timeout 30 วินาทีต่อคำขอ อ่านซ้ำได้อีกหนึ่งครั้งเฉพาะ network error หรือ HTTP 502/503/504; ไม่ retry เมื่อ timeout, 429 หรือคำสั่งเขียน เพราะคำสั่งเดิมอาจสำเร็จแล้ว ฝั่งเว็บรอไม่เกิน 70 วินาทีต่อคำขอและแสดงข้อผิดพลาดในพื้นที่เดิม
+
+ตู้น้ำหอมแบ่งฝั่งเว็บชุดละ 20 ตู้ และ Worker เรียก DKM พร้อมกันไม่เกิน 6 ตู้ (timeout 10 วินาทีต่อตู้, ไม่ retry) API รับไม่เกิน 40 IDs ต่อคำขอ ข้อมูลที่อ่านไม่ได้เป็น `null` ไม่แปลงเป็นรายได้ 0 และเมื่อบางชุดล้มเหลวยังแสดงชุดที่สำเร็จได้
+
+ยังใช้ GAS `doGet` เดิมสำหรับส่งต่อคำสั่งเขียนเพื่อคงความเข้ากันได้กับ deployment ภายนอก repo นี้ ห้ามบันทึก upstream URL/query ลง log เพราะมี token และข้อมูลบันทึกงาน การย้ายเป็น POST ต้องแก้และทดสอบ Apps Script ด้วย
 
 ให้เว็บเห็นข้อมูลใหม่ทันทีหลังรอบเช็ค — เติมท้าย `runCheck_()` ใน `DEAL_MachineStatus_Daily.gs`:
 

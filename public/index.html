@@ -631,11 +631,12 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
   </div>
 </div>
 
+<script src="./api-client.js"></script>
 <script>
 /* ═══════════ ตั้งค่า ═══════════
-   ไม่ต้องใส่ URL ของ Apps Script ตรงนี้ — Pages Function ที่ /api จัดการให้
+   ไม่ต้องใส่ URL ของ Apps Script ตรงนี้ — Worker ที่ /api จัดการให้
    เปิดไฟล์นี้จากเครื่อง (file://) = โหมดข้อมูลตัวอย่าง
-   deploy บน Cloudflare Pages = ต่อของจริงอัตโนมัติ                        */
+   deploy บน Cloudflare Workers = ต่อของจริงอัตโนมัติ                      */
 const API = (location.protocol === 'file:') ? '' : '/api';
 const KEY = '';
 const RULE = {
@@ -694,24 +695,39 @@ addEventListener('resize', knobAll);
 /* ── api ── */
 async function api(p){
   const q = new URLSearchParams(Object.assign({}, p, KEY?{key:KEY}:{}));
-  const j = await (await fetch(API+'?'+q)).json();
-  if(!j.ok) throw new Error(j.error); return j.data;
+  const j = await DealApi.request(API+'?'+q);
+  const d = j.data;
+  if(!d || typeof d!=='object' ||
+    (p.action==='months' && (!Array.isArray(d.months) || !d.months.every(m=>typeof m==='string'))) ||
+    (p.action==='month' && (!Array.isArray(d.slots) || !Array.isArray(d.rows) ||
+      !d.slots.every(s=>typeof s==='string') || !d.rows.every(r=>r && typeof r.code==='string' && Array.isArray(r.cells)))) ||
+    (p.action==='notes' && (!Array.isArray(d.notes) || (d.statuses!=null && !Array.isArray(d.statuses)))) ||
+    (p.action==='history' && !Array.isArray(d.history))) throw new Error('รูปแบบข้อมูลจาก API ไม่ถูกต้อง');
+  return d;
 }
 async function boot(){
   if(!API){ DATA=demo(); $('#month').innerHTML='<option>'+DATA.month+'</option>'; build(); return; }
   try{
     const r = await api({action:'months'});
-    $('#month').innerHTML = r.months.map(m=>'<option>'+m+'</option>').join('');
+    $('#month').innerHTML = r.months.map(m=>'<option>'+esc(m)+'</option>').join('');
+    if(!r.months.length) throw new Error('ยังไม่มีข้อมูลรายเดือน');
     await load($('#month').value);
   }catch(e){ fail(e.message); }
 }
+let loadRequest = 0, notesRequest = 0, historyEpoch = 0;
+let monthFreshUntil = 0;
+try { monthFreshUntil = Number(sessionStorage.dealRenameAt || 0) + 21600000; } catch(e){}
 async function load(month, fresh){
+  const version = ++loadRequest;
+  if(fresh){ historyEpoch++; Object.keys(HIST).forEach(k=>delete HIST[k]); }
   $('#rows').innerHTML = Array(8).fill('<div class="skel"></div>').join('');
   if(fresh) $('#reload').classList.add('spin');
-  try{ DATA = await api(Object.assign({action:'month', month:month}, fresh?{fresh:'1'}:{})); build();
+  try{ const data = await api(Object.assign({action:'month', month:month}, (fresh||Date.now()<monthFreshUntil)?{fresh:'1'}:{}));
+       if(version!==loadRequest) return;
+       DATA = data; build();
        if(fresh) toast('ดึงข้อมูลสดจาก Lark แล้ว'); }
-  catch(e){ fail(e.message); }
-  finally{ $('#reload').classList.remove('spin'); }
+  catch(e){ if(version===loadRequest) fail(e.message); }
+  finally{ if(version===loadRequest) $('#reload').classList.remove('spin'); }
 }
 const fail = m => { $('#rows').innerHTML = '<div class="empty"><b>ดึงข้อมูลไม่สำเร็จ</b>'+esc(m)+
   '<br>ตรวจว่าใส่ URL ของ Web App ในตัวแปร API แล้ว และตั้ง Who has access = Anyone</div>';
@@ -1113,6 +1129,7 @@ document.addEventListener('mouseout', e=>{ if(e.target.closest('.tick')) tip.cla
 /* ══ sheet ══ */
 function open(code){
   const r = DATA.rows.find(x=>x.code===code); if(!r) return;
+  PICK = '';
   const m = M[code];
   const cs = VIEW.cells(r).filter(Boolean);
   const tot = cs.reduce((s,c)=>Math.max(s,c.m||0),0);
@@ -1178,27 +1195,28 @@ const who = () => { try { return localStorage.dealWho || ''; } catch(e){ return 
 let PICK = '';
 
 async function post(body){
-  const r = await fetch(API, { method:'POST', headers:{'content-type':'application/json'},
-    body: JSON.stringify(Object.assign({}, body, KEY?{key:KEY}:{})) });
-  const j = await r.json();
-  if(!j.ok) throw new Error(j.error);
-  return j.data;
+  try {
+    const j = await DealApi.request(API, { method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify(Object.assign({}, body, KEY?{key:KEY}:{})) });
+    return j.data;
+  } catch(e){ throw new Error(e.message+' — ตรวจบันทึกก่อนส่งซ้ำ'); }
 }
 
 const FALLBACK_ST = ['รับเรื่องแล้ว','นัดช่างแล้ว','ช่างเข้าหน้างาน','ซ่อมเสร็จ','รอลูกค้าตอบ','ร้านปิดชั่วคราว','ปกติ ไม่ต้องทำอะไร'];
 
 async function loadNotes(code){
+  const version = ++notesRequest, panel = $('#tnow');
   let d;
   if(!API){ d = { notes: DEMO_NOTES[code] || [], statuses: FALLBACK_ST }; }
   else {
     try { d = await api({action:'notes', code:code}); }
-    catch(e){ const el=$('#tnow'); if(el) el.innerHTML = '<div class="tnone">โหลดบันทึกไม่ได้: '+esc(e.message)+'</div>'; return; }
+    catch(e){ const el=$('#tnow'); if(el===panel && version===notesRequest && el) el.innerHTML = '<div class="tnone">โหลดบันทึกไม่ได้: '+esc(e.message)+'</div>'; return; }
   }
+  if(version!==notesRequest || panel!==$('#tnow')) return;
   NOTES[code] = d.notes;
-  PICK = '';
   const sb = $('#stbtns'); if(!sb) return;
   sb.innerHTML = (d.statuses||FALLBACK_ST).map(x=>
-    '<button class="stbtn" data-s="'+esc(x)+'" aria-pressed="false">'+esc(x)+'</button>').join('');
+    '<button class="stbtn" data-s="'+esc(x)+'" aria-pressed="'+(x===PICK)+'">'+esc(x)+'</button>').join('');
   sb.onclick = e => { const b = e.target.closest('.stbtn'); if(!b) return;
     const on = b.getAttribute('aria-pressed')==='true';
     sb.querySelectorAll('.stbtn').forEach(x=>x.setAttribute('aria-pressed','false'));
@@ -1237,6 +1255,7 @@ function when(iso){
 }
 
 async function saveNote(r){
+  const panel = $('#tnow');
   const note = $('#tnote').value.trim();
   const by   = $('#tby').value.trim();
   if(!PICK && !note) return toast('เลือกสถานะ หรือพิมพ์ข้อความก่อน');
@@ -1248,15 +1267,19 @@ async function saveNote(r){
   try {
     if(API) await post({action:'note', code:r.code, name:r.name, status:PICK, note:note, by:by});
     NOTES[r.code] = [entry].concat(NOTES[r.code]||[]);
+    if(panel!==$('#tnow')) { toast('บันทึกแล้ว'); return; }
+    notesRequest++; // Discard pre-save reads, then reconcile with a fresh read below.
     $('#tnote').value = ''; PICK = '';
     $('#stbtns').querySelectorAll('.stbtn').forEach(x=>x.setAttribute('aria-pressed','false'));
     paintNotes(r.code);
     toast('บันทึกแล้ว');
+    if(API) loadNotes(r.code);
   } catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
   finally { btn.disabled = false; btn.textContent = 'บันทึก'; }
 }
 
 async function doRename(r){
+  const heading = $('#dname');
   const name = prompt('ชื่อตู้ใหม่', r.name);
   if(name==null) return;
   const v = name.trim();
@@ -1264,26 +1287,32 @@ async function doRename(r){
   const by = ($('#tby') && $('#tby').value.trim()) || who() || 'ไม่ระบุ';
   try {
     if(API) await post({action:'rename', code:r.code, name:v, by:by});
+    if(API){ monthFreshUntil = Date.now() + 21600000; try { sessionStorage.dealRenameAt = Date.now(); } catch(e){} }
     r.name = v;
-    $('#dname').innerHTML = esc(v)+' <button class="pen" id="rename" title="แก้ชื่อตู้">✎</button>';
-    $('#rename').onclick = () => doRename(r);
+    const current = DATA.rows.find(x=>x.code===r.code); if(current) current.name = v;
+    if(heading===$('#dname')){
+      $('#dname').innerHTML = esc(v)+' <button class="pen" id="rename" title="แก้ชื่อตู้">✎</button>';
+      $('#rename').onclick = () => doRename(r);
+    }
     render(); renderWatch();
     toast('เปลี่ยนชื่อแล้ว');
-    loadNotes(r.code);
+    if(heading===$('#dname')) loadNotes(r.code);
   } catch(e){ toast('เปลี่ยนชื่อไม่สำเร็จ: '+e.message); }
 }
 
 async function loadHistory(code){
+  const panel = $('#hist'), epoch = historyEpoch;
   let h = HIST[code];
   if(!h){
     if(!API){ h = demoHist(); }
     else{
-      try{ h = (await api({action:'history', code:code})).history; }
-      catch(e){ const el=$('#hist'); if(el) el.innerHTML = '<div class="muted">โหลดประวัติไม่ได้: '+esc(e.message)+'</div>'; return; }
+      try{ h = (await api(Object.assign({action:'history', code:code}, epoch?{fresh:'1'}:{}))).history; }
+      catch(e){ const el=$('#hist'); if(el===panel && epoch===historyEpoch && el) el.innerHTML = '<div class="muted">โหลดประวัติไม่ได้: '+esc(e.message)+'</div>'; return; }
     }
+    if(epoch!==historyEpoch) return;
     HIST[code] = h;
   }
-  const el = $('#hist'); if(!el) return;
+  const el = $('#hist'); if(!el || el!==panel) return;
   if(!h.length){ el.innerHTML = '<div class="muted">ยังไม่มีเดือนอื่นให้เทียบ</div>'; return; }
   const max = Math.max.apply(null, h.map(x=>x.total).concat([1]));
   el.innerHTML = '<div class="hist">'+ h.map(x=>
@@ -1292,7 +1321,7 @@ async function loadHistory(code){
       '<span class="hl">'+x.month.split('-')[0]+'</span></div>').join('') +'</div>'+
     '<div class="hvals">'+ h.map(x=>'<span>'+kb(x.total)+'</span>').join('') +'</div>';
 }
-function close(){ $('#drawer').classList.remove('on'); $('#scrim').classList.remove('on'); $('#drawer').setAttribute('aria-hidden','true'); }
+function close(){ notesRequest++; $('#drawer').classList.remove('on'); $('#scrim').classList.remove('on'); $('#drawer').setAttribute('aria-hidden','true'); }
 
 /* ══ command palette ══ */
 let CSEL = 0, CRES = [];
@@ -1628,7 +1657,7 @@ boot();
     var time=range.start+'~'+range.end; var ids=PERF_MACHINES.map(function(m){return m.mid;});
     var old=btn.textContent; btn.disabled=true; btn.textContent='\u23f3 \u0e01\u0e33\u0e25\u0e31\u0e07\u0e14\u0e36\u0e07...';
     var res;
-    try{ var r=await fetch('/api/perfume',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:token,time:time,ids:ids})}); res=await r.json(); }
+    try{ res=await DealApi.perfume(token,time,ids); }
     catch(e){ btn.disabled=false; btn.textContent=old; toastP('\u0e40\u0e23\u0e35\u0e22\u0e01 /api/perfume \u0e44\u0e21\u0e48\u0e44\u0e14\u0e49: '+e); return; }
     btn.disabled=false; btn.textContent=old;
     if(!res||!res.ok){ toastP('\u0e14\u0e36\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49: '+((res&&res.error)||'unknown')); return; }
