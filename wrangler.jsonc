@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "incomepeday",
-  "main": "src/index.js",
+  "main": "src/worker.js",
   "compatibility_date": "2025-06-01",
 
   // เสิร์ฟหน้าเว็บจาก public/ เท่านั้น
@@ -14,6 +14,9 @@
   },
 
   "observability": { "enabled": true },
+
+  "durable_objects": { "bindings": [{ "name": "CEM_SESSION", "class_name": "CemSession" }] },
+  "migrations": [{ "tag": "cem-session-v1", "new_sqlite_classes": ["CemSession"] }],
 
   // ปิด Preview URL สาธารณะ — กัน URL ของ build เก่าลอยแบบไม่มีใครล็อก
   "preview_urls": false

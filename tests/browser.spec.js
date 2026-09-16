@@ -14,7 +14,7 @@ async function setup(page, { baseline = false, onApi } = {}) {
   await page.route('**/*', async route => {
     const url = new URL(route.request().url());
     if (url.hostname !== 'dashboard.test') return route.abort();
-    if (url.pathname === '/api' || url.pathname === '/api/perfume') {
+    if (['/api','/api/perfume','/api/cem'].includes(url.pathname)) {
       if (onApi && await onApi(route, url)) return;
       const action = url.searchParams.get('action');
       let value;
@@ -26,6 +26,7 @@ async function setup(page, { baseline = false, onApi } = {}) {
       return route.fulfill({ json: { ok: true, data: value } });
     }
     if (url.pathname === '/api-client.js') return route.fulfill({ contentType: 'text/javascript', body: readFileSync('public/api-client.js', 'utf8') });
+    if (url.pathname === '/revenue-model.js') return route.fulfill({ contentType:'text/javascript',body:readFileSync('public/revenue-model.js','utf8') });
     return route.fulfill({ contentType: 'text/html', body: baseline ? original : readFileSync('public/index.html', 'utf8') });
   });
   await page.goto('https://dashboard.test/');
@@ -45,6 +46,52 @@ test('latest selected month wins when old response arrives late', async ({ page 
   await expect(page.locator('#rows')).toContainText('07-2026');
   await delay(500);
   await expect(page.locator('#rows')).toContainText('07-2026');
+});
+
+const cemCodes=Array.from({length:6},(_,i)=>'LO_'+String(i+1).padStart(4,'0'));
+function cemPart(batch){
+  const codes=cemCodes.slice(batch*5,(batch+1)*5);
+  return {batch,version:'test-version',codes,dates:['2026-09-01','2026-09-02'],today:'2026-09-02',current:true,
+    status:Object.fromEntries(codes.map(code=>[code,'ONLINE'])),
+    totals:[10000,2000].map(amount=>Object.fromEntries(codes.map(code=>[code,amount])))};
+}
+test('CEM batches merge atomically into existing rows and fresh propagates to every batch',async({page})=>{
+  const requests=[];
+  await setup(page,{onApi:async(route,url)=>{
+    if(url.searchParams.get('action')==='month'){
+      const d=data('09-2026');d.cem={batches:2,version:'test-version',codes:cemCodes};
+      await route.fulfill({json:{ok:true,data:d}});return true;
+    }
+    if(url.pathname==='/api/cem'){
+      requests.push(url.searchParams.get('fresh'));
+      const batch=Number(url.searchParams.get('batch'));if(batch===1)await delay(100);
+      await route.fulfill({json:{ok:true,data:cemPart(batch)}});return true;
+    }return false;
+  }});
+  const state=await page.evaluate(()=>({rows:DATA.rows.length,month:M.LO_0001.month,source:DATA.rows[0].revenueSource}));
+  expect(state).toEqual({rows:2,month:120,source:'cem'});
+  await page.click('#reload');await expect(page.locator('#rows .row')).toHaveCount(2);
+  expect(requests).toEqual([null,null,'1','1']);
+  await page.evaluate(()=>setMode('round'));
+  await expect(page.locator('#k-mon')).toHaveText('240บาท สะสมเดือนนี้');
+});
+test('failed CEM batch cannot publish partial totals or overwrite the displayed data model',async({page})=>{
+  let enabled=false;
+  await setup(page,{onApi:async(route,url)=>{
+    if(!enabled)return false;
+    if(url.searchParams.get('action')==='month'){
+      const d=data('09-2026');d.cem={batches:2,version:'test-version',codes:cemCodes};
+      await route.fulfill({json:{ok:true,data:d}});return true;
+    }
+    if(url.pathname==='/api/cem'){
+      if(url.searchParams.get('batch')==='1')await route.fulfill({status:502,json:{ok:false,error:'CEM session expired'}});
+      else await route.fulfill({json:{ok:true,data:cemPart(0)}});
+      return true;
+    }return false;
+  }});
+  enabled=true;await page.click('#reload');
+  await expect(page.locator('#rows')).toContainText('CEM session expired');
+  expect(await page.evaluate(()=>DATA.rows[0].revenueSource)).toBeUndefined();
 });
 
 test('notes for previously opened machine cannot overwrite current drawer', async ({ page }) => {
@@ -105,9 +152,13 @@ for (const width of [1440, 390]) test('unchanged dashboard and drawer appearance
   for (const page of [before, after]) {
     await page.evaluate(() => open('LO_0001'));
     await expect(page.locator('#tnow')).toContainText('LO_0001');
+    await expect(page.locator('#hist')).toContainText('ยังไม่มี');
     await page.clock.runFor(2000);
   }
-  expect((await after.screenshot({ animations: 'disabled' })).equals(await before.screenshot({ animations: 'disabled' })), 'drawer pixels match baseline').toBe(true);
+  const afterDrawer=await after.screenshot({animations:'disabled'}),beforeDrawer=await before.screenshot({animations:'disabled'});
+  writeFileSync(testInfo.outputPath('after-drawer.png'),afterDrawer);
+  writeFileSync(testInfo.outputPath('before-drawer.png'),beforeDrawer);
+  expect(afterDrawer.equals(beforeDrawer),'drawer pixels match baseline').toBe(true);
   await context.close();
 });
 

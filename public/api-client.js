@@ -47,5 +47,37 @@ globalThis.DealApi = (() => {
     if (failed && failed === Math.ceil(ids.length / 20)) throw lastError;
     return { ok: true, results };
   }
-  return { request, perfume };
+  async function cemMonth(data, api, params){
+    const manifest=data.cem;
+    const invalid=()=>new Error('ข้อมูล CEM ไม่ครบหรือเปลี่ยนระหว่างโหลด กรุณารีเฟรช');
+    if(!Number.isInteger(manifest.batches)||manifest.batches<1||manifest.batches>20||
+      typeof manifest.version!=='string'||!Array.isArray(manifest.codes)||
+      new Set(manifest.codes).size!==manifest.codes.length)throw invalid();
+    const endpoint=new URL(api,location.href);endpoint.pathname=endpoint.pathname.replace(/\/$/,'')+'/cem';
+    const parts=new Array(manifest.batches);
+    for(let batch=0;batch<manifest.batches;batch++){
+        const url=new URL(endpoint);
+        url.search=new URLSearchParams({month:params.month,batch:String(batch),version:manifest.version,
+          ...(params.fresh?{fresh:params.fresh}:{})});
+        parts[batch]=(await request(url.toString())).data;
+    }
+    const seen=new Set();let day;
+    for(let batch=0;batch<parts.length;batch++){
+      const part=parts[batch];
+      if(!part||part.batch!==batch||part.version!==manifest.version||!Array.isArray(part.codes)||
+        !Array.isArray(part.dates)||!Array.isArray(part.totals)||part.dates.length!==part.totals.length||
+        (day&&day!==part.today))throw invalid();
+      day=part.today;
+      for(const code of part.codes){
+        if(seen.has(code)||!manifest.codes.includes(code)||part.totals.some(t=>!Number.isSafeInteger(t[code])||t[code]<0))throw invalid();
+        seen.add(code);
+      }
+    }
+    if(seen.size!==manifest.codes.length)throw invalid();
+    const {mergeMonth}=await import('./revenue-model.js');
+    let result=data;
+    for(const part of parts)result=mergeMonth(result,part,{mapping:part.codes.map(code=>({code}))},'cem');
+    return result;
+  }
+  return { request, perfume, cemMonth };
 })();

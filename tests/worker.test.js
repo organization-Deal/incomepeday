@@ -1,6 +1,7 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import worker from '../src/index.js';
+import { cemConfig, readCemBatch } from '../src/cem.js';
 
 const realFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = realFetch; delete globalThis.caches; });
@@ -53,6 +54,28 @@ test('enabled EQLink merges before caching, fresh bypasses cache, and changed co
   extra.EQLINK_PASSWORD='changed-password';
   assert.equal((await h.request(path)).headers.get('x-cache'),'MISS');
   assert.doesNotMatch(JSON.stringify(result),/private-token|SERIAL1|test-password/);
+});
+
+test('CEM manifest avoids fleet fan-out in main request; batches cache independently and reject changed versions',async()=>{
+  const extra={CEM_REFRESH_TOKEN:'test-refresh-secret',CEM_MAPPING:'[{"code":"LO_0001","branch":10,"device":100}]'};
+  extra.CEM_SESSION={getByName:()=>({readBatch:(month,batch)=>readCemBatch(cemConfig(extra),month,batch)})};
+  const h=setup((url)=>{
+    const path=new URL(url).pathname;
+    if(path.includes('/macros/'))return json({ok:true,data:{month:'02-2024',rows:[],slots:[]}});
+    if(path.endsWith('/refresh_token'))return json({bearer:'private-bearer'});
+    if(path.endsWith('/branch_info'))return json({id:10,currency_type:'THB',is_time_close:false,
+      qr_box_machine:[{id:100,currency_type:'THB',is_time_to_close:false,status:'OFFLINE'}]});
+    return json({details:Array.from({length:29},(_,i)=>({day:i+1,total_summary:10}))});
+  },extra);
+  const month=await(await h.request('/api?action=month&month=02-2024')).json();
+  assert.equal(h.calls.length,1);assert.equal(month.data.cem.batches,1);
+  const path='/api/cem?month=02-2024&batch=0&version='+month.data.cem.version;
+  const first=await(await h.request(path)).json();assert.equal(first.data.totals.length,29);assert.equal(h.calls.length,4);
+  await h.request(path);assert.equal(h.calls.length,4);
+  await h.request(path+'&fresh=1');assert.equal(h.calls.length,7);
+  assert.doesNotMatch(JSON.stringify(first),/private-bearer|test-refresh-secret|"device"|"branch"/);
+  extra.CEM_REFRESH_TOKEN='renewed-secret';
+  assert.equal((await h.request(path)).status,409);assert.equal(h.calls.length,7);
 });
 test('GAS application errors are never cached', async () => {
   const h = setup(() => json({ ok: false, error: 'unauthorized' }));

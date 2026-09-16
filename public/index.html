@@ -696,13 +696,14 @@ addEventListener('resize', knobAll);
 async function api(p){
   const q = new URLSearchParams(Object.assign({}, p, KEY?{key:KEY}:{}));
   const j = await DealApi.request(API+'?'+q);
-  const d = j.data;
+  let d = j.data;
   if(!d || typeof d!=='object' ||
     (p.action==='months' && (!Array.isArray(d.months) || !d.months.every(m=>typeof m==='string'))) ||
     (p.action==='month' && (!Array.isArray(d.slots) || !Array.isArray(d.rows) ||
       !d.slots.every(s=>typeof s==='string') || !d.rows.every(r=>r && typeof r.code==='string' && Array.isArray(r.cells)))) ||
     (p.action==='notes' && (!Array.isArray(d.notes) || (d.statuses!=null && !Array.isArray(d.statuses)))) ||
     (p.action==='history' && !Array.isArray(d.history))) throw new Error('รูปแบบข้อมูลจาก API ไม่ถูกต้อง');
+  if(p.action==='month' && d.cem) d=await DealApi.cemMonth(d,API,p);
   return d;
 }
 async function boot(){
@@ -1013,9 +1014,9 @@ function render(){
   const li = labels.length-1;
   const tally = {ONLINE:0,OFFLINE:0,ERROR:0,UNKNOWN:0};
   let day=0, mon=0;
-  rows.forEach(r=>{ const cs = CELLS(r); const c = cs[li] || lastOf(cs) || (r.revenueSource==='eqlink'?{s:'UNKNOWN'}:null); if(!c) return;
+  rows.forEach(r=>{ const cs = CELLS(r); const c = cs[li] || lastOf(cs) || (r.revenueSource?{s:'UNKNOWN'}:null); if(!c) return;
     tally[currentCell(r,cs).s]++; day += c.d||0;
-    mon += r.revenueSource==='eqlink' ? M[r.code].month : (c.m||0); });
+    mon += r.revenueSource ? M[r.code].month : (c.m||0); });
   const n = rows.length || 1;
   const ups  = rows.map(r=>M[r.code].uptime).filter(v=>v!=null);
   const upxs = rows.map(r=>M[r.code].upx).filter(v=>v!=null);

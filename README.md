@@ -13,8 +13,8 @@ Lark Bitable  ←→  Apps Script  ──→  Cloudflare Worker  ──→  ห�
 | **GitHub** | เก็บโค้ดหน้าเว็บ | repo นี้ |
 | **Cloudflare** | โฮสต์หน้าเว็บ + ซ่อน URL ของ Apps Script + แคช | Worker `incomepeday` |
 
-ไม่มี KV ไม่มี Queue ไม่มี cron ฝั่ง Cloudflare
-Lark เก็บทะเบียนและบันทึกงาน ส่วนตู้ชกมวยที่จับคู่ไว้สามารถอ่านรายได้และสถานะจาก EQLink ผ่าน Worker โดยตรง
+ไม่มี KV namespace ไม่มี Queue ไม่มี cron ฝั่ง Cloudflare; CEM ใช้ SQLite Durable Object ดูแล session
+Lark เก็บทะเบียนและบันทึกงาน ส่วนตู้ชกมวยที่จับคู่ไว้สามารถอ่านรายได้และสถานะจาก EQLink และ CEM QR-Box ผ่าน Worker
 
 ---
 
@@ -31,12 +31,16 @@ Worker ถือ URL + token ไว้ฝั่ง server เว็บเห็�
 .
 ├── public/
 │   ├── index.html      หน้าตาและการคำนวณเดิม ไม่มี build step
-│   └── api-client.js   การเชื่อมต่อฝั่งเว็บและแบ่งชุดตู้น้ำหอม
+│   ├── api-client.js   การเชื่อมต่อฝั่งเว็บและแบ่งชุด API
+│   └── revenue-model.js รวมข้อมูลรายวันร่วมกันระหว่าง Worker/เว็บ
 ├── src/
 │   ├── index.js        Worker: routing, Apps Script, cache
+│   ├── worker.js       Cloudflare entrypoint + CemSession Durable Object
+│   ├── cem-session-core.js ต่ออายุ session กลางและเก็บ token ฝั่ง server
 │   ├── http.js         JSON validation, timeout, bounded reads
 │   ├── perfume.js      DKM proxy (ใช้ implementation เดียว)
-│   └── eqlink.js       EQLink read adapter + จับคู่รหัส LO
+│   ├── eqlink.js       EQLink read adapter + จับคู่รหัส LO
+│   └── cem.js          CEM QR-Box read adapter + API แบบแบ่งชุด
 ├── wrangler.jsonc
 ├── package.json
 ├── package-lock.json
@@ -184,6 +188,47 @@ Apps Script มี timeout 30 วินาทีต่อคำขอ อ่า�
 ปุ่มรีเฟรช bypass แคช หาก EQLink ล้มเหลวจะไม่บันทึกคำตอบลงแคชหรือแทนยอดที่ขาดด้วยศูนย์
 ต้องตั้ง secrets และ deploy Worker เวอร์ชันใหม่นี้จึงจะเปิดใช้จริง การ push draft PR อย่างเดียว
 ยังไม่เปิดการเชื่อมต่อใน production
+
+### เชื่อม CEM QR-Box เพิ่มเติม
+
+ตั้ง Worker secrets `CEM_REFRESH_TOKEN` และ `CEM_MAPPING` โดย mapping เป็น JSON array
+เช่น `[{"code":"LO_0001","branch":10,"device":100}]` (ตัวเลขตัวอย่างเท่านั้น)
+ใช้ branch ID และ machine ID ที่ตรวจแล้วว่ามีเครื่องเดียวต่อสาขา ชื่อตรงทะเบียนอย่างแน่นอน
+สกุลเงินของสาขาและเครื่องเป็น THB และไม่ได้ตั้งเวลาปิดยอดพิเศษ ตรวจเงื่อนไขเหล่านี้ซ้ำทุกครั้ง
+รหัส LO ต้องไม่ซ้ำกับ EQLink หากซ้ำระบบจะหยุดให้เลือกแหล่งเดียวเพื่อไม่บวกยอดซ้ำ
+รหัสที่ไม่มีในตารางเดือนนั้นไม่ถูกเพิ่มเป็นแถวใหม่
+
+CEM รายงานรายวันเฉพาะวันที่ปิดยอดแล้ว จึงอ่านยอดวันนี้จาก `summary_report` แยกแล้วรวมครั้งเดียว
+ตรวจวัน/เดือนของรายงาน ความครบถ้วนของวัน รหัสเครื่อง สกุลเงิน และช่วงปิดยอดก่อนนำมาใช้
+ยอดในหน่วยเงินบาท; ใช้สตางค์ระหว่างรวมเช่นเดียวกับ EQLink สถานะ ONLINE/OFFLINE อ่านจากเครื่อง
+และไม่ใช้สถานะปัจจุบันเติมประวัติย้อนหลัง
+
+`/api?action=month` ส่งรายการชุด CEM ให้ client อ่าน `/api/cem` ชุดละ 5 เครื่อง
+สูงสุด 16 คำขอ upstream ต่อชุด (refresh + 3 ต่อเครื่อง) เพื่อไม่รวมกับ 34 คำขอของ EQLink
+ใน Worker invocation เดียว เว็บเรียกทีละชุด และแต่ละชุดอ่านพร้อมกันไม่เกิน 2 เครื่อง
+deadline 45 วินาทีต่อชุดรวมการต่ออายุ session / timeout 12 วินาทีต่อคำขอ ไม่มี retry อัตโนมัติ
+หากชุดใดล้มเหลวจะไม่แสดงยอดรวมบางส่วน แคชชุดที่ตรวจครบแล้ว 10 นาที/6 ชั่วโมงเช่น API เดิม
+การเปลี่ยน mapping/session หรือข้ามวันจะไม่ปะปนแคชชุดเดิม ปุ่มรีเฟรชส่ง fresh ไปทุกชุด
+ประวัติรองรับ 36 รายการเดือน อ่านรายงานรายปีหนึ่งครั้งต่อปีที่ใช้
+
+**Session กลาง:** CEM จำกัดจำนวนอุปกรณ์ที่ล็อกอิน และการ refresh อาจทำให้ bearer เดิมใช้ไม่ได้
+จึงมี `CEM_SESSION` SQLite Durable Object หนึ่งตัวต่อ seeded login session ดูแล token และเรียงคำขอ
+ไม่ refresh ระหว่างที่ชุดก่อนกำลังอ่านข้อมูล ใช้ bearer เดิมจนเหลืออายุไม่เกิน 60 วินาที แล้วบันทึก
+refresh token ที่หมุนใหม่ลง durable storage ก่อนอ่านรายงาน จึงอยู่รอดเมื่อ object ถูกพัก/เริ่มใหม่
+รอคิวได้ไม่เกิน 15 วินาที คิวรวมไม่เกิน 8; เกินกำหนดแสดงข้อผิดพลาดแทนค้างหรือยิงซ้ำ
+โครง binding และ migration `cem-session-v1` อยู่ใน wrangler.jsonc ต้อง deploy พร้อมโค้ดนี้
+
+Session ที่ไม่ได้ใช้นานจนหมดอายุหรือถูกเพิกถอนต้องต่ออายุด้วยการเข้าสู่ระบบที่ได้รับอนุญาต
+กรณีนี้แสดงข้อผิดพลาดในพื้นที่เดิม ไม่ลองล็อกอินซ้ำหรือไล่อุปกรณ์อื่นออก
+local `.dev.vars` ใช้ `CEM_USERNAME` และ `CEM_PASSWORD` สำหรับการต่ออายุครั้งเดียวได้:
+
+```bash
+node scripts/refresh-cem-session.mjs
+```
+
+คำสั่งนี้อัปเดตเฉพาะ `CEM_REFRESH_TOKEN` ในไฟล์ local ที่ถูก ignore และไม่พิมพ์ token
+ไม่ได้เปลี่ยน secret บน Cloudflare; ต้องอัปเดต Worker secret แยกเมื่อเปิดใช้/ต่ออายุ production
+รหัสผ่าน ชื่อบัญชี mapping จริง token และข้อมูลดิบจาก CEM ไม่รวมใน Git หรือไฟล์ public
 
 ตู้น้ำหอมแบ่งฝั่งเว็บชุดละ 20 ตู้ และ Worker เรียก DKM พร้อมกันไม่เกิน 6 ตู้ (timeout 10 วินาทีต่อตู้, ไม่ retry) API รับไม่เกิน 40 IDs ต่อคำขอ ข้อมูลที่อ่านไม่ได้เป็น `null` ไม่แปลงเป็นรายได้ 0 และเมื่อบางชุดล้มเหลวยังแสดงชุดที่สำเร็จได้
 

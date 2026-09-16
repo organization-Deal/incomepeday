@@ -14,7 +14,7 @@ function mock(change = () => {}) {
   const calls = []; let active = 0, peak = 0;
   globalThis.fetch = async (url, init) => {
     assert.equal(new URL(url).origin, 'https://laundromat-th.eqlink.top');
-    assert.equal(init.redirect, 'error');
+    assert.equal(init.redirect, 'manual');
     const body = JSON.parse(init.body); const path = new URL(url).pathname;
     calls.push({ path, body }); active++; peak = Math.max(peak, active);
     await new Promise(resolve => setTimeout(resolve, 1)); active--;

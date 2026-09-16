@@ -1,6 +1,7 @@
 import { HttpError, json, requestJson, requestBody } from './http.js';
 import { handlePerfume } from './perfume.js';
 import { eqlinkConfig, configFingerprint, readMonth, mergeMonth, replaceHistory } from './eqlink.js';
+import { cemConfig, cemManifest, validateProviders, handleCem, cemCoordinator } from './cem.js';
 
 const ALLOWED = ['months', 'month', 'history', 'notes'];
 const WRITE = ['note', 'rename'];
@@ -18,6 +19,11 @@ export default {
         if (request.method === 'POST') return await handlePerfume(request);
         if (request.method === 'GET') return json({ ok: true, msg: 'perfume proxy พร้อม — ใช้ POST {token,time,ids}' });
         return json({ ok: false, error: 'method not allowed' }, 405);
+      }
+      if (url.pathname === '/api/cem') {
+        if(request.method!=='GET') return json({ok:false,error:'method not allowed'},405);
+        validateProviders(eqlinkConfig(env),cemConfig(env));
+        return await handleCem(url,env,ctx);
       }
       if (url.pathname.startsWith('/api/')) return json({ ok: false, error: 'ไม่พบ API' }, 404);
       return env.ASSETS.fetch(request);
@@ -73,7 +79,9 @@ async function handleApi(url, env, ctx) {
   const keyUrl = new URL('/api', url.origin);
   keyUrl.search = params.toString();
   const boxing = ['month', 'history'].includes(action) ? eqlinkConfig(env) : null;
-  keyUrl.searchParams.set('_cache', 'v3-' + await configFingerprint(boxing));
+  const cem = ['month', 'history'].includes(action) ? cemConfig(env) : null;
+  validateProviders(boxing,cem);
+  keyUrl.searchParams.set('_cache', 'v4-' + await configFingerprint(boxing||cem?{boxing,cem}:null));
   const cacheKey = new Request(keyUrl);
   const cache = globalThis.caches?.default;
   if (cache && !fresh) {
@@ -93,6 +101,12 @@ async function handleApi(url, env, ctx) {
   ]);
   if (source) data.data = mergeMonth(data.data, source, boxing);
   if (boxing && action === 'history') data.data = await replaceHistory(data.data, params.get('code'), boxing);
+  if (cem && action === 'history' && cem.mapping.some(m=>m.code===params.get('code'))) {
+    const stub=await cemCoordinator(env,cem);
+    try{data.data=await stub.history(data.data,params.get('code'));}
+    catch{throw new HttpError('อ่านประวัติ CEM ไม่สำเร็จ — ตรวจ session และช่วงเวลารายงาน');}
+  }
+  if (cem && action === 'month') data.data.cem = await cemManifest(cem);
   const res = json(data);
   res.headers.set('x-cache', live ? 'BYPASS' : 'MISS');
   if (cache && !live) {
