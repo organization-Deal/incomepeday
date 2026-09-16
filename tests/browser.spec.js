@@ -387,3 +387,13 @@ test('latest online and offline timestamps are shown as Bangkok observations',as
  await page.evaluate(()=>Workspace.openMachine('LO_0001'));const last=page.locator('#fp-online-time .ot-last');
  await expect(last).toContainText('พบออฟไลน์ล่าสุด:');await expect(last).toContainText('10:05');await expect(last).toContainText('11:25');
 });
+
+test('source-history transitions are labelled separately from later dashboard observations',async({page})=>{
+ await setup(page,{onApi:async(route,url)=>{
+  if(url.pathname!=='/api/online-time')return false;
+  const d={code:'LO_0001',onlineMs:0,offlineMs:0,unknownMs:0,elapsedMs:0,observations:0,sourceHistory:{provider:'cem',complete:true,latestOnlineAt:Date.parse('2026-09-16T03:05:00Z'),latestOfflineAt:Date.parse('2026-09-15T15:30:00Z')}};
+  await route.fulfill({json:{ok:true,data:url.searchParams.has('code')?d:{rows:[d]}}});return true;
+ }});
+ await expect(page.locator('#rows .row[data-code="LO_0001"]')).toContainText('ออนไลน์ล่าสุดจากต้นทาง:');
+ await page.evaluate(()=>Workspace.openMachine('LO_0001'));const last=page.locator('#fp-online-time .ot-last');await expect(last).toContainText('10:05');await expect(last).toContainText('22:30');
+});

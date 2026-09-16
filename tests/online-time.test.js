@@ -53,3 +53,9 @@ test('latest online/offline observations survive unknown reads and day rollover'
  assert.equal(d.latestOnlineAt,on.at);assert.equal(d.latestOfflineAt,off.at);
  const other=await core.day('LO_0002','2026-09-17',now);assert.equal(other.latestOnlineAt,null);assert.equal(other.latestOfflineAt,null);
 });
+
+test('source transitions remain distinct from later polling observations',async()=>{
+ const core=new OnlineTimeCore(store()),h={provider:'cem',checkedAt:time('2026-09-16T12:00:00'),latestOnlineAt:time('2026-09-16T10:00:00'),latestOfflineAt:time('2026-09-15T22:00:00'),complete:true};
+ await core.record([{...sample('2026-09-16T12:00:00'),sourceHistory:h}]);await core.record([sample('2026-09-16T12:05:00')]);
+ const d=await core.day('LO_0001','2026-09-16');assert.equal(d.sourceHistory.latestOnlineAt,h.latestOnlineAt);assert.equal(d.latestOnlineAt,time('2026-09-16T12:05:00'));
+});

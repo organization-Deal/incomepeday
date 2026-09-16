@@ -1,3 +1,4 @@
+import {latestCemEvents} from './source-status.js';
 import { readMapping } from './fleet.js';
 import { HttpError, requestJson, json } from './http.js';
 import { monthDates, configFingerprint } from './eqlink.js';
@@ -174,12 +175,27 @@ export async function cemCoordinator(env,config){
 export async function readCemStatuses(config,batch,accessToken,deadline){
  const size=5;if(!Number.isInteger(batch)||batch<0||batch>=Math.ceil(config.mapping.length/size))throw new HttpError('ชุดสถานะไม่ถูกต้อง',400);
  const call=await session(config,accessToken,deadline);
- return bounded(config.mapping.slice(batch*size,(batch+1)*size),async m=>{
+ // Prioritize all current observations; optional history must not starve later machines.
+ const observations=await bounded(config.mapping.slice(batch*size,(batch+1)*size),async m=>{
   try{
    const data=await call('/api/restrict/machine/qrbox/branch_info?id='+m.branch);
    const row=data?.qr_box_machine?.find(r=>r.id===m.device);
    if(data?.id!==m.branch||!row)throw fail();
-   return {code:m.code,at:Date.now(),status:['ONLINE','OFFLINE'].includes(row.status)?row.status:'UNKNOWN'};
-  }catch{return {code:m.code,at:Date.now(),status:'UNKNOWN'};}
+   return {mac:row.mac_address,sample:{code:m.code,at:Date.now(),status:['ONLINE','OFFLINE'].includes(row.status)?row.status:'UNKNOWN'}};
+  }catch{return {sample:{code:m.code,at:Date.now(),status:'UNKNOWN'}};}
+ });
+ return bounded(observations,async({mac,sample})=>{
+  try{
+   if(typeof mac!=='string'||!mac)throw fail();
+   const history={latestOnlineAt:null,latestOfflineAt:null,checkedAt:Date.now(),provider:'cem',complete:false};
+   for(let page=1;page<=3;page++){
+    const data=await call('/api/restrict/machine/state-history/'+encodeURIComponent(mac)+'?'+new URLSearchParams({page:String(page),limit:'100',project:'qrbox'}));
+    if(data?.pagination?.page!==page)throw fail();
+    const latest=latestCemEvents(data);history.latestOnlineAt??=latest.latestOnlineAt;history.latestOfflineAt??=latest.latestOfflineAt;
+    if((history.latestOnlineAt!==null&&history.latestOfflineAt!==null)||page>=data.pagination.total_page){history.complete=true;break;}
+   }
+   sample.sourceHistory=history;
+  }catch{sample.sourceHistoryError=true;}
+  return sample;
  });
 }

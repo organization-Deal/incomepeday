@@ -37,3 +37,19 @@ test('fleet daily summary uses one ledger call and only configured machine ident
  const response=await handleOnlineTime(new Request('https://dashboard.test/api/online-time?date=2026-09-16'),env);
  const body=await response.json();assert.equal(body.data.rows[0].seenOnline,true);assert.equal(calls,1);
 });
+
+test('CEM resolves history by mapped device, reads older pages if necessary, and preserves status on history failure',async()=>{
+ const mapping=[{code:'LO_0001',branch:1,device:1}];let calls=0;
+ globalThis.fetch=async url=>{calls++;if(url.includes('branch_info'))return Response.json({id:1,qr_box_machine:[{id:1,mac_address:'test-mac',status:'ONLINE'}]});
+ assert.ok(url.includes('/state-history/test-mac'));const page=Number(new URL(url).searchParams.get('page'));return Response.json({pagination:{page,total_page:2},result:page===1?[{state:'ONLINE',record_at:'2026-09-16T00:00:00Z'}]:[{state:'OFFLINE',record_at:'2026-09-15T00:00:00Z'}]});};
+ const [sample]=await readCemStatuses({mapping},0,'test',Date.now()+45000);assert.equal(sample.status,'ONLINE');assert.equal(sample.sourceHistory.complete,true);assert.equal(sample.sourceHistory.latestOfflineAt,Date.parse('2026-09-15T00:00:00Z'));assert.equal(calls,3);
+ globalThis.fetch=async url=>url.includes('branch_info')?Response.json({id:1,qr_box_machine:[{id:1,mac_address:'test-mac',status:'ONLINE'}]}):new Response('failed',{status:503});
+ const [failed]=await readCemStatuses({mapping},0,'test',Date.now()+45000);assert.equal(failed.status,'ONLINE');assert.equal(failed.sourceHistoryError,true);
+});
+
+test('all current statuses are read before optional history begins',async()=>{
+ const mapping=Array.from({length:5},(_,i)=>({code:'LO_000'+(i+1),branch:i+1,device:i+1}));let statuses=0;
+ globalThis.fetch=async url=>{if(url.includes('branch_info')){statuses++;const id=Number(new URL(url).searchParams.get('id'));return Response.json({id,qr_box_machine:[{id,mac_address:'mac-'+id,status:'ONLINE'}]});}
+ assert.equal(statuses,5);return new Response('unavailable',{status:503});};
+ const result=await readCemStatuses({mapping},0,'test',Date.now()+45000);assert.equal(result.filter(r=>r.status==='ONLINE').length,5);
+});

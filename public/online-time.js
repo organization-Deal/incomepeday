@@ -2,7 +2,7 @@ globalThis.DealOnlineTime=(()=>{
  const today=()=>new Date(Date.now()+7*3600000).toISOString().slice(0,10);
  const duration=ms=>{const minutes=Math.floor(ms/60000);return Math.floor(minutes/60)+' ชม. '+minutes%60+' นาที';};
  const stamp=at=>Number.isFinite(at)?new Date(at).toLocaleString('th-TH',{timeZone:'Asia/Bangkok',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}):'ยังไม่มีบันทึก';
- const latest=d=>'พบออนไลน์ล่าสุด: '+stamp(d?.latestOnlineAt)+' · พบออฟไลน์ล่าสุด: '+stamp(d?.latestOfflineAt);
+ const latest=d=>{const h=d?.sourceHistory;return h?'ออนไลน์ล่าสุดจากต้นทาง: '+stamp(h.latestOnlineAt)+' · ออฟไลน์ล่าสุดจากต้นทาง: '+stamp(h.latestOfflineAt)+(h.complete?'':' · ประวัติยังไม่ครบ'):'พบออนไลน์ล่าสุด: '+stamp(d?.latestOnlineAt)+' · พบออฟไลน์ล่าสุด: '+stamp(d?.latestOfflineAt);};
  const headline=d=>d?.seenOnline||d?.onlineMs>0?'เคยออนไลน์แล้ว':d?.observations?'ยังไม่พบออนไลน์ในช่วงที่เก็บข้อมูล':'ยังไม่มีข้อมูลยืนยัน';
  const total=d=>d?.seenOnline||d?.onlineMs>0?(d.onlineMs>=60000?'รวม ≈ '+duration(d.onlineMs):d.onlineMs>0?'รวมประมาณน้อยกว่า 1 นาที':'พบออนไลน์แล้ว · รอข้อมูลเพื่อคำนวณเวลา'):d?.observations?'พบออนไลน์สะสม 0 ชม. 0 นาที':'เวลาสะสมยังไม่ทราบ';
  let fleetCache=null;

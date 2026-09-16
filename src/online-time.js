@@ -31,6 +31,11 @@ export class OnlineTimeCore{
     }
     const value=await entry(dateOf(sample.at));value.observations++;value.lastObservedAt=sample.at;if(sample.status==='ONLINE')value.seenOnline=true;
     for(const {key,value} of entries.values())await tx.put(key,value);
+    if(sample.sourceHistory){
+     const h=sample.sourceHistory;
+     if(h.provider!=='cem'||!Number.isFinite(h.checkedAt)||[h.latestOnlineAt,h.latestOfflineAt].some(v=>v!==null&&(!Number.isFinite(v)||v<0||v>now+60000)))throw new HttpError('ประวัติต้นทางไม่ถูกต้อง',400);
+     await tx.put('source:'+sample.code,h);
+    }
     await tx.put(lastKey,{at:sample.at,status:sample.status,
      latestOnlineAt:sample.status==='ONLINE'?sample.at:last?.latestOnlineAt??(last?.status==='ONLINE'?last.at:null),
      latestOfflineAt:sample.status==='OFFLINE'?sample.at:last?.latestOfflineAt??(last?.status==='OFFLINE'?last.at:null)});accepted++;
@@ -47,9 +52,11 @@ export class OnlineTimeCore{
   const [start,end]=dayBounds(date);if(start>now)throw new HttpError('ยังไม่ถึงวันที่เลือก',400);
   const value=await this.storage.get('day:'+date+':'+code)||{onlineMs:0,offlineMs:0,observations:0};
   const latest=await this.storage.get('last:'+code);
+  const sourceHistory=await this.storage.get('source:'+code)||null;
   const elapsedMs=Math.min(now,end)-start;
-  return {...value,latestOnlineAt:latest?.latestOnlineAt??(latest?.status==='ONLINE'?latest.at:null),
-   latestOfflineAt:latest?.latestOfflineAt??(latest?.status==='OFFLINE'?latest.at:null),seenOnline:value.seenOnline===true||value.onlineMs>0,code,date,elapsedMs,unknownMs:Math.max(0,elapsedMs-value.onlineMs-value.offlineMs),closed:now>=end,
+  return {...value,sourceHistory,latestOnlineAt:latest?.latestOnlineAt??(latest?.status==='ONLINE'?latest.at:null),
+   latestOfflineAt:latest?.latestOfflineAt??(latest?.status==='OFFLINE'?latest.at:null),seenOnline:value.seenOnline===true||value.onlineMs>0||
+    (sourceHistory?.latestOnlineAt!=null&&sourceHistory.latestOnlineAt>=start&&sourceHistory.latestOnlineAt<Math.min(now,end)),code,date,elapsedMs,unknownMs:Math.max(0,elapsedMs-value.onlineMs-value.offlineMs),closed:now>=end,
    intervalMinutes:5,maxGapMinutes:10,estimated:true,timeZone:'Asia/Bangkok'};
  }
 }
