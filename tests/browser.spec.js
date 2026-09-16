@@ -25,6 +25,7 @@ async function setup(page, { baseline = false, onApi, expectedRows=2, reducedMot
       else value = { history: [] };
       return route.fulfill({ json: { ok: true, data: value } });
     }
+    if(url.pathname==='/revenue-groups.js')return route.fulfill({contentType:'text/javascript',body:readFileSync('public/revenue-groups.js','utf8')});
     if (url.pathname === '/api-client.js') return route.fulfill({ contentType: 'text/javascript', body: readFileSync('public/api-client.js', 'utf8') });
     if (url.pathname === '/revenue-model.js') return route.fulfill({ contentType:'text/javascript',body:readFileSync('public/revenue-model.js','utf8') });
     return route.fulfill({ contentType: 'text/html', body: baseline ? original : readFileSync('public/index.html', 'utf8') });
@@ -139,6 +140,7 @@ for (const width of [1440, 390]) test('unchanged dashboard and drawer appearance
   const context = await browser.newContext({ viewport: { width, height: 1000 }, deviceScaleFactor: 1 });
   const before = await context.newPage(), after = await context.newPage();
   await setup(before, { baseline: true }); await setup(after);
+  await after.addStyleTag({content:'#revenue-groups{display:none!important}'});
   for (const theme of ['light', 'dark']) {
     for (const page of [before, after]) {
       await page.evaluate(t => setTheme(t), theme); await page.clock.runFor(2000);
@@ -299,4 +301,26 @@ test('unavailable KPI cancels an older numeric animation',async({page})=>{
  await page.evaluate(()=>setNum('#k-up',100));await page.clock.runFor(100);
  await page.evaluate(()=>setNum('#k-up',null));await page.clock.runFor(1500);
  await expect(page.locator('#k-up')).toContainText('–');
+});
+
+test('revenue groups partition machines and filter the original table on desktop and mobile',async({page})=>{
+ await setup(page,{expectedRows:5,onApi:async(route,url)=>{
+  if(url.searchParams.get('action')!=='month')return false;
+  const d=data('09-2026');d.updated='2026-09-16T09:00:00Z';d.dailyLabels=['13/09','14/09','15/09'];d.slots=[];
+  d.rows=['OFFLINE','OFFLINE','ONLINE','ONLINE','ONLINE'].map((status,i)=>({code:'LO_000'+(i+1),name:'Group '+i,cells:[],revenueSource:'cem',currentStatus:status,
+   daily:Object.fromEntries(d.dailyLabels.map(day=>[day,{s:'UNKNOWN',d:i===4?null:(i===1||i===3?10:0),m:0,closed:true}]))}));
+  await route.fulfill({json:{ok:true,data:d}});return true;
+ }});
+ for(const key of ['offline-zero','offline-money','online-zero','online-money','unknown']){
+  await expect(page.locator('[data-group-count="'+key+'"]')).toHaveText('1');
+  await page.locator('[data-revenue-group="'+key+'"]').click();await expect(page.locator('#rows .row')).toHaveCount(1);
+  expect(await page.evaluate(()=>GROUPS[LIST[0].code])).toBe(key);
+ }
+ await page.locator('[data-revenue-group=""]').click();await expect(page.locator('#rows .row')).toHaveCount(5);
+ await page.locator('[data-revenue-group="offline-zero"]').click();
+ await page.evaluate(()=>setFilter('ONLINE'));await expect(page.locator('#rows .row')).toHaveCount(3);
+ await page.setViewportSize({width:390,height:844});await page.locator('#revenue-groups').scrollIntoViewIfNeeded();
+ expect(await page.locator('#revenue-groups').evaluate(el=>Array.from(el.querySelectorAll('*')).every(n=>n.getBoundingClientRect().right<=innerWidth+1&&n.getBoundingClientRect().left>=0))).toBe(true);
+ await page.locator('[data-revenue-group="online-money"]').click();await expect(page.locator('#rows .row')).toHaveCount(1);
+ await page.locator('#rows .row').click();await expect(page.locator('#dname')).toContainText('Group 3');
 });

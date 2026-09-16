@@ -482,6 +482,11 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
   .ops-chart,.ops-side{padding:15px}#healthChart{height:190px}.ops-updated{display:none}
 }
 
+.revenue-group-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.revenue-group{padding:18px;text-align:left;color:var(--ink);cursor:pointer;font:inherit;display:flex;flex-direction:column;gap:10px}
+.revenue-group span{font-size:13px;font-weight:600}.revenue-group strong{font-family:var(--disp);font-size:32px}.revenue-group small{color:var(--ink-3);font-size:11px}
+.revenue-group[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:2px}.group-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px 0;font-size:12px;color:var(--ink-3)}.group-actions span{margin-right:auto}
+@media(max-width:1000px){.revenue-group-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.revenue-group-grid{grid-template-columns:1fr}.revenue-group{padding:16px}}
 </style>
 </head>
 <body>
@@ -541,6 +546,17 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
       <div class="ops-side-item amber" data-ops-watch="short"><i>3</i><div><b>ดับ 2–6 วัน</b><small>ติดตามก่อนเป็นปัญหายาว</small></div><strong id="ops-short">0</strong></div>
       <div class="ops-side-item gray" data-ops-watch="err"><i>?</i><div><b>เช็กไม่ได้ / ไม่มีข้อมูล</b><small>ตรวจระบบล็อกอินและ API</small></div><strong id="ops-error">0</strong></div>
     </div></div>
+  </section>
+
+  <section id="revenue-groups" aria-label="หมวดตู้ตามสถานะและรายได้">
+    <div class="sect"><h2>สถานะตู้และรายได้ 3 วัน</h2><div class="cap" id="group-window"></div></div>
+    <div class="revenue-group-grid">
+      <button class="card revenue-group" data-revenue-group="offline-zero" aria-pressed="false"><span>ออฟไลน์ · ไม่มียอดเงิน</span><strong data-group-count="offline-zero">0</strong><small>ไม่มีรายได้ครบ 3 วันที่ปิดยอดแล้ว</small></button>
+      <button class="card revenue-group" data-revenue-group="offline-money" aria-pressed="false"><span>ออฟไลน์ · มียอดเงิน</span><strong data-group-count="offline-money">0</strong><small>มีรายได้ใน 3 วันที่ปิดยอดแล้ว</small></button>
+      <button class="card revenue-group" data-revenue-group="online-zero" aria-pressed="false"><span>ออนไลน์ · ไม่มียอดเกิน 2 วัน</span><strong data-group-count="online-zero">0</strong><small>ไม่มีรายได้ต่อเนื่องอย่างน้อย 3 วัน</small></button>
+      <button class="card revenue-group" data-revenue-group="online-money" aria-pressed="false"><span>ออนไลน์ · มียอดเงิน</span><strong data-group-count="online-money">0</strong><small>มีรายได้ใน 3 วันที่ปิดยอดแล้ว</small></button>
+    </div>
+    <div class="group-actions"><span id="group-selected">กดหมวดเพื่อดูรายชื่อตู้ในตารางด้านล่าง</span><button class="gbtn" data-revenue-group="unknown">ข้อมูลไม่พอ <b data-group-count="unknown">0</b></button><button class="gbtn" data-revenue-group="">ดูทั้งหมด</button></div>
   </section>
 
   <div class="sect"><h2>ต้องทำวันนี้</h2><div class="cap">เรียงตามเงินที่กำลังเสียไป</div></div>
@@ -632,6 +648,7 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
 </div>
 
 <script src="./api-client.js"></script>
+<script src="./revenue-groups.js"></script>
 <script>
 /* ═══════════ ตั้งค่า ═══════════
    ไม่ต้องใส่ URL ของ Apps Script ตรงนี้ — Worker ที่ /api จัดการให้
@@ -659,6 +676,7 @@ const esc = s => String(s||'').replace(/[<>&"]/g, m => ({'<':'&lt;','>':'&gt;','
 const COL = {ONLINE:'var(--green)',OFFLINE:'var(--red)',ERROR:'var(--amber)',UNKNOWN:'var(--ink-4)'};
 const med = a => { if(!a.length) return 0; const s=a.slice().sort((x,y)=>x-y), h=s.length>>1;
   return s.length%2 ? s[h] : (s[h-1]+s[h])/2; };
+let REVENUE_GROUP='', GROUPS={};
 let DATA=null, VIEW=null, DAY=null, M={}, SORT={k:'code',dir:1}, FILTER='', MODE='day', WTAB='down';
 let LIST=[], KBI=-1, SERIES=[], HEALTH_DAYS=30;
 const HIST = {};
@@ -807,7 +825,29 @@ function build(){
     if(uptime!=null) upAll.push(uptime);
   });
   M.__medUp = med(upAll);
+  buildRevenueGroups();
   render(); renderWatch(); renderLB(); headline(); knobAll();
+}
+function buildRevenueGroups(){
+  GROUPS={};const counts={'offline-zero':0,'offline-money':0,'online-zero':0,'online-money':0,unknown:0};
+  DATA.rows.forEach(r=>{
+    const cells=DAY.cells(r),daily=Object.fromEntries(DAY.labels.map((label,i)=>[label,cells[i]?{...cells[i],closed:!isPartial(cells[i],DAY.part[i])}:null]));
+    const key=DealRevenueGroups.classify({month:DATA.month,status:M[r.code].last.s,daily,unavailable:r.revenueUnavailable,asOf:DATA.updated});
+    GROUPS[r.code]=key;counts[key]++;
+  });
+  Object.entries(counts).forEach(([key,n])=>{$('[data-group-count="'+key+'"]').textContent=n;});
+  const dates=DealRevenueGroups.windowDays(DATA.updated);
+  $('#group-window').textContent=dates.length?dates[0].split('-').reverse().join('/')+' – '+dates[2].split('-').reverse().join('/')+' · ไม่รวมวันนี้':'ไม่ทราบเวลาของข้อมูล';
+}
+function selectRevenueGroup(key){
+  REVENUE_GROUP=key;FILTER='';
+  $$('#seg button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.f===''));knob($('#seg'));render();
+  $('#rows').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function renderRevenueSelection(){
+  $$('[data-revenue-group]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.revenueGroup===REVENUE_GROUP)));
+  const names={'offline-zero':'ออฟไลน์ · ไม่มียอดเงิน 3 วัน','offline-money':'ออฟไลน์ · มียอดเงิน 3 วัน','online-zero':'ออนไลน์ · ไม่มียอดเกิน 2 วัน','online-money':'ออนไลน์ · มียอดเงิน 3 วัน',unknown:'ข้อมูลไม่พอ: สถานะหรือรายได้ 3 วันไม่ครบ'};
+  $('#group-selected').textContent=REVENUE_GROUP?'กำลังแสดง: '+names[REVENUE_GROUP]:'กดหมวดเพื่อดูรายชื่อตู้ในตารางด้านล่าง';
 }
 const isPartial = (cell, fallback) => typeof cell?.closed==='boolean' ? !cell.closed : fallback;
 const currentCell = (row, cells) => Object.assign({}, lastOf(cells)||{s:'UNKNOWN'},
@@ -1012,6 +1052,7 @@ function renderLB(){
 
 /* ══ ตารางหลัก ══ */
 function render(){
+  renderRevenueSelection();
   const rows = DATA.rows, labels = VIEW.labels;
   const cache = new Map(); const CELLS = r => { if(!cache.has(r)) cache.set(r, VIEW.cells(r)); return cache.get(r); };
 
@@ -1066,7 +1107,7 @@ function render(){
 
   let list = rows.filter(r=>{
     const c = currentCell(r, CELLS(r));
-    return !(FILTER && (!c || c.s!==FILTER));
+    return (!REVENUE_GROUP||GROUPS[r.code]===REVENUE_GROUP)&&!(FILTER && (!c || c.s!==FILTER));
   });
   const key = r => { const m = M[r.code], c = lastOf(CELLS(r))||{};
     return SORT.k==='mon' ? (m.month||0) : SORT.k==='week' ? (m.week||0)
@@ -1427,6 +1468,7 @@ function setMode(m){
   if(DATA) build();
 }
 function setFilter(f){
+  REVENUE_GROUP='';
   FILTER = f;
   $$('#seg button').forEach(x=>x.setAttribute('aria-pressed', x.dataset.f===f));
   knob($('#seg'));
@@ -1441,6 +1483,7 @@ $('#scrim').onclick = close;
 $('#rows').onclick = e => { const r = e.target.closest('.row'); if(r) open(r.dataset.code); };
 $('#wl-rows').onclick = e => { const r = e.target.closest('.wrow'); if(r) open(r.dataset.code); };
 $('#mode').onclick = e => { const b = e.target.closest('button'); if(b) setMode(b.dataset.m); };
+$('#revenue-groups').onclick=e=>{const b=e.target.closest('[data-revenue-group]');if(b)selectRevenueGroup(b.dataset.revenueGroup);};
 $('#seg').onclick  = e => { const b = e.target.closest('button'); if(b) setFilter(b.dataset.f); };
 $('#wtab').onclick = e => { const b = e.target.closest('button'); if(!b) return;
   WTAB = b.dataset.w;
