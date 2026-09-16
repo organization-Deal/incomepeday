@@ -1,0 +1,94 @@
+import {cemConfig} from './cem.js';
+import {eqlinkConfig} from './eqlink.js';
+import {HttpError,json} from './http.js';
+const DAY=86400000,OFFSET=7*3600000,MAX_GAP=10*60000;
+const validCode=code=>typeof code==='string'&&/^(?:LO_\d{4,10}|(?:CEM|EQ)_[A-F0-9]{12})$/.test(code);
+const known=status=>status==='ONLINE'||status==='OFFLINE';
+const dateOf=at=>new Date(at+OFFSET).toISOString().slice(0,10);
+export function dayBounds(date){
+ if(typeof date!=='string'||!/^20\d{2}-\d{2}-\d{2}$/.test(date))throw new HttpError('วันที่ไม่ถูกต้อง',400);
+ const start=Date.parse(date+'T00:00:00+07:00');
+ if(!Number.isFinite(start)||dateOf(start)!==date)throw new HttpError('วันที่ไม่ถูกต้อง',400);
+ return [start,start+DAY];
+}
+// Independent of revenue and snapshot percentages. Only trusted server-side reads enter here.
+export class OnlineTimeCore{
+ constructor(storage){this.storage=storage;}
+ async record(samples,now=Date.now()){
+  if(!Array.isArray(samples)||samples.length>500||samples.some(s=>!validCode(s?.code)||!Number.isSafeInteger(s.at)||s.at<0||s.at>now||!['ONLINE','OFFLINE','UNKNOWN','ERROR'].includes(s.status)))throw new HttpError('ข้อมูลสถานะไม่ถูกต้อง',400);
+  return this.storage.transaction(async tx=>{
+   let accepted=0;
+   for(const sample of samples){
+    const lastKey='last:'+sample.code,last=await tx.get(lastKey);
+    if(last&&sample.at<=last.at)continue;
+    const entries=new Map();
+    async function entry(date){if(!entries.has(date)){const key='day:'+date+':'+sample.code;entries.set(date,{key,value:await tx.get(key)||{onlineMs:0,offlineMs:0,observations:0}});}return entries.get(date).value;}
+    if(last&&sample.at-last.at<=MAX_GAP&&known(last.status)&&known(sample.status)){
+     for(let from=last.at;from<sample.at;){
+      const date=dateOf(from),until=Math.min(dayBounds(date)[1],sample.at),value=await entry(date);
+      value[last.status==='ONLINE'?'onlineMs':'offlineMs']+=until-from;from=until;
+     }
+    }
+    const value=await entry(dateOf(sample.at));value.observations++;value.lastObservedAt=sample.at;if(sample.status==='ONLINE')value.seenOnline=true;
+    for(const {key,value} of entries.values())await tx.put(key,value);
+    if(sample.sourceHistory){
+     const h=sample.sourceHistory;
+     if(h.provider!=='cem'||!Number.isFinite(h.checkedAt)||[h.latestOnlineAt,h.latestOfflineAt].some(v=>v!==null&&(!Number.isFinite(v)||v<0||v>now+60000)))throw new HttpError('ประวัติต้นทางไม่ถูกต้อง',400);
+     await tx.put('source:'+sample.code,h);
+    }
+    await tx.put(lastKey,{at:sample.at,status:sample.status,
+     latestOnlineAt:sample.status==='ONLINE'?sample.at:last?.latestOnlineAt??(last?.status==='ONLINE'?last.at:null),
+     latestOfflineAt:sample.status==='OFFLINE'?sample.at:last?.latestOfflineAt??(last?.status==='OFFLINE'?last.at:null)});accepted++;
+   }
+   return {accepted};
+  });
+ }
+ async days(codes,date){
+  if(!Array.isArray(codes)||codes.length>600||codes.some(code=>!validCode(code)))throw new HttpError('รหัสตู้ไม่ถูกต้อง',400);
+  const now=Date.now();return Promise.all(codes.map(code=>this.day(code,date,now)));
+ }
+ async recordPayments(rows){
+  if(!Array.isArray(rows)||rows.length>600)throw new HttpError('ข้อมูลเงินเข้าล่าสุดไม่ถูกต้อง',400);
+  return this.storage.transaction(async tx=>{
+   let accepted=0;
+   for(const row of rows){
+    if(!row||!validCode(row.code))throw new HttpError('ข้อมูลเงินเข้าล่าสุดไม่ถูกต้อง',400);
+    if(row.payment===null)continue;
+    const p=row.payment,now=Date.now();
+    if(!p||!['cem','eqlink'].includes(p.provider)||p.currency!=='THB'||!Number.isSafeInteger(p.amountCents)||p.amountCents<=0||
+      !Number.isFinite(p.receivedAt)||p.receivedAt<0||p.receivedAt>now+60000||!Number.isFinite(p.checkedAt)||
+      p.checkedAt<0||p.checkedAt>now+60000||typeof p.method!=='string'||!p.method||p.method.length>40)throw new HttpError('ข้อมูลเงินเข้าล่าสุดไม่ถูกต้อง',400);
+    const key='payment:'+row.code,previous=await tx.get(key);
+    if(previous&&previous.receivedAt>=p.receivedAt)continue;
+    await tx.put(key,p);accepted++;
+   }
+   return {accepted};
+  });
+ }
+ async day(code,date,now=Date.now()){
+  if(!validCode(code))throw new HttpError('รหัสตู้ไม่ถูกต้อง',400);
+  const [start,end]=dayBounds(date);if(start>now)throw new HttpError('ยังไม่ถึงวันที่เลือก',400);
+  const value=await this.storage.get('day:'+date+':'+code)||{onlineMs:0,offlineMs:0,observations:0};
+  const latest=await this.storage.get('last:'+code);
+  const sourceHistory=await this.storage.get('source:'+code)||null;
+  const latestPayment=await this.storage.get('payment:'+code)||null;
+  const elapsedMs=Math.min(now,end)-start;
+  return {...value,sourceHistory,latestPayment,latestOnlineAt:latest?.latestOnlineAt??(latest?.status==='ONLINE'?latest.at:null),
+   latestOfflineAt:latest?.latestOfflineAt??(latest?.status==='OFFLINE'?latest.at:null),seenOnline:value.seenOnline===true||value.onlineMs>0||
+    (sourceHistory?.latestOnlineAt!=null&&sourceHistory.latestOnlineAt>=start&&sourceHistory.latestOnlineAt<Math.min(now,end)),code,date,elapsedMs,unknownMs:Math.max(0,elapsedMs-value.onlineMs-value.offlineMs),closed:now>=end,
+   intervalMinutes:5,maxGapMinutes:10,estimated:true,timeZone:'Asia/Bangkok'};
+ }
+}
+export async function handleOnlineTime(request,env){
+ if(request.method!=='GET')return json({ok:false,error:'method not allowed'},405);
+ const url=new URL(request.url),code=url.searchParams.get('code'),date=url.searchParams.get('date');
+ if(code!==null&&!validCode(code))throw new HttpError('รหัสตู้ไม่ถูกต้อง',400);dayBounds(date);
+ if(!env.ONLINE_TIME?.getByName)throw new HttpError('ยังไม่ได้เปิดเก็บชั่วโมงออนไลน์',503);
+ const ledger=env.ONLINE_TIME.getByName('fleet-v1');
+ if(code===null){
+  const codes=[...new Set([...(cemConfig(env)?.mapping||[]),...(eqlinkConfig(env)?.mapping||[])].map(m=>m.code))];
+  return json({ok:true,data:{date,rows:await ledger.days(codes,date),collectorEnabled:env.ONLINE_TIME_ENABLED==='true'}});
+ }
+ const data=await ledger.day(code,date);
+ return json({ok:true,data:{...data,collectorEnabled:env.ONLINE_TIME_ENABLED==='true'}});
+}

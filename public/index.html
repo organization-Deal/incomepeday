@@ -482,9 +482,16 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
   .ops-chart,.ops-side{padding:15px}#healthChart{height:190px}.ops-updated{display:none}
 }
 
+.revenue-group-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.revenue-group{padding:18px;text-align:left;color:var(--ink);cursor:pointer;font:inherit;display:flex;flex-direction:column;gap:10px}
+.revenue-group span{font-size:13px;font-weight:600}.revenue-group strong{font-family:var(--disp);font-size:32px}.revenue-group small{color:var(--ink-3);font-size:11px}
+.revenue-group[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:2px}.group-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px 0;font-size:12px;color:var(--ink-3)}.group-actions span{margin-right:auto}
+@media(max-width:1000px){.revenue-group-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.revenue-group-grid{grid-template-columns:1fr}.revenue-group{padding:16px}}
 </style>
+<link rel="stylesheet" href="./workspace.css">
 </head>
 <body>
+<aside class="workspace-nav" aria-label="เมนูหลัก"><div class="workspace-brand"><b>DEAL<span>!</span></b><small>ศูนย์ดูแลตู้และรายได้</small></div><nav class="workspace-links"><a href="#overview" aria-current="page"><i>◫</i>ภาพรวม</a><a href="#revenue-groups"><i>◎</i>ติดตามตู้</a><a href="#machines"><i>▤</i>ตู้ทั้งหมด</a><a href="#reports"><i>↗</i>รายได้และรายงาน</a><button id="workspace-notes"><i>✎</i>บันทึกงานรายวัน</button></nav><footer>ดูสถานะ · ติดตามปัญหา<br>บันทึกการทำงานในที่เดียว</footer></aside>
 
 <nav class="nav" id="nav">
   <div class="logo">
@@ -505,7 +512,7 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
 
 <div class="wrap">
 
-  <header class="hero ops-hero">
+  <header class="hero ops-hero" id="overview">
     <div class="ops-title">
       <div class="eyebrow">OPERATIONS · ภาพรวมทั้งกอง</div>
       <h1>สถานะตู้วันนี้</h1>
@@ -522,6 +529,17 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
     <div class="card ops-kpi attention"><div class="k">ต้องตรวจสอบ</div><div class="v tab"><span id="ops-attention">—</span><small> ตู้</small></div><div class="ops-deltas"><span class="ops-delta bad">ดับ ≥ 2 วัน หรือเช็กไม่ได้</span></div></div>
   </section>
 
+  <section id="revenue-groups" aria-label="หมวดตู้ตามสถานะและรายได้">
+    <div class="sect"><h2>สถานะตู้และรายได้ 3 วัน</h2><div class="cap" id="group-window"></div></div>
+    <div class="revenue-group-grid">
+      <button class="card revenue-group" data-revenue-group="offline-zero" aria-pressed="false"><span>ออฟไลน์ · ไม่มียอดเงิน</span><strong data-group-count="offline-zero">0</strong><small>ไม่มีรายได้ครบ 3 วันที่ปิดยอดแล้ว</small></button>
+      <button class="card revenue-group" data-revenue-group="offline-money" aria-pressed="false"><span>ออฟไลน์ · มียอดเงิน</span><strong data-group-count="offline-money">0</strong><small>มีรายได้ใน 3 วันที่ปิดยอดแล้ว</small></button>
+      <button class="card revenue-group" data-revenue-group="online-zero" aria-pressed="false"><span>ออนไลน์ · ไม่มียอดเกิน 2 วัน</span><strong data-group-count="online-zero">0</strong><small>ไม่มีรายได้ต่อเนื่องอย่างน้อย 3 วัน</small></button>
+      <button class="card revenue-group" data-revenue-group="online-money" aria-pressed="false"><span>ออนไลน์ · มียอดเงิน</span><strong data-group-count="online-money">0</strong><small>มีรายได้ใน 3 วันที่ปิดยอดแล้ว</small></button>
+    </div>
+    <div class="group-actions"><span id="group-selected">กดหมวดเพื่อดูรายชื่อตู้ในตารางด้านล่าง</span><button class="gbtn" data-revenue-group="unknown">ข้อมูลไม่พอ <b data-group-count="unknown">0</b></button><button class="gbtn" data-revenue-group="">ดูทั้งหมด</button></div>
+  </section>
+
   <section class="ops-layout">
     <div class="card ops-chart">
       <div class="ops-head"><div><h2>แนวโน้มออนไลน์ / ออฟไลน์</h2><p>เทียบสถานะรายวัน · เป้าหมายออนไลน์ 95%</p></div><div class="ops-range" id="healthRange"><button data-days="7">7 วัน</button><button data-days="30" class="on">30 วัน</button><button data-days="90">3 เดือน</button></div></div>
@@ -529,8 +547,8 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
       <div class="ops-legend"><span><i class="dot" style="background:var(--green)"></i>Online %</span><span><i class="dot" style="background:var(--red)"></i>Offline %</span><span><i style="width:13px;border-top:1px dashed var(--green)"></i>เป้าหมาย 95%</span></div>
       <div class="health legacy-health"><div class="hmain"><div class="hbar"><div class="mix" id="mix"><i class="mx-ONLINE"></i><i class="mx-OFFLINE"></i><i class="mx-ERROR"></i><i class="mx-UNKNOWN"></i></div><div class="mixleg" id="mixleg"></div></div></div>
         <div class="ops-secondary">
-          <div class="hc"><div class="k">Uptime ที่นับผิด</div><div class="v2 tab" id="k-upx">—<small>%</small></div><div class="sub">ตัดวันร้านปิดออก · ใช้วัดทีม</div></div>
-          <div class="hc"><div class="k">Uptime ดิบ</div><div class="v2 tab" id="k-up">—<small>%</small></div><div class="sub" id="k-upsub">—</div></div>
+          <div class="hc"><div class="k">รอบเช็คออนไลน์ (ปรับวันปิด)</div><div class="v2 tab" id="k-upx">—<small>%</small></div><div class="sub">ตัดวันร้านปิดออก · ใช้วัดทีม</div></div>
+          <div class="hc"><div class="k">รอบเช็คออนไลน์</div><div class="v2 tab" id="k-up">—<small>%</small></div><div class="sub" id="k-upsub">—</div></div>
           <div class="hc"><div class="k" id="k-daylab">รายได้วันล่าสุด</div><div class="v2 tab" id="k-day">—<small>บาท</small></div><div class="sub" id="k-daysub">—</div></div>
           <div class="hc"><div class="k">รายได้ 7 วันล่าสุด</div><div class="v2 tab" id="k-week">—<small>บาท</small></div><div class="sub" id="k-weeksub">—</div></div>
         </div><span id="bar-up" style="display:none"></span><span id="bar-upx" style="display:none"></span>
@@ -556,7 +574,7 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
     <div id="wl-rows"></div>
   </div>
 
-  <div class="sect"><h2>รายได้รวม</h2><div class="cap" id="chart-h">—</div></div>
+  <div class="sect" id="reports"><h2>รายได้รวม</h2><div class="cap" id="chart-h">—</div></div>
   <div class="card chartcard">
     <div class="chead">
       <div>
@@ -576,13 +594,13 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
     <div class="cap" id="lb-field"></div></div>
   <div class="card lb" id="lb">
     <div class="lbrow head">
-      <span></span><span>ผู้ดูแล</span><span>ตู้</span><span>Uptime ที่นับผิด · ขีด = ค่ากลาง</span>
+      <span></span><span>ผู้ดูแล</span><span>ตู้</span><span>รอบเช็คออนไลน์ (ปรับวันปิด) · ขีด = ค่ากลาง</span>
       <span></span><span>ดิบ</span><span>ดับ</span><span>เงินที่หาย</span>
     </div>
     <div id="lb-rows"></div>
   </div>
 
-  <div class="sect"><h2>ตู้ทั้งหมด</h2></div>
+  <div class="sect" id="machines"><h2>ตู้ทั้งหมด</h2></div>
   <div class="tools">
     <div class="sc" id="seg"><div class="knob"></div>
       <button data-f="" aria-pressed="true">ทั้งหมด <i class="n" data-c="all">0</i></button>
@@ -599,7 +617,7 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
       <span data-sort="code" class="on">รหัส</span>
       <span data-sort="name">โลเคชั่น</span>
       <span id="th-strip">ไทม์ไลน์ →</span>
-      <span data-sort="down">สถานะ</span>
+      <span data-sort="down" title="เรียงตามสถานะล่าสุด">ออนไลน์สะสมวันนี้</span>
       <span data-sort="day" style="text-align:right">วันนี้</span>
       <span data-sort="week" style="text-align:right">7 วัน</span>
       <span data-sort="mon" style="text-align:right">เดือนนี้</span>
@@ -631,11 +649,15 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
   </div>
 </div>
 
+<script src="./api-client.js"></script>
+<script src="./revenue-groups.js"></script>
+<script src="./workspace.js"></script>
+<script src="./online-time.js"></script>
 <script>
 /* ═══════════ ตั้งค่า ═══════════
-   ไม่ต้องใส่ URL ของ Apps Script ตรงนี้ — Pages Function ที่ /api จัดการให้
+   ไม่ต้องใส่ URL ของ Apps Script ตรงนี้ — Worker ที่ /api จัดการให้
    เปิดไฟล์นี้จากเครื่อง (file://) = โหมดข้อมูลตัวอย่าง
-   deploy บน Cloudflare Pages = ต่อของจริงอัตโนมัติ                        */
+   deploy บน Cloudflare Workers = ต่อของจริงอัตโนมัติ                      */
 const API = (location.protocol === 'file:') ? '' : '/api';
 const KEY = '';
 const RULE = {
@@ -650,14 +672,15 @@ const RULE = {
 const $ = s => document.querySelector(s);
 const $$ = s => [].slice.call(document.querySelectorAll(s));
 const money = n => n == null ? '–' : Math.round(Number(n)).toLocaleString('en-US');
-const kb = n => n >= 1000 ? Math.round(n/1000)+'k' : Math.round(n||0);
+const kb = n => n == null ? '–' : n >= 1000 ? Math.round(n/1000)+'k' : Math.round(n||0);
 /** ตู้ที่ยังไม่ได้กรอกชื่อใน Lark — อย่าปล่อยแถวว่าง ให้เห็นว่าเป็นตัวไหนและต้องไปกรอก */
-const nameOf = r => r.name && r.name.trim() ? esc(r.name) :
+const nameOf = r => r.name && r.name.trim() ? esc(r.name)+(r.revenueUnavailable?' <span class="noname">('+esc(r.revenueUnavailable)+')</span>':'') :
   '<span class="noname">'+r.code+' <i>ยังไม่ได้ตั้งชื่อ</i></span>';
 const esc = s => String(s||'').replace(/[<>&"]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[m]));
 const COL = {ONLINE:'var(--green)',OFFLINE:'var(--red)',ERROR:'var(--amber)',UNKNOWN:'var(--ink-4)'};
 const med = a => { if(!a.length) return 0; const s=a.slice().sort((x,y)=>x-y), h=s.length>>1;
   return s.length%2 ? s[h] : (s[h-1]+s[h])/2; };
+let REVENUE_GROUP='', GROUPS={};
 let DATA=null, VIEW=null, DAY=null, M={}, SORT={k:'code',dir:1}, FILTER='', MODE='day', WTAB='down';
 let LIST=[], KBI=-1, SERIES=[], HEALTH_DAYS=30;
 const HIST = {};
@@ -694,24 +717,40 @@ addEventListener('resize', knobAll);
 /* ── api ── */
 async function api(p){
   const q = new URLSearchParams(Object.assign({}, p, KEY?{key:KEY}:{}));
-  const j = await (await fetch(API+'?'+q)).json();
-  if(!j.ok) throw new Error(j.error); return j.data;
+  const j = await DealApi.request(API+'?'+q);
+  let d = j.data;
+  if(!d || typeof d!=='object' ||
+    (p.action==='months' && (!Array.isArray(d.months) || !d.months.every(m=>typeof m==='string'))) ||
+    (p.action==='month' && (!Array.isArray(d.slots) || !Array.isArray(d.rows) ||
+      !d.slots.every(s=>typeof s==='string') || !d.rows.every(r=>r && typeof r.code==='string' && Array.isArray(r.cells)))) ||
+    (p.action==='notes' && (!Array.isArray(d.notes) || (d.statuses!=null && !Array.isArray(d.statuses)))) ||
+    (p.action==='history' && !Array.isArray(d.history))) throw new Error('รูปแบบข้อมูลจาก API ไม่ถูกต้อง');
+  if(p.action==='month' && d.cem) d=await DealApi.cemMonth(d,API,p);
+  return d;
 }
 async function boot(){
   if(!API){ DATA=demo(); $('#month').innerHTML='<option>'+DATA.month+'</option>'; build(); return; }
   try{
     const r = await api({action:'months'});
-    $('#month').innerHTML = r.months.map(m=>'<option>'+m+'</option>').join('');
+    $('#month').innerHTML = r.months.map(m=>'<option>'+esc(m)+'</option>').join('');
+    if(!r.months.length) throw new Error('ยังไม่มีข้อมูลรายเดือน');
     await load($('#month').value);
   }catch(e){ fail(e.message); }
 }
+let loadRequest = 0, notesRequest = 0, historyEpoch = 0;
+let monthFreshUntil = 0;
+try { monthFreshUntil = Number(sessionStorage.dealRenameAt || 0) + 21600000; } catch(e){}
 async function load(month, fresh){
+  const version = ++loadRequest;
+  if(fresh){ historyEpoch++; Object.keys(HIST).forEach(k=>delete HIST[k]); }
   $('#rows').innerHTML = Array(8).fill('<div class="skel"></div>').join('');
   if(fresh) $('#reload').classList.add('spin');
-  try{ DATA = await api(Object.assign({action:'month', month:month}, fresh?{fresh:'1'}:{})); build();
-       if(fresh) toast('ดึงข้อมูลสดจาก Lark แล้ว'); }
-  catch(e){ fail(e.message); }
-  finally{ $('#reload').classList.remove('spin'); }
+  try{ const data = await api(Object.assign({action:'month', month:month}, (fresh||Date.now()<monthFreshUntil)?{fresh:'1'}:{}));
+       if(version!==loadRequest) return;
+       DATA = data; build();
+       if(fresh) toast('ดึงข้อมูลล่าสุดแล้ว'); }
+  catch(e){ if(version===loadRequest) fail(e.message); }
+  finally{ if(version===loadRequest) $('#reload').classList.remove('spin'); }
 }
 const fail = m => { $('#rows').innerHTML = '<div class="empty"><b>ดึงข้อมูลไม่สำเร็จ</b>'+esc(m)+
   '<br>ตรวจว่าใส่ URL ของ Web App ในตัวแปร API แล้ว และตั้ง Who has access = Anyone</div>';
@@ -724,7 +763,9 @@ function build(){
 
   /* รายวัน: ยึดรอบ 00:00 ของวันถัดไป (ปิดยอดเต็มวัน) ไม่มีค่อยใช้ 22:00 (ยังไม่ปิด) */
   const days = []; const seen = {};
-  slots.forEach(s=>{ const d=s.split(' ')[0]; if(!seen[d]){seen[d]=1; days.push(d);} });
+  const providerOnly=DATA.rows.length && DATA.rows.every(r=>r.revenueSource && r.daily);
+  slots.forEach(s=>{ const d=s.split(' ')[0]; if(providerOnly&&!DATA.rows.some(r=>r.daily[d]))return; if(!seen[d]){seen[d]=1; days.push(d);} });
+  (DATA.dailyLabels||[]).forEach(d=>{ if(!seen[d]){seen[d]=1; days.push(d);} });
   days.sort((a,b)=> (a.split('/')[1]+a.split('/')[0]).localeCompare(b.split('/')[1]+b.split('/')[0]));
   const pick = days.map(d=>{
     const dd = d.split('/')[0], mm = d.split('/')[1];
@@ -734,7 +775,8 @@ function build(){
     if(idx[d+' 00:00']!=null) return {i:idx[d+' 00:00'], part:true};
     return null;
   });
-  DAY = { labels: days, part: pick.map(p=>p?p.part:true), cells: r => pick.map(p=> p ? r.cells[p.i] : null) };
+  DAY = { labels: days, part: pick.map(p=>p?p.part:true),
+    cells: r => r.daily ? days.map(d=>r.daily[d]||null) : pick.map(p=> p ? r.cells[p.i] : null) };
 
   VIEW = MODE==='round'
     ? { labels: slots.slice(), part: slots.map(s=>/22:00$/.test(s)), cells: r => r.cells }
@@ -745,7 +787,7 @@ function build(){
   const upAll = [];
   DATA.rows.forEach(r=>{
     const cells = DAY.cells(r);
-    const closed = cells.map((c,i)=> DAY.part[i] ? null : c);
+    const closed = cells.map((c,i)=> isPartial(c, DAY.part[i]) ? null : c);
     // ERROR = เข้าไปเช็คไม่ได้ (login พัง) ไม่ใช่สถานะของตู้ → ตัดออกจากการคิด uptime
     const have = closed.filter(c=> c && c.s!=='ERROR' && c.s!=='UNKNOWN');
     const on = have.filter(c=>c.s==='ONLINE');
@@ -755,6 +797,7 @@ function build(){
     for(let i=closed.length-1;i>=0;i--){ const c=closed[i];
       if(!c || c.s==='ERROR' || c.s==='UNKNOWN') continue;
       if(c.s==='ONLINE') break; down++; }
+    if(r.currentStatus && r.currentStatus!=='OFFLINE') down = 0;
 
     let fault = 0, run = 0;
     have.forEach(c=>{ if(c.s==='OFFLINE'){ run++; } else { if(run>RULE.GRACE_DAYS) fault += run; run=0; } });
@@ -770,35 +813,64 @@ function build(){
     const base = med(baseArr);
     const recent = recentIdx.length ? recentIdx.reduce((s,i)=>s+(closed[i].d||0),0)/recentIdx.length : 0;
     const dropPct = (base>=RULE.DROP_MIN && baseArr.length>=3 && recentIdx.length) ? 1 - recent/base : 0;
-    const last = lastOf(cells) || {s:'UNKNOWN'};
+    const last = currentCell(r, cells);
 
     // ── รายได้จริง: วัน / 7 วัน / เดือน (วัดได้ ไม่ใช่ประเมิน) ──
     const withData = cells.filter(Boolean);
     const lastClosed = closed.filter(Boolean).slice(-1)[0] || null;
-    const dayRev  = lastClosed ? (lastClosed.d || 0) : (last.d || 0);
-    const dayOpen = !lastClosed || (cells.length && DAY.part[cells.length-1]);
+    const dayRev  = r.revenueSource ? (withData.at(-1)?.d ?? null) : lastClosed ? (lastClosed.d || 0) : (last.d || 0);
+    const dayOpen = !lastClosed || (cells.length && isPartial(cells[cells.length-1], DAY.part[cells.length-1]));
     const week    = withData.slice(-7).reduce((s,c)=> s + (c.d||0), 0);
     const month   = withData.reduce((s,c)=> Math.max(s, c.m||0), 0);
 
     M[r.code] = { uptime, upx, down, avg, lost, base, recent, dropPct,
-      dayRev, dayOpen, week, month,
+      dayRev:r.revenueUnavailable?null:dayRev, dayOpen, week:r.revenueUnavailable?null:week, month:r.revenueUnavailable?null:month,
       dropping: last.s==='ONLINE' && dropPct >= RULE.DROP_PCT, last, days: have.length };
     if(uptime!=null) upAll.push(uptime);
   });
   M.__medUp = med(upAll);
+  buildRevenueGroups();
   render(); renderWatch(); renderLB(); headline(); knobAll();
 }
+function buildRevenueGroups(){
+  GROUPS={};const counts={'offline-zero':0,'offline-money':0,'online-zero':0,'online-money':0,unknown:0};
+  DATA.rows.forEach(r=>{
+    const cells=DAY.cells(r),daily=Object.fromEntries(DAY.labels.map((label,i)=>[label,cells[i]?{...cells[i],closed:!isPartial(cells[i],DAY.part[i])}:null]));
+    const key=DealRevenueGroups.classify({month:DATA.month,status:M[r.code].last.s,daily,unavailable:r.revenueUnavailable,asOf:DATA.updated});
+    GROUPS[r.code]=key;counts[key]++;
+  });
+  Object.entries(counts).forEach(([key,n])=>{$('[data-group-count="'+key+'"]').textContent=n;});
+  const dates=DealRevenueGroups.windowDays(DATA.updated);
+  $('#group-window').textContent=dates.length?dates[0].split('-').reverse().join('/')+' – '+dates[2].split('-').reverse().join('/')+' · ไม่รวมวันนี้':'ไม่ทราบเวลาของข้อมูล';
+}
+function filterRevenueGroup(key){
+  REVENUE_GROUP=key;FILTER='';
+  $$('#seg button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.f===''));knob($('#seg'));render();
+  $('#rows').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function selectRevenueGroup(key){Workspace.openGroup(key);}
+function renderRevenueSelection(){
+  $$('[data-revenue-group]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.revenueGroup===REVENUE_GROUP)));
+  const names={'offline-zero':'ออฟไลน์ · ไม่มียอดเงิน 3 วัน','offline-money':'ออฟไลน์ · มียอดเงิน 3 วัน','online-zero':'ออนไลน์ · ไม่มียอดเกิน 2 วัน','online-money':'ออนไลน์ · มียอดเงิน 3 วัน',unknown:'ข้อมูลไม่พอ: สถานะหรือรายได้ 3 วันไม่ครบ'};
+  $('#group-selected').textContent=REVENUE_GROUP?'กำลังแสดง: '+names[REVENUE_GROUP]:'กดหมวดเพื่อเปิดรายชื่อตู้และบันทึกงาน';
+}
+const isPartial = (cell, fallback) => typeof cell?.closed==='boolean' ? !cell.closed : fallback;
+const currentCell = (row, cells) => Object.assign({}, lastOf(cells)||{s:'UNKNOWN'},
+  row.currentStatus ? {s:row.currentStatus} : {});
 
 /* ══ animated counters (ตัวเลขวิ่งขึ้น แบบ Apple) ══ */
 const RM = matchMedia('(prefers-reduced-motion:reduce)').matches;
 const NUMV = new WeakMap();
+const NUMANIM = new WeakMap();
 function countTo(el, to, fmt, node){
+  const version=(NUMANIM.get(el)||0)+1;NUMANIM.set(el,version);
   node = node || el;
   const from = NUMV.get(el) || 0;
   NUMV.set(el, to);
   if(RM || Math.abs(to-from) < 1){ node.textContent = fmt(to); return; }
   const t0 = performance.now(), dur = 900;
   (function step(t){
+    if(NUMANIM.get(el)!==version)return;
     const p = Math.min((t-t0)/dur, 1);
     const e = 1 - Math.pow(1-p, 4);          // easeOutQuart
     node.textContent = fmt(from + (to-from)*e);
@@ -807,6 +879,7 @@ function countTo(el, to, fmt, node){
 }
 const setNum = (sel, v, fmt) => { const el = $(sel);
   const n = (el.firstChild && el.firstChild.nodeType===3) ? el.firstChild : el;
+  if(v==null){NUMANIM.set(el,(NUMANIM.get(el)||0)+1);NUMV.delete(el);n.textContent='–';return;}
   countTo(el, v, fmt||money, n); };
 
 /* ══ แถบสัดส่วนทั้งกอง — 1 แถบ อ่านจบใน 1 วิ ══ */
@@ -833,29 +906,38 @@ function fleetSeries(){
     const t={ONLINE:0,OFFLINE:0,ERROR:0,UNKNOWN:0};
     DATA.rows.forEach(r=>{ const c=DAY.cells(r)[i]; if(c && t[c.s]!=null) t[c.s]++; });
     const known=t.ONLINE+t.OFFLINE;
-    return {label,on:t.ONLINE,off:t.OFFLINE,err:t.ERROR,unknown:t.UNKNOWN,onPct:known?t.ONLINE/known*100:0,offPct:known?t.OFFLINE/known*100:0};
+    return {label,on:t.ONLINE,off:t.OFFLINE,err:t.ERROR,unknown:t.UNKNOWN,known,onPct:known?t.ONLINE/known*100:null,offPct:known?t.OFFLINE/known*100:null};
   });
 }
 function cmpText(el,label,now,prev,invert){
-  if(!el)return;if(prev==null||!isFinite(prev)){el.textContent=label+' —';el.className='ops-delta';return;}
+  if(!el)return;if(now==null||prev==null||!isFinite(prev)){el.textContent=label+' —';el.className='ops-delta';return;}
   const d=Math.round((now-prev)*10)/10;el.textContent=label+' '+(d>0?'+':'')+d+'%';
   const good=invert?d<0:d>0,bad=invert?d>0:d<0;el.className='ops-delta'+(good?' good':bad?' bad':'');
 }
 function drawHealthChart(){
   const svg=$('#healthChart');if(!svg)return;const all=fleetSeries(),data=all.slice(-HEALTH_DAYS),W=800,H=220,p={l:42,r:10,t:14,b:30};
   if(!data.length){svg.innerHTML='';return;}const x=i=>p.l+(data.length<2?0:i/(data.length-1))*(W-p.l-p.r),y=v=>p.t+(100-v)/100*(H-p.t-p.b);
-  const path=k=>data.map((d,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(d[k]).toFixed(1)).join(' ');let g='';
+  const path=k=>{let active=false;return data.map((d,i)=>{if(d[k]==null){active=false;return '';}const command=active?'L':'M';active=true;return command+x(i).toFixed(1)+' '+y(d[k]).toFixed(1);}).join(' ');};let g='';
   [0,25,50,75,100].forEach(v=>{g+='<line x1="'+p.l+'" y1="'+y(v)+'" x2="'+(W-p.r)+'" y2="'+y(v)+'" stroke="var(--hair)"/><text x="4" y="'+(y(v)+4)+'" fill="var(--ink-4)" font-size="10">'+v+'%</text>';});
   g+='<line x1="'+p.l+'" y1="'+y(95)+'" x2="'+(W-p.r)+'" y2="'+y(95)+'" stroke="var(--green)" stroke-dasharray="6 6" opacity=".45"/>';
   g+='<path d="'+path('onPct')+'" fill="none" stroke="var(--green)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>';
   g+='<path d="'+path('offPct')+'" fill="none" stroke="var(--red)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>';
+  if(data.every(d=>d.known===0))g+='<text x="400" y="110" text-anchor="middle" fill="var(--ink-3)" font-size="12">ยังไม่มีประวัติสถานะ</text>';
   g+='<text x="'+p.l+'" y="'+(H-7)+'" fill="var(--ink-4)" font-size="10">'+esc(data[0].label)+'</text><text x="'+(W-p.r)+'" y="'+(H-7)+'" text-anchor="end" fill="var(--ink-4)" font-size="10">'+esc(data[data.length-1].label)+'</text>';svg.innerHTML=g;
 }
 function renderOpsDashboard(){
-  const s=fleetSeries(),now=s[s.length-1]||{on:0,off:0,err:0,unknown:0,onPct:0,offPct:0},total=DATA.rows.length,known=now.on+now.off;
+  const s=fleetSeries(),now=Object.assign({},s[s.length-1]||{on:0,off:0,err:0,unknown:0,onPct:0,offPct:0}),total=DATA.rows.length;
+  const statusKey={ONLINE:'on',OFFLINE:'off',ERROR:'err',UNKNOWN:'unknown'};
+  if(DATA.dailyLabels){
+    now.on=now.off=now.err=now.unknown=0;
+    DATA.rows.forEach(r=>{ const key=statusKey[currentCell(r,DAY.cells(r)).s]; if(key)now[key]++; });
+  }
+  const known=now.on+now.off;
+  now.onPct=total?now.on/total*100:null;now.offPct=total?now.off/total*100:null;
   const attention=DATA.rows.filter(r=>M[r.code].down>=RULE.DEAD_DAYS||['ERROR','UNKNOWN'].includes(M[r.code].last.s)).length;
   $('#ops-total').textContent=total;$('#ops-online').textContent=now.on;$('#ops-offline').textContent=now.off;$('#ops-offline-pct').textContent=Math.round(now.offPct);$('#ops-attention').textContent=attention;$('#ops-known').textContent='สถานะชัดเจน '+known+' จาก '+total+' ตู้';
-  const d1=s[s.length-2],d7=s[s.length-8],dm=s[0];cmpText($('#on-d1'),'เมื่อวาน',now.onPct,d1&&d1.onPct,false);cmpText($('#on-d7'),'7 วัน',now.onPct,d7&&d7.onPct,false);cmpText($('#on-dm'),'เดือน',now.onPct,dm&&dm.onPct,false);cmpText($('#off-d1'),'เมื่อวาน',now.offPct,d1&&d1.offPct,true);cmpText($('#off-d7'),'7 วัน',now.offPct,d7&&d7.offPct,true);cmpText($('#off-dm'),'เดือน',now.offPct,dm&&dm.offPct,true);
+  const historic=(d,k)=>known===total&&d?.known===total?d[k]:null;
+  const d1=s[s.length-2],d7=s[s.length-8],dm=s[0];cmpText($('#on-d1'),'เมื่อวาน',now.onPct,historic(d1,'onPct'),false);cmpText($('#on-d7'),'7 วัน',now.onPct,historic(d7,'onPct'),false);cmpText($('#on-dm'),'เดือน',now.onPct,historic(dm,'onPct'),false);cmpText($('#off-d1'),'เมื่อวาน',now.offPct,historic(d1,'offPct'),true);cmpText($('#off-d7'),'7 วัน',now.offPct,historic(d7,'offPct'),true);cmpText($('#off-dm'),'เดือน',now.offPct,historic(dm,'offPct'),true);
   $('#ops-long').textContent=DATA.rows.filter(r=>M[r.code].down>=7).length;$('#ops-short').textContent=DATA.rows.filter(r=>M[r.code].down>=RULE.DEAD_DAYS&&M[r.code].down<7).length;$('#ops-error').textContent=DATA.rows.filter(r=>['ERROR','UNKNOWN'].includes(M[r.code].last.s)).length;
   $('#ops-updated').textContent='อัปเดตล่าสุด '+new Date(DATA.updated).toLocaleString('th-TH',{dateStyle:'medium',timeStyle:'short'});drawHealthChart();
 }
@@ -868,7 +950,13 @@ function headline(){
   const s = watchSets();
   const lost = s.down.reduce((a,r)=> a + M[r.code].lost, 0);
   const h = $('#headline');
-  if(!s.down.length && !s.drop.length){
+  const offline=DATA.rows.filter(r=>M[r.code].last.s==='OFFLINE').length;
+  const unknown=DATA.rows.filter(r=>['UNKNOWN','ERROR'].includes(M[r.code].last.s)).length;
+  if(!s.down.length && !s.drop.length && (offline||unknown)){
+    h.innerHTML=(offline?'ขณะนี้มี <em>'+offline+' ตู้ออฟไลน์</em>':'')+
+      (unknown?'<span class="g">'+(offline?' · ':'')+unknown+' ตู้ยังยืนยันสถานะไม่ได้</span>':'')+
+      '<span class="g"> — ยังสรุประยะเวลาที่ดับไม่ได้</span>';
+  } else if(!s.down.length && !s.drop.length){
     h.innerHTML = 'ทุกตู้<em> ปกติดี</em><span class="g"> — ไม่มีอะไรต้องเข้าแก้วันนี้</span>';
   } else {
     h.innerHTML = 'วันนี้มี <em>'+s.down.length+' ตู้</em> ต้องเข้าแก้'+
@@ -969,12 +1057,15 @@ function renderLB(){
 
 /* ══ ตารางหลัก ══ */
 function render(){
+  renderRevenueSelection();
   const rows = DATA.rows, labels = VIEW.labels;
   const cache = new Map(); const CELLS = r => { if(!cache.has(r)) cache.set(r, VIEW.cells(r)); return cache.get(r); };
 
   $('#stamp').textContent = DATA.slots.length+' รอบ · อัปเดต '+
     new Date(DATA.updated).toLocaleString('th-TH',{dateStyle:'medium',timeStyle:'short'});
-  $('#chart-h').textContent = MODE==='day'?'รายวัน · ทุกตู้รวมกัน':'รายรอบ · ทุกตู้รวมกัน';
+  const unavailable=rows.filter(r=>r.revenueUnavailable).length;
+  $('#chart-h').textContent = (MODE==='day'?'รายวัน':'รายรอบ')+(unavailable?' · รวมเฉพาะ '+(rows.length-unavailable)+' / '+rows.length+' ตู้ที่อ่านยอดได้':' · ทุกตู้รวมกัน');
+  $('#k-mon small').textContent='บาท สะสมเดือนนี้'+(unavailable?' · ไม่รวม '+unavailable+' ตู้ที่ยังอ่านยอดไม่ได้':'');
   $('#th-strip').textContent = (MODE==='day'?'ไทม์ไลน์รายวัน →':'ไทม์ไลน์รายรอบ →');
   $('#k-daylab').textContent = MODE==='day' ? 'รายได้วันล่าสุด' : 'รายได้รอบล่าสุด';
   $('#foot-note').textContent = MODE==='day'
@@ -984,28 +1075,29 @@ function render(){
   const li = labels.length-1;
   const tally = {ONLINE:0,OFFLINE:0,ERROR:0,UNKNOWN:0};
   let day=0, mon=0;
-  rows.forEach(r=>{ const cs = CELLS(r); const c = cs[li] || lastOf(cs); if(!c) return;
-    tally[c.s]++; day += c.d||0; mon += c.m||0; });
+  rows.forEach(r=>{ const cs = CELLS(r); const c = cs[li] || lastOf(cs) || (r.revenueSource?{s:'UNKNOWN'}:null); if(!c) return;
+    tally[currentCell(r,cs).s]++; day += c.d||0;
+    mon += r.revenueSource ? M[r.code].month : (c.m||0); });
   const n = rows.length || 1;
   const ups  = rows.map(r=>M[r.code].uptime).filter(v=>v!=null);
   const upxs = rows.map(r=>M[r.code].upx).filter(v=>v!=null);
-  const avgUp  = ups.length  ? ups.reduce((a,b)=>a+b,0)/ups.length   : 0;
-  const avgUpx = upxs.length ? upxs.reduce((a,b)=>a+b,0)/upxs.length : 0;
+  const avgUp  = ups.length  ? ups.reduce((a,b)=>a+b,0)/ups.length   : null;
+  const avgUpx = upxs.length ? upxs.reduce((a,b)=>a+b,0)/upxs.length : null;
   const bad = rows.filter(r=>M[r.code].uptime!=null && M[r.code].uptime < 60).length;
 
   const onNow = rows.filter(r=>M[r.code].last.s==='ONLINE').length;
   const onPct = onNow/n*100;
   const weekTot = rows.reduce((s,r)=> s + (M[r.code].week||0), 0);
 
-  setNum('#k-mon', mon);
-  setNum('#k-day', day);
+  setNum('#k-mon', unavailable===rows.length?null:mon);
+  setNum('#k-day', unavailable===rows.length?null:day);
   setNum('#k-on', onPct, v=>Math.round(v));
   setNum('#k-up', avgUp, v=>Math.round(v));
   setNum('#k-upx', avgUpx, v=>Math.round(v));
-  setNum('#k-week', weekTot);
+  setNum('#k-week', unavailable===rows.length?null:weekTot);
   $('#k-onsub').textContent = onNow+' จาก '+rows.length+' ตู้';
-  $('#k-daysub').textContent = 'เฉลี่ย '+money(day/n)+' บาท/ตู้';
-  $('#k-upsub').textContent = 'ค่ากลาง '+Math.round(M.__medUp)+'% · ต่ำกว่า 60% อยู่ '+bad+' ตู้';
+  $('#k-daysub').textContent = 'เฉลี่ย '+money(rows.length-unavailable?day/(rows.length-unavailable):null)+' บาท/ตู้'+(unavailable?' · เฉพาะตู้ที่อ่านยอดได้':'');
+  $('#k-upsub').textContent = !ups.length ? 'ยังไม่มีประวัติสถานะสำหรับคำนวณสัดส่วนรอบเช็ค' : 'ค่ากลาง '+Math.round(M.__medUp)+'% · ต่ำกว่า 60% อยู่ '+bad+' ตู้';
   $('#k-weeksub').textContent = 'เฉลี่ย '+money(weekTot/7)+' บาท/วัน';
   renderMix(tally, rows.length);
   renderOpsDashboard();
@@ -1019,8 +1111,8 @@ function render(){
   const p90 = all.length ? (all[Math.floor(all.length*.9)] || 1) : 1;
 
   let list = rows.filter(r=>{
-    const c = lastOf(CELLS(r));
-    return !(FILTER && (!c || c.s!==FILTER));
+    const c = currentCell(r, CELLS(r));
+    return (!REVENUE_GROUP||GROUPS[r.code]===REVENUE_GROUP)&&!(FILTER && (!c || c.s!==FILTER));
   });
   const key = r => { const m = M[r.code], c = lastOf(CELLS(r))||{};
     return SORT.k==='mon' ? (m.month||0) : SORT.k==='week' ? (m.week||0)
@@ -1032,22 +1124,23 @@ function render(){
 
   $('#count').textContent = list.length+' / '+rows.length+' ตู้';
   $('#rows').innerHTML = list.length ? list.map((r,ri)=>{
-    const cs = CELLS(r), m = M[r.code], c = lastOf(cs) || {s:'UNKNOWN'};
+    const cs = CELLS(r), m = M[r.code], c = currentCell(r, cs);
     const strip = cs.map((x,i)=> !x ? '<i class="tick"></i>' :
-      '<i class="tick'+(VIEW.part[i]?' part':'')+'" data-s="'+x.s+'" data-t="'+labels[i]+
-      (VIEW.part[i]&&MODE==='day'?' (ยังไม่ปิดวัน)':'')+' · '+x.s+' · '+money(x.d)+' บาท">'+
+      '<i class="tick'+(isPartial(x,VIEW.part[i])?' part':'')+'" data-s="'+x.s+'" data-t="'+labels[i]+
+      (isPartial(x,VIEW.part[i])&&MODE==='day'?' (ยังไม่ปิดวัน)':'')+' · '+x.s+' · '+money(x.d)+' บาท">'+
       '<i style="height:'+Math.max(2, Math.min(30, Math.round((x.d||0)/p90*30)))+'px"></i></i>').join('');
     const upc = m.uptime==null?'mid': m.uptime>=85?'good': m.uptime>=60?'mid':'bad';
+    const latestRevenue=DealOnlineTime.latestRevenue(r),revenueAttrs=latestRevenue?' data-last-revenue-cents="'+latestRevenue.amountCents+'" data-last-revenue-date="'+latestRevenue.date+'"':'';
     return '<div class="row'+((isDead(r)||m.dropping)?' alert':'')+'" data-code="'+r.code+'" style="animation-delay:'+Math.min(ri*9,200)+'ms">'+
       '<div class="code">'+r.code+'</div>'+
       '<div class="nm" title="'+esc(r.name||r.code)+'">'+(m.dropping?'<span class="warn" title="รายได้ร่วงผิดสังเกต">▼</span>':'')+nameOf(r)+'</div>'+
       '<div class="pulse">'+strip+'</div>'+
-      (m.down ? '<span class="chip c-OFFLINE">ดับ '+m.down+' วัน</span>'
-              : '<span class="chip c-'+c.s+'">'+(c.s==='ONLINE'?'ปกติ':c.s)+'</span>')+
+      '<div class="daily-status"><div class="online-summary" data-online-summary="'+esc(r.code)+'"'+revenueAttrs+'>วันนี้ · กำลังอ่านเวลาสะสม…</div><small>ณ ตอนเช็ค: '+esc(c.s)+'</small></div>'+
       '<div class="num sm'+(m.dayRev?'':' zero')+'">'+money(m.dayRev)+(m.dayOpen&&m.dayRev?'<i class="op">·</i>':'')+'</div>'+
       '<div class="num sm'+(m.week?'':' zero')+'">'+money(m.week)+'</div>'+
       '<div class="num'+(m.month?'':' zero')+'">'+money(m.month)+'</div></div>';
   }).join('') : '<div class="empty"><b>ไม่พบตู้ที่ตรงเงื่อนไข</b>ลองเลือก “ทั้งหมด”</div>';
+  DealOnlineTime.fillSummaries($('#rows'));
 }
 
 /* ══ chart + scrubbing ══ */
@@ -1055,12 +1148,13 @@ const CW=600, CH=150;
 function drawSpark(CELLS){
   const get = CELLS || (r=>VIEW.cells(r));
   const labels = VIEW.labels, rows = DATA.rows;
-  SERIES = labels.map((_,i)=> rows.reduce((s,r)=>{ const c=get(r)[i]; return s + ((c&&c.d)||0); },0));
+  SERIES = labels.map((_,i)=>{let have=false;const sum=rows.reduce((s,r)=>{const c=get(r)[i];if(c?.d!=null)have=true;return s+(c?.d||0);},0);return have?sum:null;});
   const max = Math.max.apply(null, SERIES.concat([1]));
   const x = i => labels.length<2 ? CW/2 : i/(labels.length-1)*CW;
   const y = v => CH - (v/max)*(CH-14);
-  const pts = SERIES.map((v,i)=>[x(i), y(v)]);
-  const line = pts.map((p,i)=> (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const pts = SERIES.map((v,i)=>v==null?null:[x(i), y(v)]);
+  let active=false;
+  const line = pts.map(p=>{if(!p){active=false;return '';}const command=active?'L':'M';active=true;return command+p[0].toFixed(1)+' '+p[1].toFixed(1);}).join(' ');
   const cs = getComputedStyle(document.documentElement);
   const red = cs.getPropertyValue('--red').trim();
   const last = pts[pts.length-1];
@@ -1069,14 +1163,15 @@ function drawSpark(CELLS){
     '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">'+
       '<stop offset="0" stop-color="'+red+'" stop-opacity=".2"/>'+
       '<stop offset="1" stop-color="'+red+'" stop-opacity="0"/></linearGradient></defs>'+
-    '<path d="'+line+' L'+CW+' '+CH+' L0 '+CH+' Z" fill="url(#g)"/>'+
+    (pts.every(Boolean)?'<path d="'+line+' L'+CW+' '+CH+' L0 '+CH+' Z" fill="url(#g)"/>':'')+
     '<path d="'+line+'" fill="none" stroke="'+red+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'+
     (last ? '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="3.5" fill="'+red+'"/>' : '');
   $('#x0').textContent = labels[0]||'—';
   $('#x1').textContent = labels[labels.length-1]||'—';
   const a = SERIES[SERIES.length-2], b = SERIES[SERIES.length-1];
   const unit = MODE==='day' ? 'วันก่อน' : 'รอบก่อน';
-  $('#k-delta').innerHTML = (a==null||b==null||!a) ? 'ล่าสุด '+money(b||0)+' บาท'
+  const openProvider=MODE==='day' && rows.some(r=>r.revenueSource && r.daily?.[labels.at(-1)]?.closed===false);
+  $('#k-delta').innerHTML = openProvider ? 'ล่าสุด '+money(b)+' บาท · ยังไม่ปิดวัน' : (a==null||b==null||!a) ? 'ล่าสุด '+money(b)+' บาท'
     : 'เทียบ'+unit+' <b class="'+(b<a?'dn':'')+'">'+(b>=a?'↑ +':'↓ ')+Math.round((b-a)/a*100)+'%</b> · ล่าสุด '+money(b)+' บาท';
 }
 
@@ -1086,6 +1181,7 @@ function scrub(e){
   const r = cw.getBoundingClientRect();
   const px = Math.min(Math.max(e.clientX - r.left, 0), r.width);
   const i = Math.round(px / r.width * (SERIES.length-1));
+  if(SERIES[i]==null){cw.classList.remove('scrub');return;}
   const max = Math.max.apply(null, SERIES.concat([1]));
   const left = SERIES.length<2 ? r.width/2 : i/(SERIES.length-1)*r.width;
   const yPct = (CH - (SERIES[i]/max)*(CH-14)) / CH;
@@ -1113,47 +1209,34 @@ document.addEventListener('mouseout', e=>{ if(e.target.closest('.tick')) tip.cla
 /* ══ sheet ══ */
 function open(code){
   const r = DATA.rows.find(x=>x.code===code); if(!r) return;
+  PICK = '';
   const m = M[code];
   const cs = VIEW.cells(r).filter(Boolean);
   const tot = cs.reduce((s,c)=>Math.max(s,c.m||0),0);
   const body = VIEW.labels.map((s,i)=>{ const c=VIEW.cells(r)[i];
-    return '<tr><td>'+s+(VIEW.part[i]&&MODE==='day'?' <span class="muted">ยังไม่ปิด</span>':'')+
+    return '<tr><td>'+s+(isPartial(c,VIEW.part[i])&&MODE==='day'?' <span class="muted">ยังไม่ปิด</span>':'')+
       '</td><td>'+(c?'<i class="dot" style="background:'+COL[c.s]+'"></i>'+c.s:'–')+
       '</td><td>'+(c?money(c.d):'–')+'</td><td>'+(c?money(c.m):'–')+'</td></tr>';
   }).reverse().join('');
-  const upv = m.uptime==null?0:m.uptime;
-  const diff = Math.round(upv - M.__medUp);
-  const upCol = upv>=85?'var(--green)':upv>=60?'var(--amber)':'var(--red)';
 
   $('#dbody').innerHTML =
     '<div class="dhead"><button class="dclose" id="dclose" aria-label="ปิด">✕</button>'+
       '<div class="code">'+r.code+(r.owner?' · '+esc(r.owner):'')+'</div>'+
       '<h2 id="dname">'+(r.name&&r.name.trim()?esc(r.name):'<span class="noname">ยังไม่ได้ตั้งชื่อ</span>')+' <button class="pen" id="rename" title="แก้ชื่อตู้">✎</button></h2>'+
       '<div class="dchip"><span class="chip c-'+(m.down?'OFFLINE':m.last.s)+'">'+
-        (m.down ? 'ดับ '+m.down+' วัน' : m.last.s==='ONLINE' ? 'ออนไลน์วันนี้' : m.last.s)+'</span>'+
-        '<span class="muted">เฉลี่ยตอนปกติ '+money(m.avg)+' บาท/วัน · uptime '+(m.uptime==null?'–':Math.round(m.uptime)+'%')+'</span></div>'+
+        (m.down ? 'ดับ '+m.down+' วัน' : m.last.s==='ONLINE' ? 'ออนไลน์ ณ ตอนเช็ค' : m.last.s)+'</span>'+
+        '<span class="muted">เฉลี่ยตอนปกติ '+money(m.avg)+' บาท/วัน · สัดส่วนรอบเช็คออนไลน์ '+(m.uptime==null?'–':Math.round(m.uptime)+'%')+'</span></div>'+
       '<div class="dstats">'+
         '<div><div class="k">วันนี้'+(m.dayOpen?' <i class="op">·ยังไม่ปิด</i>':'')+'</div><div class="v">'+money(m.dayRev)+'</div></div>'+
         '<div><div class="k">7 วันล่าสุด</div><div class="v">'+money(m.week)+'</div></div>'+
         '<div><div class="k">เดือนนี้</div><div class="v">'+money(m.month)+'</div></div>'+
       '</div></div>'+
-    '<div class="dsec"><h3>Uptime เทียบทั้งกอง</h3>'+
-      '<div class="bench"><div class="lbl"><span>Uptime ดิบ</span><b style="color:'+upCol+'">'+
-        (m.uptime==null?'–':Math.round(upv)+'%')+'</b></div>'+
-        '<div class="bmark"><i style="width:'+upv+'%;background:'+upCol+'"></i>'+
-        '<u style="left:'+M.__medUp+'%" data-l="ค่ากลาง '+Math.round(M.__medUp)+'%"></u></div></div>'+
-      '<div class="bench" style="margin-top:28px"><div class="lbl"><span>Uptime ที่นับผิด <span class="muted">ตัดวันร้านปิด</span></span>'+
-        '<b>'+(m.upx==null?'–':Math.round(m.upx)+'%')+'</b></div>'+
-        '<div class="bmark"><i style="width:'+(m.upx||0)+'%;background:var(--amber)"></i></div></div>'+
-      '<div class="note" style="margin-top:10px">'+
-        (m.uptime==null ? 'ยังไม่มีวันที่ปิดยอด' :
-         diff >= 0 ? 'ดีกว่าค่ากลางทั้งกอง <b>'+diff+' จุด</b> — ตู้นี้ไม่ใช่ปัญหา'
-                   : 'ต่ำกว่าค่ากลางทั้งกอง <b>'+Math.abs(diff)+' จุด</b> — ถ้า “ที่นับผิด” ต่ำด้วย แปลว่าดับยาวจริง ไม่ใช่ร้านปิดตามปกติ')+
-      '</div></div>'+
+    '<div class="dsec"><div id="drawer-online-time" class="online-time"></div></div>'+
     (m.dropping ? '<div class="dsec"><h3>รายได้ร่วงผิดสังเกต</h3><div class="note">'+
       'ตู้ยัง Online แต่ '+RULE.DROP_WIN+' วันล่าสุดทำได้เฉลี่ย <b>'+money(m.recent)+'</b> บาท '+
       'จากปกติ <b>'+money(m.base)+'</b> บาท (ร่วง '+Math.round(m.dropPct*100)+'%) — '+
       'ตู้ไม่ได้พัง แต่คนเล่นน้อยลง ลองเช็คว่าโดนย้ายมุม หรือมีอะไรบัง</div></div>' : '')+
+    '<div class="dsec"><button class="fp-primary" id="daily-open">บันทึกงานรายวัน ↗</button></div>'+
     '<div class="teamsec"><h3 style="font-size:9.5px;font-family:var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px">สถานะจากทีม</h3>'+
       '<div id="tnow"><div class="tnone">กำลังโหลด…</div></div>'+
       '<div class="stbtns" id="stbtns"></div>'+
@@ -1169,6 +1252,9 @@ function open(code){
   $('#drawer').classList.add('on'); $('#scrim').classList.add('on'); $('#drawer').setAttribute('aria-hidden','false');
   $('#rename').onclick = () => doRename(r);
   $('#tsave').onclick  = () => saveNote(r);
+  $('#daily-open').onclick=()=>{close();Workspace.openMachine(code);};
+  if(/^(CEM|EQ)_/.test(code))$('.teamsec').style.display='none';
+  DealOnlineTime.mount($('#drawer-online-time'),code);
   loadHistory(code);
   loadNotes(code);
 }
@@ -1178,27 +1264,28 @@ const who = () => { try { return localStorage.dealWho || ''; } catch(e){ return 
 let PICK = '';
 
 async function post(body){
-  const r = await fetch(API, { method:'POST', headers:{'content-type':'application/json'},
-    body: JSON.stringify(Object.assign({}, body, KEY?{key:KEY}:{})) });
-  const j = await r.json();
-  if(!j.ok) throw new Error(j.error);
-  return j.data;
+  try {
+    const j = await DealApi.request(API, { method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify(Object.assign({}, body, KEY?{key:KEY}:{})) });
+    return j.data;
+  } catch(e){ throw new Error(e.message+' — ตรวจบันทึกก่อนส่งซ้ำ'); }
 }
 
 const FALLBACK_ST = ['รับเรื่องแล้ว','นัดช่างแล้ว','ช่างเข้าหน้างาน','ซ่อมเสร็จ','รอลูกค้าตอบ','ร้านปิดชั่วคราว','ปกติ ไม่ต้องทำอะไร'];
 
 async function loadNotes(code){
+  const version = ++notesRequest, panel = $('#tnow');
   let d;
   if(!API){ d = { notes: DEMO_NOTES[code] || [], statuses: FALLBACK_ST }; }
   else {
     try { d = await api({action:'notes', code:code}); }
-    catch(e){ const el=$('#tnow'); if(el) el.innerHTML = '<div class="tnone">โหลดบันทึกไม่ได้: '+esc(e.message)+'</div>'; return; }
+    catch(e){ const el=$('#tnow'); if(el===panel && version===notesRequest && el) el.innerHTML = '<div class="tnone">โหลดบันทึกไม่ได้: '+esc(e.message)+'</div>'; return; }
   }
+  if(version!==notesRequest || panel!==$('#tnow')) return;
   NOTES[code] = d.notes;
-  PICK = '';
   const sb = $('#stbtns'); if(!sb) return;
   sb.innerHTML = (d.statuses||FALLBACK_ST).map(x=>
-    '<button class="stbtn" data-s="'+esc(x)+'" aria-pressed="false">'+esc(x)+'</button>').join('');
+    '<button class="stbtn" data-s="'+esc(x)+'" aria-pressed="'+(x===PICK)+'">'+esc(x)+'</button>').join('');
   sb.onclick = e => { const b = e.target.closest('.stbtn'); if(!b) return;
     const on = b.getAttribute('aria-pressed')==='true';
     sb.querySelectorAll('.stbtn').forEach(x=>x.setAttribute('aria-pressed','false'));
@@ -1237,6 +1324,7 @@ function when(iso){
 }
 
 async function saveNote(r){
+  const panel = $('#tnow');
   const note = $('#tnote').value.trim();
   const by   = $('#tby').value.trim();
   if(!PICK && !note) return toast('เลือกสถานะ หรือพิมพ์ข้อความก่อน');
@@ -1248,15 +1336,19 @@ async function saveNote(r){
   try {
     if(API) await post({action:'note', code:r.code, name:r.name, status:PICK, note:note, by:by});
     NOTES[r.code] = [entry].concat(NOTES[r.code]||[]);
+    if(panel!==$('#tnow')) { toast('บันทึกแล้ว'); return; }
+    notesRequest++; // Discard pre-save reads, then reconcile with a fresh read below.
     $('#tnote').value = ''; PICK = '';
     $('#stbtns').querySelectorAll('.stbtn').forEach(x=>x.setAttribute('aria-pressed','false'));
     paintNotes(r.code);
     toast('บันทึกแล้ว');
+    if(API) loadNotes(r.code);
   } catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
   finally { btn.disabled = false; btn.textContent = 'บันทึก'; }
 }
 
 async function doRename(r){
+  const heading = $('#dname');
   const name = prompt('ชื่อตู้ใหม่', r.name);
   if(name==null) return;
   const v = name.trim();
@@ -1264,35 +1356,41 @@ async function doRename(r){
   const by = ($('#tby') && $('#tby').value.trim()) || who() || 'ไม่ระบุ';
   try {
     if(API) await post({action:'rename', code:r.code, name:v, by:by});
+    if(API){ monthFreshUntil = Date.now() + 21600000; try { sessionStorage.dealRenameAt = Date.now(); } catch(e){} }
     r.name = v;
-    $('#dname').innerHTML = esc(v)+' <button class="pen" id="rename" title="แก้ชื่อตู้">✎</button>';
-    $('#rename').onclick = () => doRename(r);
+    const current = DATA.rows.find(x=>x.code===r.code); if(current) current.name = v;
+    if(heading===$('#dname')){
+      $('#dname').innerHTML = esc(v)+' <button class="pen" id="rename" title="แก้ชื่อตู้">✎</button>';
+      $('#rename').onclick = () => doRename(r);
+    }
     render(); renderWatch();
     toast('เปลี่ยนชื่อแล้ว');
-    loadNotes(r.code);
+    if(heading===$('#dname')) loadNotes(r.code);
   } catch(e){ toast('เปลี่ยนชื่อไม่สำเร็จ: '+e.message); }
 }
 
 async function loadHistory(code){
+  const panel = $('#hist'), epoch = historyEpoch;
   let h = HIST[code];
   if(!h){
     if(!API){ h = demoHist(); }
     else{
-      try{ h = (await api({action:'history', code:code})).history; }
-      catch(e){ const el=$('#hist'); if(el) el.innerHTML = '<div class="muted">โหลดประวัติไม่ได้: '+esc(e.message)+'</div>'; return; }
+      try{ h = (await api(Object.assign({action:'history', code:code}, epoch?{fresh:'1'}:{}))).history; }
+      catch(e){ const el=$('#hist'); if(el===panel && epoch===historyEpoch && el) el.innerHTML = '<div class="muted">โหลดประวัติไม่ได้: '+esc(e.message)+'</div>'; return; }
     }
+    if(epoch!==historyEpoch) return;
     HIST[code] = h;
   }
-  const el = $('#hist'); if(!el) return;
+  const el = $('#hist'); if(!el || el!==panel) return;
   if(!h.length){ el.innerHTML = '<div class="muted">ยังไม่มีเดือนอื่นให้เทียบ</div>'; return; }
   const max = Math.max.apply(null, h.map(x=>x.total).concat([1]));
   el.innerHTML = '<div class="hist">'+ h.map(x=>
-      '<div class="hcol'+(x.month===DATA.month?' now':'')+'" title="'+x.month+' · '+money(x.total)+' บาท · uptime '+x.uptime+'%">'+
-      '<i class="hb" style="height:'+Math.max(3, Math.round(x.total/max*58))+'px"></i>'+
+      '<div class="hcol'+(x.month===DATA.month?' now':'')+'" title="'+x.month+' · '+money(x.total)+' บาท · รอบเช็คออนไลน์ '+(x.uptime==null?'–':x.uptime+'%')+'">'+
+      '<i class="hb" style="height:'+(x.total==null?0:Math.max(3, Math.round(x.total/max*58)))+'px"></i>'+
       '<span class="hl">'+x.month.split('-')[0]+'</span></div>').join('') +'</div>'+
     '<div class="hvals">'+ h.map(x=>'<span>'+kb(x.total)+'</span>').join('') +'</div>';
 }
-function close(){ $('#drawer').classList.remove('on'); $('#scrim').classList.remove('on'); $('#drawer').setAttribute('aria-hidden','true'); }
+function close(){ notesRequest++; $('#drawer').classList.remove('on'); $('#scrim').classList.remove('on'); $('#drawer').setAttribute('aria-hidden','true'); }
 
 /* ══ command palette ══ */
 let CSEL = 0, CRES = [];
@@ -1343,7 +1441,7 @@ $('#cmd').onclick = openCmd;
 /* ══ CSV ══ */
 function csv(){
   const L = VIEW.labels;
-  const head = ['รหัสโลเคชั่น','ชื่อโลเคชั่น','ผู้ดูแล','Uptime %','Uptime ที่นับผิด %','ดับมา (วัน)','เฉลี่ย/วัน','เงินที่หายไป']
+  const head = ['รหัสโลเคชั่น','ชื่อโลเคชั่น','ผู้ดูแล','รอบเช็คออนไลน์ %','รอบเช็คออนไลน์ (ปรับวันปิด) %','ดับมา (วัน)','เฉลี่ย/วัน','เงินที่หายไป']
     .concat(L.reduce((a,s)=>a.concat([s+' สถานะ', s+' รายได้', s+' สะสม/เดือน']),[]));
   const lines = [head].concat(DATA.rows.map(r=>{ const m=M[r.code];
     return [r.code, r.name, r.owner||'', m.uptime==null?'':Math.round(m.uptime), m.upx==null?'':Math.round(m.upx),
@@ -1365,6 +1463,7 @@ function setMode(m){
   if(DATA) build();
 }
 function setFilter(f){
+  REVENUE_GROUP='';
   FILTER = f;
   $$('#seg button').forEach(x=>x.setAttribute('aria-pressed', x.dataset.f===f));
   knob($('#seg'));
@@ -1379,6 +1478,10 @@ $('#scrim').onclick = close;
 $('#rows').onclick = e => { const r = e.target.closest('.row'); if(r) open(r.dataset.code); };
 $('#wl-rows').onclick = e => { const r = e.target.closest('.wrow'); if(r) open(r.dataset.code); };
 $('#mode').onclick = e => { const b = e.target.closest('button'); if(b) setMode(b.dataset.m); };
+Workspace.init({getData:()=>DATA,getGroups:()=>GROUPS,getMetrics:()=>M,onDetails:open,onTable:filterRevenueGroup});
+$('#workspace-notes').onclick=()=>Workspace.openGroup('');
+$$('.workspace-links a').forEach(a=>a.onclick=()=>{$$('.workspace-links a').forEach(x=>x.removeAttribute('aria-current'));a.setAttribute('aria-current','page');});
+$('#revenue-groups').onclick=e=>{const b=e.target.closest('[data-revenue-group]');if(b)selectRevenueGroup(b.dataset.revenueGroup);};
 $('#seg').onclick  = e => { const b = e.target.closest('button'); if(b) setFilter(b.dataset.f); };
 $('#wtab').onclick = e => { const b = e.target.closest('button'); if(!b) return;
   WTAB = b.dataset.w;
@@ -1628,7 +1731,7 @@ boot();
     var time=range.start+'~'+range.end; var ids=PERF_MACHINES.map(function(m){return m.mid;});
     var old=btn.textContent; btn.disabled=true; btn.textContent='\u23f3 \u0e01\u0e33\u0e25\u0e31\u0e07\u0e14\u0e36\u0e07...';
     var res;
-    try{ var r=await fetch('/api/perfume',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:token,time:time,ids:ids})}); res=await r.json(); }
+    try{ res=await DealApi.perfume(token,time,ids); }
     catch(e){ btn.disabled=false; btn.textContent=old; toastP('\u0e40\u0e23\u0e35\u0e22\u0e01 /api/perfume \u0e44\u0e21\u0e48\u0e44\u0e14\u0e49: '+e); return; }
     btn.disabled=false; btn.textContent=old;
     if(!res||!res.ok){ toastP('\u0e14\u0e36\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49: '+((res&&res.error)||'unknown')); return; }
