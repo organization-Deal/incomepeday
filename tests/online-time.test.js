@@ -44,3 +44,12 @@ test('one online observation confirms online today without inventing a duration;
  await core.record([sample('2026-09-16T12:05:00','OFFLINE')]);d=await core.day('LO_0001','2026-09-16');assert.equal(d.seenOnline,true);assert.equal(d.onlineMs,300000);
  assert.equal((await core.day('LO_0002','2026-09-16')).seenOnline,false);
 });
+
+test('latest online/offline observations survive unknown reads and day rollover',async()=>{
+ const core=new OnlineTimeCore(store()),now=time('2026-09-18T00:00:00');
+ const on=sample('2026-09-16T23:55:00'),off=sample('2026-09-17T00:00:00','OFFLINE'),unknown=sample('2026-09-17T00:05:00','UNKNOWN');
+ await core.record([on,off,unknown],now);await core.record([on],now);
+ const d=await core.day('LO_0001','2026-09-17',now);
+ assert.equal(d.latestOnlineAt,on.at);assert.equal(d.latestOfflineAt,off.at);
+ const other=await core.day('LO_0002','2026-09-17',now);assert.equal(other.latestOnlineAt,null);assert.equal(other.latestOfflineAt,null);
+});

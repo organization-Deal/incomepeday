@@ -23,3 +23,4 @@ html{scroll-padding-top:100px}body{padding-left:216px}.wrap{max-width:1440px;pad
 @media(min-width:1001px){.thead,.row{grid-template-columns:80px minmax(120px,1fr) minmax(40px,1fr) 195px 72px 72px 88px}.row{height:auto;min-height:88px}}
 .row>.code{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:1000px){.thead>span:nth-child(4){display:none}.daily-status{width:100%}.row>.daily-status{padding-left:0}}
+.ot-last{margin-top:16px;padding-top:12px;border-top:1px solid var(--hair);font-size:12px;color:var(--ink-2);line-height:1.8}.ot-last-inline{margin-top:5px;font-size:10px!important;line-height:1.6!important}

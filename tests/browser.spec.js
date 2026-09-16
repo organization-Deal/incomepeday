@@ -376,3 +376,14 @@ test('offline now still shows online today and accumulated hours in table and po
  await expect(page.locator('#fp-online-time')).toContainText('วันนี้ · เคยออนไลน์แล้ว');
  await expect(page.locator('#fp-list [data-machine="LO_0001"]')).toContainText('3 ชม. 25 นาที');
 });
+
+test('latest online and offline timestamps are shown as Bangkok observations',async({page})=>{
+ await setup(page,{onApi:async(route,url)=>{
+  if(url.pathname!=='/api/online-time')return false;
+  const d={code:'LO_0001',seenOnline:true,onlineMs:600000,offlineMs:0,unknownMs:600000,elapsedMs:1200000,observations:2,latestOnlineAt:Date.parse('2026-09-16T03:05:00Z'),latestOfflineAt:Date.parse('2026-09-16T04:25:00Z')};
+  await route.fulfill({json:{ok:true,data:url.searchParams.has('code')?d:{rows:[d]}}});return true;
+ }});
+ const row=page.locator('#rows .row[data-code="LO_0001"]');await expect(row).toContainText('พบออนไลน์ล่าสุด:');await expect(row).toContainText('10:05');await expect(row).toContainText('11:25');
+ await page.evaluate(()=>Workspace.openMachine('LO_0001'));const last=page.locator('#fp-online-time .ot-last');
+ await expect(last).toContainText('พบออฟไลน์ล่าสุด:');await expect(last).toContainText('10:05');await expect(last).toContainText('11:25');
+});

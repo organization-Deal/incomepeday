@@ -31,7 +31,9 @@ export class OnlineTimeCore{
     }
     const value=await entry(dateOf(sample.at));value.observations++;value.lastObservedAt=sample.at;if(sample.status==='ONLINE')value.seenOnline=true;
     for(const {key,value} of entries.values())await tx.put(key,value);
-    await tx.put(lastKey,{at:sample.at,status:sample.status});accepted++;
+    await tx.put(lastKey,{at:sample.at,status:sample.status,
+     latestOnlineAt:sample.status==='ONLINE'?sample.at:last?.latestOnlineAt??(last?.status==='ONLINE'?last.at:null),
+     latestOfflineAt:sample.status==='OFFLINE'?sample.at:last?.latestOfflineAt??(last?.status==='OFFLINE'?last.at:null)});accepted++;
    }
    return {accepted};
   });
@@ -44,8 +46,10 @@ export class OnlineTimeCore{
   if(!validCode(code))throw new HttpError('รหัสตู้ไม่ถูกต้อง',400);
   const [start,end]=dayBounds(date);if(start>now)throw new HttpError('ยังไม่ถึงวันที่เลือก',400);
   const value=await this.storage.get('day:'+date+':'+code)||{onlineMs:0,offlineMs:0,observations:0};
+  const latest=await this.storage.get('last:'+code);
   const elapsedMs=Math.min(now,end)-start;
-  return {...value,seenOnline:value.seenOnline===true||value.onlineMs>0,code,date,elapsedMs,unknownMs:Math.max(0,elapsedMs-value.onlineMs-value.offlineMs),closed:now>=end,
+  return {...value,latestOnlineAt:latest?.latestOnlineAt??(latest?.status==='ONLINE'?latest.at:null),
+   latestOfflineAt:latest?.latestOfflineAt??(latest?.status==='OFFLINE'?latest.at:null),seenOnline:value.seenOnline===true||value.onlineMs>0,code,date,elapsedMs,unknownMs:Math.max(0,elapsedMs-value.onlineMs-value.offlineMs),closed:now>=end,
    intervalMinutes:5,maxGapMinutes:10,estimated:true,timeZone:'Asia/Bangkok'};
  }
 }

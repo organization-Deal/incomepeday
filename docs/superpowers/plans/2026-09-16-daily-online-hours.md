@@ -24,3 +24,5 @@ Validation: midnight rollover, flapping, duplicate/concurrent writes, missing hi
 ## Daily activity summary clarification
 
 The machine table and popup list now lead with whether online activity was observed today and cumulative hours/minutes, followed by the separate latest snapshot. A single ONLINE observation establishes “seen online” but cannot establish duration; a later OFFLINE observation does not clear that fact. Missing history says unconfirmed, and offline-only observations say no online activity observed in the collected period, never “offline all day.” A shared 30-second browser cache loads configured fleet day summaries in one ledger RPC without calling provider APIs.
+
+Latest ONLINE and OFFLINE observation timestamps are retained independently across midnight and UNKNOWN/ERROR reads. They are global machine history, explicitly labelled separately from the selected day's hours. These timestamps mean last observed by the five-minute sampler, not exact state-transition times. Missing observations display no recorded history.

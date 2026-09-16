@@ -1,6 +1,8 @@
 globalThis.DealOnlineTime=(()=>{
  const today=()=>new Date(Date.now()+7*3600000).toISOString().slice(0,10);
  const duration=ms=>{const minutes=Math.floor(ms/60000);return Math.floor(minutes/60)+' ชม. '+minutes%60+' นาที';};
+ const stamp=at=>Number.isFinite(at)?new Date(at).toLocaleString('th-TH',{timeZone:'Asia/Bangkok',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}):'ยังไม่มีบันทึก';
+ const latest=d=>'พบออนไลน์ล่าสุด: '+stamp(d?.latestOnlineAt)+' · พบออฟไลน์ล่าสุด: '+stamp(d?.latestOfflineAt);
  const headline=d=>d?.seenOnline||d?.onlineMs>0?'เคยออนไลน์แล้ว':d?.observations?'ยังไม่พบออนไลน์ในช่วงที่เก็บข้อมูล':'ยังไม่มีข้อมูลยืนยัน';
  const total=d=>d?.seenOnline||d?.onlineMs>0?(d.onlineMs>=60000?'รวม ≈ '+duration(d.onlineMs):d.onlineMs>0?'รวมประมาณน้อยกว่า 1 นาที':'พบออนไลน์แล้ว · รอข้อมูลเพื่อคำนวณเวลา'):d?.observations?'พบออนไลน์สะสม 0 ชม. 0 นาที':'เวลาสะสมยังไม่ทราบ';
  let fleetCache=null;
@@ -12,19 +14,20 @@ globalThis.DealOnlineTime=(()=>{
  }
  async function fillSummaries(root){
   const targets=[...root.querySelectorAll('[data-online-summary]')];if(!targets.length)return;
-  try{const data=await fleet();for(const el of targets){if(!el.isConnected)continue;const d=data.get(el.dataset.onlineSummary);el.replaceChildren();const b=document.createElement('b'),small=document.createElement('small');b.textContent='วันนี้ · '+headline(d);small.textContent=total(d);el.append(b,small);}}
+  try{const data=await fleet();for(const el of targets){if(!el.isConnected)continue;const d=data.get(el.dataset.onlineSummary);el.replaceChildren();const b=document.createElement('b'),small=document.createElement('small');b.textContent='วันนี้ · '+headline(d);small.textContent=total(d);el.append(b,small);const times=document.createElement('small');times.className='ot-last-inline';times.textContent=latest(d);el.append(times);}}
   catch{for(const el of targets)if(el.isConnected)el.textContent='วันนี้ · ยังอ่านเวลาสะสมไม่ได้';}
  }
  function mount(target,code){
   if(!target)return;
-  target.innerHTML='<div class="ot-head"><div><h3>ชั่วโมงออนไลน์รายวัน</h3><small>00:00–23:59 น. · เวลาไทย</small></div><label>วันที่<input aria-label="วันที่ดูชั่วโมงออนไลน์" type="date" value="'+today()+'" max="'+today()+'"></label></div><div class="ot-result" aria-live="polite"></div>';
-  const input=target.querySelector('input'),result=target.querySelector('.ot-result');let sequence=0;
+  target.innerHTML='<div class="ot-head"><div><h3>ชั่วโมงออนไลน์รายวัน</h3><small>00:00–23:59 น. · เวลาไทย</small></div><label>วันที่<input aria-label="วันที่ดูชั่วโมงออนไลน์" type="date" value="'+today()+'" max="'+today()+'"></label></div><div class="ot-result" aria-live="polite"></div><div class="ot-last" aria-live="polite"></div>';
+  const input=target.querySelector('input'),result=target.querySelector('.ot-result'),last=target.querySelector('.ot-last');let sequence=0;
   async function load(){
-   const id=++sequence;result.textContent='กำลังอ่านชั่วโมงออนไลน์…';
+   const id=++sequence;result.textContent='กำลังอ่านชั่วโมงออนไลน์…';last.textContent='';
    try{
     const {data:d}=await DealApi.request('/api/online-time?'+new URLSearchParams({code,date:input.value}));
     if(id!==sequence||!target.isConnected)return;
     if(!d||['onlineMs','offlineMs','unknownMs','elapsedMs','observations'].some(k=>!Number.isFinite(d[k])||d[k]<0))throw new Error('ข้อมูลชั่วโมงไม่ถูกต้อง');
+    last.textContent='ประวัติล่าสุดของตู้ (ทุกวัน) · '+latest(d);
     if(!d.observations){result.textContent=d.collectorEnabled?'ยังไม่มีประวัติช่วงเวลาของวันนี้ เริ่มนับเมื่อเก็บสถานะได้ต่อเนื่อง':'ยังไม่ได้เริ่มเก็บชั่วโมงออนไลน์ — ข้อมูลเดิมเป็นสถานะ ณ เวลาเช็ค ไม่สามารถแปลงเป็นชั่วโมงย้อนหลังได้';return;}
     result.innerHTML='<p class="ot-verdict"></p><div class="ot-values"><div><span>ออนไลน์ ≈</span><b>'+duration(d.onlineMs)+'</b></div><div><span>ออฟไลน์ ≈</span><b>'+duration(d.offlineMs)+'</b></div><div><span>ข้อมูลขาดหาย</span><b>'+duration(d.unknownMs)+'</b></div></div><p class="ot-detail"></p>';
     result.querySelector('.ot-verdict').textContent=(input.value===today()?'วันนี้':'วันที่เลือก')+' · '+headline(d)+' — '+total(d);
