@@ -11,3 +11,11 @@ html{scroll-padding-top:100px}body{padding-left:216px}.wrap{max-width:1440px;pad
 .fleet-popup[open]{display:grid;grid-template-rows:auto minmax(0,1fr)}.fp-body{height:auto}.fleet-popup [hidden]{display:none!important}.fp-primary{flex-shrink:0;white-space:nowrap}.fp-message{flex:1;min-width:0}
 @media(max-width:800px){.fp-body{height:auto}.workspace-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.workspace-links a,.workspace-links button{white-space:normal;justify-content:center;text-align:center;min-height:42px;padding:8px 4px}}
 .ops-kpi .v{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap}.ops-kpi .v>small{font-size:11px;margin:0}.ops-kpi #k-on,.ops-kpi #ops-offline-pct{font-size:24px}
+/* Time totals use a separate date window from revenue and daily notes. */
+.online-time{padding:20px 0;border-bottom:1px solid var(--line);margin-bottom:20px}
+.ot-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
+.ot-head h3{margin:0 0 5px!important;font-size:15px!important}.ot-head small,.ot-detail,.ot-values span{color:var(--ink-3);font-size:12px}
+.ot-head label{display:grid;gap:5px;font-size:12px}.ot-head input{padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+.ot-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.ot-values>div{display:grid;gap:8px;padding:12px 8px;background:var(--track);border-radius:10px}
+.ot-values b{font-size:14px}.ot-values>div:first-child b{color:var(--green)}.ot-detail{line-height:1.7;margin:12px 0 0}.ot-result{font-size:13px;line-height:1.7}
+@media(max-width:480px){.ot-head{align-items:flex-start}.ot-values{grid-template-columns:1fr}.ot-values>div{display:flex;justify-content:space-between}}

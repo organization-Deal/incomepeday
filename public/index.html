@@ -547,8 +547,8 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
       <div class="ops-legend"><span><i class="dot" style="background:var(--green)"></i>Online %</span><span><i class="dot" style="background:var(--red)"></i>Offline %</span><span><i style="width:13px;border-top:1px dashed var(--green)"></i>เป้าหมาย 95%</span></div>
       <div class="health legacy-health"><div class="hmain"><div class="hbar"><div class="mix" id="mix"><i class="mx-ONLINE"></i><i class="mx-OFFLINE"></i><i class="mx-ERROR"></i><i class="mx-UNKNOWN"></i></div><div class="mixleg" id="mixleg"></div></div></div>
         <div class="ops-secondary">
-          <div class="hc"><div class="k">Uptime ที่นับผิด</div><div class="v2 tab" id="k-upx">—<small>%</small></div><div class="sub">ตัดวันร้านปิดออก · ใช้วัดทีม</div></div>
-          <div class="hc"><div class="k">Uptime ดิบ</div><div class="v2 tab" id="k-up">—<small>%</small></div><div class="sub" id="k-upsub">—</div></div>
+          <div class="hc"><div class="k">รอบเช็คออนไลน์ (ปรับวันปิด)</div><div class="v2 tab" id="k-upx">—<small>%</small></div><div class="sub">ตัดวันร้านปิดออก · ใช้วัดทีม</div></div>
+          <div class="hc"><div class="k">รอบเช็คออนไลน์</div><div class="v2 tab" id="k-up">—<small>%</small></div><div class="sub" id="k-upsub">—</div></div>
           <div class="hc"><div class="k" id="k-daylab">รายได้วันล่าสุด</div><div class="v2 tab" id="k-day">—<small>บาท</small></div><div class="sub" id="k-daysub">—</div></div>
           <div class="hc"><div class="k">รายได้ 7 วันล่าสุด</div><div class="v2 tab" id="k-week">—<small>บาท</small></div><div class="sub" id="k-weeksub">—</div></div>
         </div><span id="bar-up" style="display:none"></span><span id="bar-upx" style="display:none"></span>
@@ -594,7 +594,7 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
     <div class="cap" id="lb-field"></div></div>
   <div class="card lb" id="lb">
     <div class="lbrow head">
-      <span></span><span>ผู้ดูแล</span><span>ตู้</span><span>Uptime ที่นับผิด · ขีด = ค่ากลาง</span>
+      <span></span><span>ผู้ดูแล</span><span>ตู้</span><span>รอบเช็คออนไลน์ (ปรับวันปิด) · ขีด = ค่ากลาง</span>
       <span></span><span>ดิบ</span><span>ดับ</span><span>เงินที่หาย</span>
     </div>
     <div id="lb-rows"></div>
@@ -652,6 +652,7 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
 <script src="./api-client.js"></script>
 <script src="./revenue-groups.js"></script>
 <script src="./workspace.js"></script>
+<script src="./online-time.js"></script>
 <script>
 /* ═══════════ ตั้งค่า ═══════════
    ไม่ต้องใส่ URL ของ Apps Script ตรงนี้ — Worker ที่ /api จัดการให้
@@ -1096,7 +1097,7 @@ function render(){
   setNum('#k-week', unavailable===rows.length?null:weekTot);
   $('#k-onsub').textContent = onNow+' จาก '+rows.length+' ตู้';
   $('#k-daysub').textContent = 'เฉลี่ย '+money(rows.length-unavailable?day/(rows.length-unavailable):null)+' บาท/ตู้'+(unavailable?' · เฉพาะตู้ที่อ่านยอดได้':'');
-  $('#k-upsub').textContent = !ups.length ? 'ยังไม่มีประวัติสถานะสำหรับคำนวณ uptime' : 'ค่ากลาง '+Math.round(M.__medUp)+'% · ต่ำกว่า 60% อยู่ '+bad+' ตู้';
+  $('#k-upsub').textContent = !ups.length ? 'ยังไม่มีประวัติสถานะสำหรับคำนวณสัดส่วนรอบเช็ค' : 'ค่ากลาง '+Math.round(M.__medUp)+'% · ต่ำกว่า 60% อยู่ '+bad+' ตู้';
   $('#k-weeksub').textContent = 'เฉลี่ย '+money(weekTot/7)+' บาท/วัน';
   renderMix(tally, rows.length);
   renderOpsDashboard();
@@ -1216,35 +1217,20 @@ function open(code){
       '</td><td>'+(c?'<i class="dot" style="background:'+COL[c.s]+'"></i>'+c.s:'–')+
       '</td><td>'+(c?money(c.d):'–')+'</td><td>'+(c?money(c.m):'–')+'</td></tr>';
   }).reverse().join('');
-  const upv = m.uptime==null?0:m.uptime;
-  const diff = Math.round(upv - M.__medUp);
-  const upCol = upv>=85?'var(--green)':upv>=60?'var(--amber)':'var(--red)';
 
   $('#dbody').innerHTML =
     '<div class="dhead"><button class="dclose" id="dclose" aria-label="ปิด">✕</button>'+
       '<div class="code">'+r.code+(r.owner?' · '+esc(r.owner):'')+'</div>'+
       '<h2 id="dname">'+(r.name&&r.name.trim()?esc(r.name):'<span class="noname">ยังไม่ได้ตั้งชื่อ</span>')+' <button class="pen" id="rename" title="แก้ชื่อตู้">✎</button></h2>'+
       '<div class="dchip"><span class="chip c-'+(m.down?'OFFLINE':m.last.s)+'">'+
-        (m.down ? 'ดับ '+m.down+' วัน' : m.last.s==='ONLINE' ? 'ออนไลน์วันนี้' : m.last.s)+'</span>'+
-        '<span class="muted">เฉลี่ยตอนปกติ '+money(m.avg)+' บาท/วัน · uptime '+(m.uptime==null?'–':Math.round(m.uptime)+'%')+'</span></div>'+
+        (m.down ? 'ดับ '+m.down+' วัน' : m.last.s==='ONLINE' ? 'ออนไลน์ ณ ตอนเช็ค' : m.last.s)+'</span>'+
+        '<span class="muted">เฉลี่ยตอนปกติ '+money(m.avg)+' บาท/วัน · สัดส่วนรอบเช็คออนไลน์ '+(m.uptime==null?'–':Math.round(m.uptime)+'%')+'</span></div>'+
       '<div class="dstats">'+
         '<div><div class="k">วันนี้'+(m.dayOpen?' <i class="op">·ยังไม่ปิด</i>':'')+'</div><div class="v">'+money(m.dayRev)+'</div></div>'+
         '<div><div class="k">7 วันล่าสุด</div><div class="v">'+money(m.week)+'</div></div>'+
         '<div><div class="k">เดือนนี้</div><div class="v">'+money(m.month)+'</div></div>'+
       '</div></div>'+
-    '<div class="dsec"><h3>Uptime เทียบทั้งกอง</h3>'+
-      '<div class="bench"><div class="lbl"><span>Uptime ดิบ</span><b style="color:'+upCol+'">'+
-        (m.uptime==null?'–':Math.round(upv)+'%')+'</b></div>'+
-        '<div class="bmark"><i style="width:'+upv+'%;background:'+upCol+'"></i>'+
-        '<u style="left:'+M.__medUp+'%" data-l="ค่ากลาง '+Math.round(M.__medUp)+'%"></u></div></div>'+
-      '<div class="bench" style="margin-top:28px"><div class="lbl"><span>Uptime ที่นับผิด <span class="muted">ตัดวันร้านปิด</span></span>'+
-        '<b>'+(m.upx==null?'–':Math.round(m.upx)+'%')+'</b></div>'+
-        '<div class="bmark"><i style="width:'+(m.upx||0)+'%;background:var(--amber)"></i></div></div>'+
-      '<div class="note" style="margin-top:10px">'+
-        (m.uptime==null ? 'ยังไม่มีวันที่ปิดยอด' :
-         diff >= 0 ? 'ดีกว่าค่ากลางทั้งกอง <b>'+diff+' จุด</b> — ตู้นี้ไม่ใช่ปัญหา'
-                   : 'ต่ำกว่าค่ากลางทั้งกอง <b>'+Math.abs(diff)+' จุด</b> — ถ้า “ที่นับผิด” ต่ำด้วย แปลว่าดับยาวจริง ไม่ใช่ร้านปิดตามปกติ')+
-      '</div></div>'+
+    '<div class="dsec"><div id="drawer-online-time" class="online-time"></div></div>'+
     (m.dropping ? '<div class="dsec"><h3>รายได้ร่วงผิดสังเกต</h3><div class="note">'+
       'ตู้ยัง Online แต่ '+RULE.DROP_WIN+' วันล่าสุดทำได้เฉลี่ย <b>'+money(m.recent)+'</b> บาท '+
       'จากปกติ <b>'+money(m.base)+'</b> บาท (ร่วง '+Math.round(m.dropPct*100)+'%) — '+
@@ -1267,6 +1253,7 @@ function open(code){
   $('#tsave').onclick  = () => saveNote(r);
   $('#daily-open').onclick=()=>{close();Workspace.openMachine(code);};
   if(/^(CEM|EQ)_/.test(code))$('.teamsec').style.display='none';
+  DealOnlineTime.mount($('#drawer-online-time'),code);
   loadHistory(code);
   loadNotes(code);
 }
@@ -1397,7 +1384,7 @@ async function loadHistory(code){
   if(!h.length){ el.innerHTML = '<div class="muted">ยังไม่มีเดือนอื่นให้เทียบ</div>'; return; }
   const max = Math.max.apply(null, h.map(x=>x.total).concat([1]));
   el.innerHTML = '<div class="hist">'+ h.map(x=>
-      '<div class="hcol'+(x.month===DATA.month?' now':'')+'" title="'+x.month+' · '+money(x.total)+' บาท · uptime '+(x.uptime==null?'–':x.uptime+'%')+'">'+
+      '<div class="hcol'+(x.month===DATA.month?' now':'')+'" title="'+x.month+' · '+money(x.total)+' บาท · รอบเช็คออนไลน์ '+(x.uptime==null?'–':x.uptime+'%')+'">'+
       '<i class="hb" style="height:'+(x.total==null?0:Math.max(3, Math.round(x.total/max*58)))+'px"></i>'+
       '<span class="hl">'+x.month.split('-')[0]+'</span></div>').join('') +'</div>'+
     '<div class="hvals">'+ h.map(x=>'<span>'+kb(x.total)+'</span>').join('') +'</div>';
@@ -1453,7 +1440,7 @@ $('#cmd').onclick = openCmd;
 /* ══ CSV ══ */
 function csv(){
   const L = VIEW.labels;
-  const head = ['รหัสโลเคชั่น','ชื่อโลเคชั่น','ผู้ดูแล','Uptime %','Uptime ที่นับผิด %','ดับมา (วัน)','เฉลี่ย/วัน','เงินที่หายไป']
+  const head = ['รหัสโลเคชั่น','ชื่อโลเคชั่น','ผู้ดูแล','รอบเช็คออนไลน์ %','รอบเช็คออนไลน์ (ปรับวันปิด) %','ดับมา (วัน)','เฉลี่ย/วัน','เงินที่หายไป']
     .concat(L.reduce((a,s)=>a.concat([s+' สถานะ', s+' รายได้', s+' สะสม/เดือน']),[]));
   const lines = [head].concat(DATA.rows.map(r=>{ const m=M[r.code];
     return [r.code, r.name, r.owner||'', m.uptime==null?'':Math.round(m.uptime), m.upx==null?'':Math.round(m.upx),

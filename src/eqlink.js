@@ -138,3 +138,13 @@ export async function eqlinkInventory(config){
   return rows(await post('/api/v3/Device/get_devicelist',{type:'1',limit:100,offset:0}),'devicelist')
     .map(row=>({device:row.devicename,name:String(row.shop_name||row.labelname||'EQLink').slice(0,200),currency:'THB'}));
 }
+
+export async function readEqlinkStatuses(config){
+ const post=await session(config);
+ const devices=rows(await post('/api/v3/Device/get_devicelist',{type:'1',limit:100,offset:0}),'devicelist');
+ const at=Date.now();
+ return config.mapping.map(({code,device})=>{
+  const row=devices.find(d=>d.devicename===device);
+  return {code,at,status:!row||row.device_type!=='CT'||Number(row.failure)===1?'UNKNOWN':row.status==='online'?'ONLINE':row.status==='offline'?'OFFLINE':'UNKNOWN'};
+ });
+}

@@ -1,3 +1,5 @@
+import {handleOnlineTime} from './online-time.js';
+import {collectOnlineTime} from './online-collector.js';
 import {handleDailyNotes} from './daily-notes.js';
 import { HttpError, json, requestJson, requestBody } from './http.js';
 import { handlePerfume } from './perfume.js';
@@ -8,6 +10,7 @@ const ALLOWED = ['months', 'month', 'history', 'notes'];
 const WRITE = ['note', 'rename'];
 
 export default {
+  async scheduled(event,env){await collectOnlineTime(env);},
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     try {
@@ -16,6 +19,7 @@ export default {
         if (request.method === 'POST') return await handleWrite(request, env);
         return json({ ok: false, error: 'method not allowed' }, 405);
       }
+      if(url.pathname==='/api/online-time')return await handleOnlineTime(request,env);
       if(url.pathname==='/api/daily-notes')return await handleDailyNotes(request,env);
       if (url.pathname === '/api/perfume') {
         if (request.method === 'POST') return await handlePerfume(request);

@@ -15,8 +15,11 @@
 
   "observability": { "enabled": true },
 
-  "durable_objects": { "bindings": [{ "name": "CEM_SESSION", "class_name": "CemSession" }, { "name": "DAILY_NOTES", "class_name": "DailyNotes" }] },
-  "migrations": [{ "tag": "cem-session-v1", "new_sqlite_classes": ["CemSession"] }, { "tag": "daily-notes-v1", "new_sqlite_classes": ["DailyNotes"] }],
+  "vars": { "ONLINE_TIME_ENABLED": "true" },
+  "triggers": { "crons": ["*/5 * * * *"] },
+
+  "durable_objects": { "bindings": [{ "name": "CEM_SESSION", "class_name": "CemSession" }, { "name": "DAILY_NOTES", "class_name": "DailyNotes" }, { "name": "ONLINE_TIME", "class_name": "OnlineTime" }] },
+  "migrations": [{ "tag": "cem-session-v1", "new_sqlite_classes": ["CemSession"] }, { "tag": "daily-notes-v1", "new_sqlite_classes": ["DailyNotes"] }, { "tag": "online-time-v1", "new_sqlite_classes": ["OnlineTime"] }],
 
   // ปิด Preview URL สาธารณะ — กัน URL ของ build เก่าลอยแบบไม่มีใครล็อก
   "preview_urls": false

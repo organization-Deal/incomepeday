@@ -15,8 +15,9 @@ async function setup(page, { baseline = false, onApi, expectedRows=2, reducedMot
   await page.route('**/*', async route => {
     const url = new URL(route.request().url());
     if (url.hostname !== 'dashboard.test') return route.abort();
-    if (['/api','/api/perfume','/api/cem','/api/daily-notes'].includes(url.pathname)) {
+    if (['/api','/api/perfume','/api/cem','/api/daily-notes','/api/online-time'].includes(url.pathname)) {
       if (onApi && await onApi(route, url)) return;
+      if(url.pathname==='/api/online-time')return route.fulfill({json:{ok:true,data:{onlineMs:0,offlineMs:0,unknownMs:0,elapsedMs:0,observations:0,collectorEnabled:false}}});
       if(url.pathname==='/api/daily-notes'){
         if(route.request().method()==='POST'){const note=route.request().postDataJSON();if(!dailyNotes.some(n=>n.id===note.id))dailyNotes.unshift({...note,at:'2026-09-16T12:00:00Z'});return route.fulfill({json:{ok:true,data:{saved:true,storage:'shared'}}});}
         return route.fulfill({json:{ok:true,data:{notes:dailyNotes.filter(n=>n.code===url.searchParams.get('code')&&n.date===url.searchParams.get('date')),storage:'shared'}}});
@@ -30,7 +31,7 @@ async function setup(page, { baseline = false, onApi, expectedRows=2, reducedMot
       else value = { history: [] };
       return route.fulfill({ json: { ok: true, data: value } });
     }
-    if(['/workspace.js','/workspace.css'].includes(url.pathname))return route.fulfill({contentType:url.pathname.endsWith('.css')?'text/css':'text/javascript',body:readFileSync('public'+url.pathname,'utf8')});
+    if(['/workspace.js','/workspace.css','/online-time.js'].includes(url.pathname))return route.fulfill({contentType:url.pathname.endsWith('.css')?'text/css':'text/javascript',body:readFileSync('public'+url.pathname,'utf8')});
     if(url.pathname==='/revenue-groups.js')return route.fulfill({contentType:'text/javascript',body:readFileSync('public/revenue-groups.js','utf8')});
     if (url.pathname === '/api-client.js') return route.fulfill({ contentType: 'text/javascript', body: readFileSync('public/api-client.js', 'utf8') });
     if (url.pathname === '/revenue-model.js') return route.fulfill({ contentType:'text/javascript',body:readFileSync('public/revenue-model.js','utf8') });
@@ -344,4 +345,18 @@ test('closing a pending note save cannot resurrect the saved text as a new draft
  await page.fill('#fp-author','Team');await page.fill('#fp-text','Saved while closed');await page.click('#fp-save');
  await page.click('#fp-close');release();await expect(page.locator('#fp-text')).toHaveValue('');
  await page.click('#workspace-notes');await page.locator('.fp-machine').first().click();await expect(page.locator('#fp-text')).toHaveValue('');
+});
+
+
+test('daily online hours show Bangkok date, unknown gaps and ignore late date responses',async({page})=>{
+ await setup(page,{onApi:async(route,url)=>{
+  if(url.pathname!=='/api/online-time')return false;
+  const old=url.searchParams.get('date')==='2026-09-15';if(old)await delay(250);
+  await route.fulfill({json:{ok:true,data:{onlineMs:old?3600000:7200000,offlineMs:3600000,unknownMs:600000,elapsedMs:11400000,observations:5,closed:true,collectorEnabled:true}}});return true;
+ }});
+ await page.evaluate(()=>Workspace.openMachine('LO_0001'));
+ const target=page.locator('#fp-online-time');await expect(target).toContainText('2 ชม. 0 นาที');
+ await expect(target).toContainText('ข้อมูลขาดหาย');await expect(target).toContainText('00:00–23:59');
+ await target.locator('input').fill('2026-09-15');await target.locator('input').fill('2026-09-16');
+ await page.waitForTimeout(350);await expect(target.locator('.ot-values>div').first()).toContainText('2 ชม. 0 นาที');
 });

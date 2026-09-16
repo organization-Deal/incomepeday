@@ -169,3 +169,17 @@ export async function cemCoordinator(env,config){
   // One coordinator per seeded login session, not per edge location or viewer.
   return env.CEM_SESSION.getByName(await configFingerprint({refresh:config.refresh}));
 }
+
+// Status-only sampling: no revenue requests; currency/closing rules do not suppress connectivity.
+export async function readCemStatuses(config,batch,accessToken,deadline){
+ const size=5;if(!Number.isInteger(batch)||batch<0||batch>=Math.ceil(config.mapping.length/size))throw new HttpError('ชุดสถานะไม่ถูกต้อง',400);
+ const call=await session(config,accessToken,deadline);
+ return bounded(config.mapping.slice(batch*size,(batch+1)*size),async m=>{
+  try{
+   const data=await call('/api/restrict/machine/qrbox/branch_info?id='+m.branch);
+   const row=data?.qr_box_machine?.find(r=>r.id===m.device);
+   if(data?.id!==m.branch||!row)throw fail();
+   return {code:m.code,at:Date.now(),status:['ONLINE','OFFLINE'].includes(row.status)?row.status:'UNKNOWN'};
+  }catch{return {code:m.code,at:Date.now(),status:'UNKNOWN'};}
+ });
+}

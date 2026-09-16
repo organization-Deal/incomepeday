@@ -44,3 +44,10 @@ test('refresh redirects are rejected without forwarding credentials',async()=>{
   await assert.rejects(new CemSessionCore(storage(),env).run(async()=>true),/CEM/);
   assert.equal(calls,1);
 });
+
+test('background status sampling has a ten-second total budget including token refresh',async()=>{
+ const core=new CemSessionCore(storage(),env);let remaining;
+ core.accessToken=async(config,deadline)=>{remaining=deadline-Date.now();return 'cached-test';};
+ globalThis.fetch=async()=>new Response(JSON.stringify({id:10,qr_box_machine:[{id:100,status:'ONLINE'}]}));
+ const values=await core.statusBatch(0);assert.equal(values[0].status,'ONLINE');assert.ok(remaining>0&&remaining<=10000);
+});
