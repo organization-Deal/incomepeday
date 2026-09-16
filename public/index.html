@@ -651,7 +651,7 @@ const RULE = {
 const $ = s => document.querySelector(s);
 const $$ = s => [].slice.call(document.querySelectorAll(s));
 const money = n => n == null ? '–' : Math.round(Number(n)).toLocaleString('en-US');
-const kb = n => n >= 1000 ? Math.round(n/1000)+'k' : Math.round(n||0);
+const kb = n => n == null ? '–' : n >= 1000 ? Math.round(n/1000)+'k' : Math.round(n||0);
 /** ตู้ที่ยังไม่ได้กรอกชื่อใน Lark — อย่าปล่อยแถวว่าง ให้เห็นว่าเป็นตัวไหนและต้องไปกรอก */
 const nameOf = r => r.name && r.name.trim() ? esc(r.name)+(r.revenueUnavailable?' <span class="noname">('+esc(r.revenueUnavailable)+')</span>':'') :
   '<span class="noname">'+r.code+' <i>ยังไม่ได้ตั้งชื่อ</i></span>';
@@ -741,7 +741,8 @@ function build(){
 
   /* รายวัน: ยึดรอบ 00:00 ของวันถัดไป (ปิดยอดเต็มวัน) ไม่มีค่อยใช้ 22:00 (ยังไม่ปิด) */
   const days = []; const seen = {};
-  slots.forEach(s=>{ const d=s.split(' ')[0]; if(!seen[d]){seen[d]=1; days.push(d);} });
+  const providerOnly=DATA.rows.length && DATA.rows.every(r=>r.revenueSource && r.daily);
+  slots.forEach(s=>{ const d=s.split(' ')[0]; if(providerOnly&&!DATA.rows.some(r=>r.daily[d]))return; if(!seen[d]){seen[d]=1; days.push(d);} });
   (DATA.dailyLabels||[]).forEach(d=>{ if(!seen[d]){seen[d]=1; days.push(d);} });
   days.sort((a,b)=> (a.split('/')[1]+a.split('/')[0]).localeCompare(b.split('/')[1]+b.split('/')[0]));
   const pick = days.map(d=>{
@@ -795,7 +796,7 @@ function build(){
     // ── รายได้จริง: วัน / 7 วัน / เดือน (วัดได้ ไม่ใช่ประเมิน) ──
     const withData = cells.filter(Boolean);
     const lastClosed = closed.filter(Boolean).slice(-1)[0] || null;
-    const dayRev  = lastClosed ? (lastClosed.d || 0) : (last.d || 0);
+    const dayRev  = r.revenueSource ? (withData.at(-1)?.d ?? null) : lastClosed ? (lastClosed.d || 0) : (last.d || 0);
     const dayOpen = !lastClosed || (cells.length && isPartial(cells[cells.length-1], DAY.part[cells.length-1]));
     const week    = withData.slice(-7).reduce((s,c)=> s + (c.d||0), 0);
     const month   = withData.reduce((s,c)=> Math.max(s, c.m||0), 0);
@@ -815,13 +816,16 @@ const currentCell = (row, cells) => Object.assign({}, lastOf(cells)||{s:'UNKNOWN
 /* ══ animated counters (ตัวเลขวิ่งขึ้น แบบ Apple) ══ */
 const RM = matchMedia('(prefers-reduced-motion:reduce)').matches;
 const NUMV = new WeakMap();
+const NUMANIM = new WeakMap();
 function countTo(el, to, fmt, node){
+  const version=(NUMANIM.get(el)||0)+1;NUMANIM.set(el,version);
   node = node || el;
   const from = NUMV.get(el) || 0;
   NUMV.set(el, to);
   if(RM || Math.abs(to-from) < 1){ node.textContent = fmt(to); return; }
   const t0 = performance.now(), dur = 900;
   (function step(t){
+    if(NUMANIM.get(el)!==version)return;
     const p = Math.min((t-t0)/dur, 1);
     const e = 1 - Math.pow(1-p, 4);          // easeOutQuart
     node.textContent = fmt(from + (to-from)*e);
@@ -830,6 +834,7 @@ function countTo(el, to, fmt, node){
 }
 const setNum = (sel, v, fmt) => { const el = $(sel);
   const n = (el.firstChild && el.firstChild.nodeType===3) ? el.firstChild : el;
+  if(v==null){NUMANIM.set(el,(NUMANIM.get(el)||0)+1);NUMV.delete(el);n.textContent='–';return;}
   countTo(el, v, fmt||money, n); };
 
 /* ══ แถบสัดส่วนทั้งกอง — 1 แถบ อ่านจบใน 1 วิ ══ */
@@ -856,22 +861,23 @@ function fleetSeries(){
     const t={ONLINE:0,OFFLINE:0,ERROR:0,UNKNOWN:0};
     DATA.rows.forEach(r=>{ const c=DAY.cells(r)[i]; if(c && t[c.s]!=null) t[c.s]++; });
     const known=t.ONLINE+t.OFFLINE;
-    return {label,on:t.ONLINE,off:t.OFFLINE,err:t.ERROR,unknown:t.UNKNOWN,onPct:known?t.ONLINE/known*100:0,offPct:known?t.OFFLINE/known*100:0};
+    return {label,on:t.ONLINE,off:t.OFFLINE,err:t.ERROR,unknown:t.UNKNOWN,known,onPct:known?t.ONLINE/known*100:null,offPct:known?t.OFFLINE/known*100:null};
   });
 }
 function cmpText(el,label,now,prev,invert){
-  if(!el)return;if(prev==null||!isFinite(prev)){el.textContent=label+' —';el.className='ops-delta';return;}
+  if(!el)return;if(now==null||prev==null||!isFinite(prev)){el.textContent=label+' —';el.className='ops-delta';return;}
   const d=Math.round((now-prev)*10)/10;el.textContent=label+' '+(d>0?'+':'')+d+'%';
   const good=invert?d<0:d>0,bad=invert?d>0:d<0;el.className='ops-delta'+(good?' good':bad?' bad':'');
 }
 function drawHealthChart(){
   const svg=$('#healthChart');if(!svg)return;const all=fleetSeries(),data=all.slice(-HEALTH_DAYS),W=800,H=220,p={l:42,r:10,t:14,b:30};
   if(!data.length){svg.innerHTML='';return;}const x=i=>p.l+(data.length<2?0:i/(data.length-1))*(W-p.l-p.r),y=v=>p.t+(100-v)/100*(H-p.t-p.b);
-  const path=k=>data.map((d,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(d[k]).toFixed(1)).join(' ');let g='';
+  const path=k=>{let active=false;return data.map((d,i)=>{if(d[k]==null){active=false;return '';}const command=active?'L':'M';active=true;return command+x(i).toFixed(1)+' '+y(d[k]).toFixed(1);}).join(' ');};let g='';
   [0,25,50,75,100].forEach(v=>{g+='<line x1="'+p.l+'" y1="'+y(v)+'" x2="'+(W-p.r)+'" y2="'+y(v)+'" stroke="var(--hair)"/><text x="4" y="'+(y(v)+4)+'" fill="var(--ink-4)" font-size="10">'+v+'%</text>';});
   g+='<line x1="'+p.l+'" y1="'+y(95)+'" x2="'+(W-p.r)+'" y2="'+y(95)+'" stroke="var(--green)" stroke-dasharray="6 6" opacity=".45"/>';
   g+='<path d="'+path('onPct')+'" fill="none" stroke="var(--green)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>';
   g+='<path d="'+path('offPct')+'" fill="none" stroke="var(--red)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>';
+  if(data.every(d=>d.known===0))g+='<text x="400" y="110" text-anchor="middle" fill="var(--ink-3)" font-size="12">ยังไม่มีประวัติสถานะ</text>';
   g+='<text x="'+p.l+'" y="'+(H-7)+'" fill="var(--ink-4)" font-size="10">'+esc(data[0].label)+'</text><text x="'+(W-p.r)+'" y="'+(H-7)+'" text-anchor="end" fill="var(--ink-4)" font-size="10">'+esc(data[data.length-1].label)+'</text>';svg.innerHTML=g;
 }
 function renderOpsDashboard(){
@@ -882,10 +888,11 @@ function renderOpsDashboard(){
     DATA.rows.forEach(r=>{ const key=statusKey[currentCell(r,DAY.cells(r)).s]; if(key)now[key]++; });
   }
   const known=now.on+now.off;
-  now.onPct=known?now.on/known*100:0;now.offPct=known?now.off/known*100:0;
+  now.onPct=total?now.on/total*100:null;now.offPct=total?now.off/total*100:null;
   const attention=DATA.rows.filter(r=>M[r.code].down>=RULE.DEAD_DAYS||['ERROR','UNKNOWN'].includes(M[r.code].last.s)).length;
   $('#ops-total').textContent=total;$('#ops-online').textContent=now.on;$('#ops-offline').textContent=now.off;$('#ops-offline-pct').textContent=Math.round(now.offPct);$('#ops-attention').textContent=attention;$('#ops-known').textContent='สถานะชัดเจน '+known+' จาก '+total+' ตู้';
-  const d1=s[s.length-2],d7=s[s.length-8],dm=s[0];cmpText($('#on-d1'),'เมื่อวาน',now.onPct,d1&&d1.onPct,false);cmpText($('#on-d7'),'7 วัน',now.onPct,d7&&d7.onPct,false);cmpText($('#on-dm'),'เดือน',now.onPct,dm&&dm.onPct,false);cmpText($('#off-d1'),'เมื่อวาน',now.offPct,d1&&d1.offPct,true);cmpText($('#off-d7'),'7 วัน',now.offPct,d7&&d7.offPct,true);cmpText($('#off-dm'),'เดือน',now.offPct,dm&&dm.offPct,true);
+  const historic=(d,k)=>known===total&&d?.known===total?d[k]:null;
+  const d1=s[s.length-2],d7=s[s.length-8],dm=s[0];cmpText($('#on-d1'),'เมื่อวาน',now.onPct,historic(d1,'onPct'),false);cmpText($('#on-d7'),'7 วัน',now.onPct,historic(d7,'onPct'),false);cmpText($('#on-dm'),'เดือน',now.onPct,historic(dm,'onPct'),false);cmpText($('#off-d1'),'เมื่อวาน',now.offPct,historic(d1,'offPct'),true);cmpText($('#off-d7'),'7 วัน',now.offPct,historic(d7,'offPct'),true);cmpText($('#off-dm'),'เดือน',now.offPct,historic(dm,'offPct'),true);
   $('#ops-long').textContent=DATA.rows.filter(r=>M[r.code].down>=7).length;$('#ops-short').textContent=DATA.rows.filter(r=>M[r.code].down>=RULE.DEAD_DAYS&&M[r.code].down<7).length;$('#ops-error').textContent=DATA.rows.filter(r=>['ERROR','UNKNOWN'].includes(M[r.code].last.s)).length;
   $('#ops-updated').textContent='อัปเดตล่าสุด '+new Date(DATA.updated).toLocaleString('th-TH',{dateStyle:'medium',timeStyle:'short'});drawHealthChart();
 }
@@ -898,7 +905,13 @@ function headline(){
   const s = watchSets();
   const lost = s.down.reduce((a,r)=> a + M[r.code].lost, 0);
   const h = $('#headline');
-  if(!s.down.length && !s.drop.length){
+  const offline=DATA.rows.filter(r=>M[r.code].last.s==='OFFLINE').length;
+  const unknown=DATA.rows.filter(r=>['UNKNOWN','ERROR'].includes(M[r.code].last.s)).length;
+  if(!s.down.length && !s.drop.length && (offline||unknown)){
+    h.innerHTML=(offline?'ขณะนี้มี <em>'+offline+' ตู้ออฟไลน์</em>':'')+
+      (unknown?'<span class="g">'+(offline?' · ':'')+unknown+' ตู้ยังยืนยันสถานะไม่ได้</span>':'')+
+      '<span class="g"> — ยังสรุประยะเวลาที่ดับไม่ได้</span>';
+  } else if(!s.down.length && !s.drop.length){
     h.innerHTML = 'ทุกตู้<em> ปกติดี</em><span class="g"> — ไม่มีอะไรต้องเข้าแก้วันนี้</span>';
   } else {
     h.innerHTML = 'วันนี้มี <em>'+s.down.length+' ตู้</em> ต้องเข้าแก้'+
@@ -1004,7 +1017,9 @@ function render(){
 
   $('#stamp').textContent = DATA.slots.length+' รอบ · อัปเดต '+
     new Date(DATA.updated).toLocaleString('th-TH',{dateStyle:'medium',timeStyle:'short'});
-  $('#chart-h').textContent = MODE==='day'?'รายวัน · ทุกตู้รวมกัน':'รายรอบ · ทุกตู้รวมกัน';
+  const unavailable=rows.filter(r=>r.revenueUnavailable).length;
+  $('#chart-h').textContent = (MODE==='day'?'รายวัน':'รายรอบ')+(unavailable?' · รวมเฉพาะ '+(rows.length-unavailable)+' / '+rows.length+' ตู้ที่อ่านยอดได้':' · ทุกตู้รวมกัน');
+  $('#k-mon small').textContent='บาท สะสมเดือนนี้'+(unavailable?' · ไม่รวม '+unavailable+' ตู้ที่ยังอ่านยอดไม่ได้':'');
   $('#th-strip').textContent = (MODE==='day'?'ไทม์ไลน์รายวัน →':'ไทม์ไลน์รายรอบ →');
   $('#k-daylab').textContent = MODE==='day' ? 'รายได้วันล่าสุด' : 'รายได้รอบล่าสุด';
   $('#foot-note').textContent = MODE==='day'
@@ -1020,23 +1035,23 @@ function render(){
   const n = rows.length || 1;
   const ups  = rows.map(r=>M[r.code].uptime).filter(v=>v!=null);
   const upxs = rows.map(r=>M[r.code].upx).filter(v=>v!=null);
-  const avgUp  = ups.length  ? ups.reduce((a,b)=>a+b,0)/ups.length   : 0;
-  const avgUpx = upxs.length ? upxs.reduce((a,b)=>a+b,0)/upxs.length : 0;
+  const avgUp  = ups.length  ? ups.reduce((a,b)=>a+b,0)/ups.length   : null;
+  const avgUpx = upxs.length ? upxs.reduce((a,b)=>a+b,0)/upxs.length : null;
   const bad = rows.filter(r=>M[r.code].uptime!=null && M[r.code].uptime < 60).length;
 
   const onNow = rows.filter(r=>M[r.code].last.s==='ONLINE').length;
   const onPct = onNow/n*100;
   const weekTot = rows.reduce((s,r)=> s + (M[r.code].week||0), 0);
 
-  setNum('#k-mon', mon);
-  setNum('#k-day', day);
+  setNum('#k-mon', unavailable===rows.length?null:mon);
+  setNum('#k-day', unavailable===rows.length?null:day);
   setNum('#k-on', onPct, v=>Math.round(v));
   setNum('#k-up', avgUp, v=>Math.round(v));
   setNum('#k-upx', avgUpx, v=>Math.round(v));
-  setNum('#k-week', weekTot);
+  setNum('#k-week', unavailable===rows.length?null:weekTot);
   $('#k-onsub').textContent = onNow+' จาก '+rows.length+' ตู้';
-  $('#k-daysub').textContent = 'เฉลี่ย '+money(day/n)+' บาท/ตู้';
-  $('#k-upsub').textContent = 'ค่ากลาง '+Math.round(M.__medUp)+'% · ต่ำกว่า 60% อยู่ '+bad+' ตู้';
+  $('#k-daysub').textContent = 'เฉลี่ย '+money(rows.length-unavailable?day/(rows.length-unavailable):null)+' บาท/ตู้'+(unavailable?' · เฉพาะตู้ที่อ่านยอดได้':'');
+  $('#k-upsub').textContent = !ups.length ? 'ยังไม่มีประวัติสถานะสำหรับคำนวณ uptime' : 'ค่ากลาง '+Math.round(M.__medUp)+'% · ต่ำกว่า 60% อยู่ '+bad+' ตู้';
   $('#k-weeksub').textContent = 'เฉลี่ย '+money(weekTot/7)+' บาท/วัน';
   renderMix(tally, rows.length);
   renderOpsDashboard();
@@ -1086,12 +1101,13 @@ const CW=600, CH=150;
 function drawSpark(CELLS){
   const get = CELLS || (r=>VIEW.cells(r));
   const labels = VIEW.labels, rows = DATA.rows;
-  SERIES = labels.map((_,i)=> rows.reduce((s,r)=>{ const c=get(r)[i]; return s + ((c&&c.d)||0); },0));
+  SERIES = labels.map((_,i)=>{let have=false;const sum=rows.reduce((s,r)=>{const c=get(r)[i];if(c?.d!=null)have=true;return s+(c?.d||0);},0);return have?sum:null;});
   const max = Math.max.apply(null, SERIES.concat([1]));
   const x = i => labels.length<2 ? CW/2 : i/(labels.length-1)*CW;
   const y = v => CH - (v/max)*(CH-14);
-  const pts = SERIES.map((v,i)=>[x(i), y(v)]);
-  const line = pts.map((p,i)=> (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const pts = SERIES.map((v,i)=>v==null?null:[x(i), y(v)]);
+  let active=false;
+  const line = pts.map(p=>{if(!p){active=false;return '';}const command=active?'L':'M';active=true;return command+p[0].toFixed(1)+' '+p[1].toFixed(1);}).join(' ');
   const cs = getComputedStyle(document.documentElement);
   const red = cs.getPropertyValue('--red').trim();
   const last = pts[pts.length-1];
@@ -1100,14 +1116,15 @@ function drawSpark(CELLS){
     '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">'+
       '<stop offset="0" stop-color="'+red+'" stop-opacity=".2"/>'+
       '<stop offset="1" stop-color="'+red+'" stop-opacity="0"/></linearGradient></defs>'+
-    '<path d="'+line+' L'+CW+' '+CH+' L0 '+CH+' Z" fill="url(#g)"/>'+
+    (pts.every(Boolean)?'<path d="'+line+' L'+CW+' '+CH+' L0 '+CH+' Z" fill="url(#g)"/>':'')+
     '<path d="'+line+'" fill="none" stroke="'+red+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'+
     (last ? '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="3.5" fill="'+red+'"/>' : '');
   $('#x0').textContent = labels[0]||'—';
   $('#x1').textContent = labels[labels.length-1]||'—';
   const a = SERIES[SERIES.length-2], b = SERIES[SERIES.length-1];
   const unit = MODE==='day' ? 'วันก่อน' : 'รอบก่อน';
-  $('#k-delta').innerHTML = (a==null||b==null||!a) ? 'ล่าสุด '+money(b||0)+' บาท'
+  const openProvider=MODE==='day' && rows.some(r=>r.revenueSource && r.daily?.[labels.at(-1)]?.closed===false);
+  $('#k-delta').innerHTML = openProvider ? 'ล่าสุด '+money(b)+' บาท · ยังไม่ปิดวัน' : (a==null||b==null||!a) ? 'ล่าสุด '+money(b)+' บาท'
     : 'เทียบ'+unit+' <b class="'+(b<a?'dn':'')+'">'+(b>=a?'↑ +':'↓ ')+Math.round((b-a)/a*100)+'%</b> · ล่าสุด '+money(b)+' บาท';
 }
 
@@ -1117,6 +1134,7 @@ function scrub(e){
   const r = cw.getBoundingClientRect();
   const px = Math.min(Math.max(e.clientX - r.left, 0), r.width);
   const i = Math.round(px / r.width * (SERIES.length-1));
+  if(SERIES[i]==null){cw.classList.remove('scrub');return;}
   const max = Math.max.apply(null, SERIES.concat([1]));
   const left = SERIES.length<2 ? r.width/2 : i/(SERIES.length-1)*r.width;
   const yPct = (CH - (SERIES[i]/max)*(CH-14)) / CH;
@@ -1331,8 +1349,8 @@ async function loadHistory(code){
   if(!h.length){ el.innerHTML = '<div class="muted">ยังไม่มีเดือนอื่นให้เทียบ</div>'; return; }
   const max = Math.max.apply(null, h.map(x=>x.total).concat([1]));
   el.innerHTML = '<div class="hist">'+ h.map(x=>
-      '<div class="hcol'+(x.month===DATA.month?' now':'')+'" title="'+x.month+' · '+money(x.total)+' บาท · uptime '+x.uptime+'%">'+
-      '<i class="hb" style="height:'+Math.max(3, Math.round(x.total/max*58))+'px"></i>'+
+      '<div class="hcol'+(x.month===DATA.month?' now':'')+'" title="'+x.month+' · '+money(x.total)+' บาท · uptime '+(x.uptime==null?'–':x.uptime+'%')+'">'+
+      '<i class="hb" style="height:'+(x.total==null?0:Math.max(3, Math.round(x.total/max*58)))+'px"></i>'+
       '<span class="hl">'+x.month.split('-')[0]+'</span></div>').join('') +'</div>'+
     '<div class="hvals">'+ h.map(x=>'<span>'+kb(x.total)+'</span>').join('') +'</div>';
 }

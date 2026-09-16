@@ -8,9 +8,9 @@ const data = month => ({ month, updated: '2026-09-16T00:00:00Z', ownerField: '�
   slots: ['01/09 22:00', '02/09 00:00', '02/09 22:00', '03/09 00:00'],
   rows: [1, 2].map(n => ({ code: 'LO_000' + n, name: month + ' ร้าน ' + n, owner: 'โซนกลาง',
     cells: [1, 2, 3, 4].map(x => ({ s: 'ONLINE', d: x * 100, m: x * 200 })) })) });
-async function setup(page, { baseline = false, onApi, expectedRows=2 } = {}) {
+async function setup(page, { baseline = false, onApi, expectedRows=2, reducedMotion='reduce' } = {}) {
   await page.clock.install({ time: new Date('2026-09-16T12:00:00Z') });
-  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.emulateMedia({ reducedMotion });
   await page.route('**/*', async route => {
     const url = new URL(route.request().url());
     if (url.hostname !== 'dashboard.test') return route.abort();
@@ -222,7 +222,8 @@ test('EQLink daily totals replace old revenues, preserve rows and use current st
   } });
   const metrics=await page.evaluate(()=>({m:M.LO_0001,days:DAY.labels,rows:DATA.rows.length}));
   expect(metrics.rows).toBe(2); expect(metrics.m.month).toBe(340); expect(metrics.m.week).toBe(340);
-  expect(metrics.m.dayRev).toBe(20); expect(metrics.m.last.s).toBe('ONLINE');
+  expect(metrics.m.dayRev).toBe(0); // Today is a real zero, not the previous closed day.
+  expect(metrics.m.last.s).toBe('ONLINE');
   expect(metrics.m.down).toBe(0); expect(metrics.m.uptime).toBe(0); expect(metrics.m.days).toBe(1);
   // A new EQLink day must not erase the other fleet's most recent observed status.
   await page.evaluate(()=>{ DATA.dailyLabels.push('04/09'); build(); });
@@ -256,6 +257,46 @@ test('full fleet displays 186 machines across 26 CEM batches and unavailable rev
  await expect(page.locator('#count')).toHaveText('186 / 186 ตู้');
  const foreign=page.locator('[data-code="'+codes[0]+'"].row');await expect(foreign).toContainText('USD');
  expect(await foreign.locator('.num').allTextContents()).toEqual(['–','–','–']);
+ await expect(page.locator('#k-mon small')).toContainText('ไม่รวม 1 ตู้');
  expect(await page.evaluate(code=>M[code].month,codes[1])).toBe(100);
  await foreign.click();await expect(page.locator('#dbody')).toContainText('CEM test');
+});
+
+test('provider dashboard distinguishes absent history, current offline state and today revenue',async({page})=>{
+ await setup(page,{onApi:async(route,url)=>{
+  if(url.searchParams.get('action')!=='month')return false;
+  const d=data('09-2026');d.slots=['15/09 22:00','16/09 00:00','16/09 22:00','17/09 00:00'];d.dailyLabels=['15/09','16/09'];
+  d.rows=d.rows.map(r=>({...r,revenueSource:'cem',currentStatus:'OFFLINE',cells:d.slots.map(()=>null),daily:{
+   '15/09':{s:'UNKNOWN',d:100,m:100,closed:true},'16/09':{s:'UNKNOWN',d:20,m:120,closed:false}}}));
+  await route.fulfill({json:{ok:true,data:d}});return true;
+ }});
+ await expect(page.locator('#headline')).not.toContainText('ปกติดี');
+ await expect(page.locator('#headline')).toContainText('ออฟไลน์');
+ await expect(page.locator('#k-up')).toContainText('–');
+ await expect(page.locator('#on-d1')).toHaveText('เมื่อวาน —');
+ const state=await page.evaluate(()=>({labels:DAY.labels,last:M.LO_0001.dayRev,series:fleetSeries(),spark:SERIES}));
+ expect(state.labels).toEqual(['15/09','16/09']);expect(state.last).toBe(20);
+ expect(state.series.every(d=>d.onPct===null&&d.offPct===null)).toBe(true);
+ expect(state.spark).toEqual([200,40]);
+ await expect(page.locator('#k-delta')).not.toContainText('-80%');
+ await expect(page.locator('#k-delta')).toContainText('ยังไม่ปิด');
+ await expect(page.locator('#k-mon')).toContainText('240');
+});
+
+test('status comparisons do not compare different known-status coverage',async({page})=>{
+ await setup(page,{onApi:async(route,url)=>{
+  if(url.searchParams.get('action')!=='month')return false;
+  const d=data('09-2026');d.dailyLabels=['01/09','02/09'];
+  d.rows[1].cells=d.rows[1].cells.map(c=>({...c,s:'UNKNOWN'}));
+  await route.fulfill({json:{ok:true,data:d}});return true;
+ }});
+ await expect(page.locator('#on-d1')).toHaveText('เมื่อวาน —');
+ await expect(page.locator('#on-dm')).toHaveText('เดือน —');
+});
+
+test('unavailable KPI cancels an older numeric animation',async({page})=>{
+ await setup(page,{reducedMotion:'no-preference'});
+ await page.evaluate(()=>setNum('#k-up',100));await page.clock.runFor(100);
+ await page.evaluate(()=>setNum('#k-up',null));await page.clock.runFor(1500);
+ await expect(page.locator('#k-up')).toContainText('–');
 });
