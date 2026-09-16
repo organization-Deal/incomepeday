@@ -199,3 +199,31 @@ export async function readCemStatuses(config,batch,accessToken,deadline){
   return sample;
  });
 }
+
+export async function readCemPayments(config,batch,accessToken,deadline,now=new Date()){
+ const size=5;if(!Number.isInteger(batch)||batch<0||batch>=Math.ceil(config.mapping.length/size))throw new HttpError('ชุดรายการเงินไม่ถูกต้อง',400);
+ const call=await session(config,accessToken,deadline),checkedAt=now.getTime(),end=new Date(checkedAt+7*3600000).toISOString().slice(0,10)+'T23:59:59';
+ return bounded(config.mapping.slice(batch*size,(batch+1)*size),async m=>{
+  try{
+   const branch=await call('/api/restrict/machine/qrbox/branch_info?id='+m.branch),machine=branch?.qr_box_machine?.find(row=>row.id===m.device);
+   if(branch?.id!==m.branch||!machine||typeof machine.mac_address!=='string'||!machine.mac_address)throw fail();
+   const query=new URLSearchParams({page:'1',limit:'100',project:'qrbox',id:String(m.device),mac_address:machine.mac_address,
+    start_date:'2020-01-01T00:00:00',end_date:end});
+   let latest=null;
+   for(let page=1;page<=3&&!latest;page++){
+    query.set('page',String(page));const data=await call('/api/restrict/machine/qrbox/transaction_by_box?'+query),rows=data?.detail;
+    if(!Array.isArray(rows)||rows.length>100)throw fail();
+    for(const row of rows){
+     if(!row||!['CASH','ONLINE'].includes(row.mode)||row.currency!=='THB')continue;
+     const receivedAt=Date.parse(row.created_at),amount=Number(row.amount);
+     if(!Number.isFinite(amount)||amount<=0||!Number.isSafeInteger(Math.round(amount*100))||!Number.isFinite(receivedAt)||receivedAt>checkedAt+60000)continue;
+     const amountCents=Math.round(amount*100);
+     if(!latest||receivedAt>latest.receivedAt)latest={provider:'cem',receivedAt,amountCents,currency:'THB',method:row.mode,checkedAt};
+    }
+    const total=Number(data?.pagination?.total_page);
+    if(rows.length<100||!Number.isInteger(total)||page>=total)break;
+   }
+   return {code:m.code,payment:latest};
+  }catch{return {code:m.code,payment:null,error:true};}
+ });
+}

@@ -8,6 +8,8 @@ export class CemSession extends DurableObject {
   constructor(ctx,env){super(ctx,env);this.session=new CemSessionCore(ctx.storage,env);}
   async readBatch(month,batch){return this.session.readBatch(month,batch);}
   async statusBatch(batch){return this.session.statusBatch(batch);}
+  async paymentBatch(batch){return this.session.paymentBatch(batch);}
+  async eqlinkPaymentBatch(batch){return this.session.eqlinkPaymentBatch(batch);}
   async history(data,code){return this.session.history(data,code);}
 }
 
@@ -20,6 +22,7 @@ export class DailyNotes extends DurableObject {
 export class OnlineTime extends DurableObject {
  constructor(ctx,env){super(ctx,env);this.ledger=new OnlineTimeCore(ctx.storage);}
  async record(samples){return this.ledger.record(samples);}
+ async recordPayments(rows){return this.ledger.recordPayments(rows);}
  async day(code,date){return this.ledger.day(code,date);}
  async days(codes,date){return this.ledger.days(codes,date);}
 }

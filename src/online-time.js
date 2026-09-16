@@ -47,14 +47,33 @@ export class OnlineTimeCore{
   if(!Array.isArray(codes)||codes.length>600||codes.some(code=>!validCode(code)))throw new HttpError('รหัสตู้ไม่ถูกต้อง',400);
   const now=Date.now();return Promise.all(codes.map(code=>this.day(code,date,now)));
  }
+ async recordPayments(rows){
+  if(!Array.isArray(rows)||rows.length>600)throw new HttpError('ข้อมูลเงินเข้าล่าสุดไม่ถูกต้อง',400);
+  return this.storage.transaction(async tx=>{
+   let accepted=0;
+   for(const row of rows){
+    if(!row||!validCode(row.code))throw new HttpError('ข้อมูลเงินเข้าล่าสุดไม่ถูกต้อง',400);
+    if(row.payment===null)continue;
+    const p=row.payment,now=Date.now();
+    if(!p||!['cem','eqlink'].includes(p.provider)||p.currency!=='THB'||!Number.isSafeInteger(p.amountCents)||p.amountCents<=0||
+      !Number.isFinite(p.receivedAt)||p.receivedAt<0||p.receivedAt>now+60000||!Number.isFinite(p.checkedAt)||
+      p.checkedAt<0||p.checkedAt>now+60000||typeof p.method!=='string'||!p.method||p.method.length>40)throw new HttpError('ข้อมูลเงินเข้าล่าสุดไม่ถูกต้อง',400);
+    const key='payment:'+row.code,previous=await tx.get(key);
+    if(previous&&previous.receivedAt>=p.receivedAt)continue;
+    await tx.put(key,p);accepted++;
+   }
+   return {accepted};
+  });
+ }
  async day(code,date,now=Date.now()){
   if(!validCode(code))throw new HttpError('รหัสตู้ไม่ถูกต้อง',400);
   const [start,end]=dayBounds(date);if(start>now)throw new HttpError('ยังไม่ถึงวันที่เลือก',400);
   const value=await this.storage.get('day:'+date+':'+code)||{onlineMs:0,offlineMs:0,observations:0};
   const latest=await this.storage.get('last:'+code);
   const sourceHistory=await this.storage.get('source:'+code)||null;
+  const latestPayment=await this.storage.get('payment:'+code)||null;
   const elapsedMs=Math.min(now,end)-start;
-  return {...value,sourceHistory,latestOnlineAt:latest?.latestOnlineAt??(latest?.status==='ONLINE'?latest.at:null),
+  return {...value,sourceHistory,latestPayment,latestOnlineAt:latest?.latestOnlineAt??(latest?.status==='ONLINE'?latest.at:null),
    latestOfflineAt:latest?.latestOfflineAt??(latest?.status==='OFFLINE'?latest.at:null),seenOnline:value.seenOnline===true||value.onlineMs>0||
     (sourceHistory?.latestOnlineAt!=null&&sourceHistory.latestOnlineAt>=start&&sourceHistory.latestOnlineAt<Math.min(now,end)),code,date,elapsedMs,unknownMs:Math.max(0,elapsedMs-value.onlineMs-value.offlineMs),closed:now>=end,
    intervalMinutes:5,maxGapMinutes:10,estimated:true,timeZone:'Asia/Bangkok'};

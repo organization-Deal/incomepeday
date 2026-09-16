@@ -1,6 +1,6 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { cemConfig, readCemBatch, cemHistory, validateProviders } from '../src/cem.js';
+import { cemConfig, readCemBatch, cemHistory, readCemPayments, validateProviders } from '../src/cem.js';
 const original=globalThis.fetch;
 afterEach(()=>{globalThis.fetch=original;});
 const env={CEM_REFRESH_TOKEN:'private-refresh',CEM_MAPPING:'[{"code":"LO_0001","branch":10,"device":100}]'};
@@ -78,4 +78,28 @@ test('full fleet keeps a failed-report machine visible with unavailable money an
  const s=await readCemBatch(config,'09-2026',0,now);
  assert.equal(s.partial,true);assert.equal(s.machines[0].unavailable,'อ่านรายงานไม่สำเร็จ');assert.equal(s.totals[0].CEM_ABCDEF123456,null);
  assert.equal(s.status.CEM_ABCDEF123456,'ONLINE');
+});
+
+test('CEM latest payment accepts only real CASH or ONLINE money and ignores command amounts',async()=>{
+ const config=cemConfig(env);globalThis.fetch=async url=>{
+  const u=new URL(url);
+  if(u.pathname.endsWith('/branch_info'))return Response.json({id:10,qr_box_machine:[{id:100,mac_address:'mac-100'}]});
+  assert.ok(u.pathname.endsWith('/transaction_by_box'));
+  return Response.json({detail:[
+   {created_at:'2026-09-16T12:00:00Z',mode:'COMMAND',amount:1000,currency:'THB'},
+   {created_at:'2026-09-16T11:00:00Z',mode:'CASH',amount:10,currency:'THB'},
+   {created_at:'2026-09-16T11:30:00Z',mode:'ONLINE',amount:20,currency:'THB'}]});
+ };
+ const [row]=await readCemPayments(config,0,'private-bearer',Date.now()+45000,new Date('2026-09-16T13:00:00Z'));
+ assert.equal(row.code,'LO_0001');assert.equal(row.payment.amountCents,2000);assert.equal(row.payment.method,'ONLINE');
+ assert.equal(row.payment.receivedAt,Date.parse('2026-09-16T11:30:00Z'));
+});
+
+test('CEM latest payment reads a bounded older page when command rows fill the newest page',async()=>{
+ const config=cemConfig(env);let pages=0;globalThis.fetch=async url=>{
+  const u=new URL(url);if(u.pathname.endsWith('/branch_info'))return Response.json({id:10,qr_box_machine:[{id:100,mac_address:'mac-100'}]});
+  pages++;const page=Number(u.searchParams.get('page'));return Response.json({pagination:{total_page:9},detail:page===1?Array.from({length:100},()=>({created_at:'2026-09-16T12:00:00Z',mode:'COMMAND',amount:1000,currency:'THB'})):[{created_at:'2026-09-15T12:00:00Z',mode:'CASH',amount:10,currency:'THB'}]});
+ };
+ const [row]=await readCemPayments(config,0,'private-bearer',Date.now()+45000,new Date('2026-09-16T13:00:00Z'));
+ assert.equal(pages,2);assert.equal(row.payment.amountCents,1000);
 });

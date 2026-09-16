@@ -1,6 +1,6 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { eqlinkConfig, readMonth, mergeMonth, replaceHistory, monthDates } from '../src/eqlink.js';
+import { eqlinkConfig, readMonth, mergeMonth, readEqlinkPayments, replaceHistory, monthDates } from '../src/eqlink.js';
 
 const realFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = realFetch; });
@@ -111,4 +111,17 @@ test('31 December closes at 1 January without fabricating a 32nd day', async () 
   assert.equal(result.rows[0].daily['31/12'].closed,true);
   assert.equal(result.rows[0].cells[1].m,320);
   assert.equal(result.dailyLabels.length,31);
+});
+
+test('EQLink latest payment compares mobile cash and coin transaction times',async()=>{
+ mock((data,path)=>{
+  if(!path.endsWith('/get_dev_revenue_details_date_range'))return;
+  delete data.count;delete data.devices_rev_month;
+  data.mobile_lists={count:1,result:[{create_time:'2026-09-16 12:00:00',sale_amt:30,refund_amt:10,pay_type:'PROMPTPAY'}]};
+  data.cash_lists={count:1,result:[{create_time:'2026-09-16 12:30:00',total_amt:10,pay_type:'CASH'}]};
+  data.coin_lists={count:1,result:[{trans_time:'2026-09-16 11:00:00',amount:5}]};
+ });
+ const [row]=await readEqlinkPayments(eqlinkConfig(env),new Date('2026-09-16T13:00:00Z'));
+ assert.equal(row.code,'LO_0001');assert.equal(row.payment.amountCents,1000);assert.equal(row.payment.method,'CASH');
+ assert.equal(row.payment.receivedAt,Date.parse('2026-09-16T12:30:00+07:00'));
 });

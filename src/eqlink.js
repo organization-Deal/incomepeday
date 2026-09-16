@@ -148,3 +148,30 @@ export async function readEqlinkStatuses(config){
   return {code,at,status:!row||row.device_type!=='CT'||Number(row.failure)===1?'UNKNOWN':row.status==='online'?'ONLINE':row.status==='offline'?'OFFLINE':'UNKNOWN'};
  });
 }
+
+function bkkTimestamp(value){
+ if(typeof value!=='string'||!/^20\d\d-\d\d-\d\d[ T]\d\d:\d\d:\d\d$/.test(value))return NaN;
+ return Date.parse(value.replace(' ','T')+'+07:00');
+}
+function detailRows(data,type){
+ const group=data?.[type+'_lists'];
+ if(!group||!Array.isArray(group.result)||!Number.isInteger(Number(group.count))||group.result.length>100||Number(group.count)<group.result.length)throw fail();
+ return group.result;
+}
+export async function readEqlinkPayments(config,now=new Date()){
+ const post=await session(config),checkedAt=now.getTime(),end=today(now),start=new Date(checkedAt-89*86400000+7*3600000).toISOString().slice(0,10);
+ return mapBounded(config.mapping,async({code,device})=>{
+  let latest=null;
+  for(const type of ['mobile','cash','coin']){
+   const data=await post('/api/Revenue/get_dev_revenue_details_date_range',{start_time:start,end_time:end,devicename:device,type,limit:100,offset:0});
+   for(const row of detailRows(data,type)){
+    const receivedAt=bkkTimestamp(type==='coin'?row.trans_time:row.create_time);
+    const amount=type==='mobile'?Number(row.sale_amt)-Number(row.refund_amt):Number(type==='cash'?row.total_amt:row.amount);
+    if(!Number.isFinite(receivedAt)||receivedAt>checkedAt+60000||!Number.isFinite(amount)||amount<=0||!Number.isSafeInteger(Math.round(amount*100)))continue;
+    const payment={provider:'eqlink',receivedAt,amountCents:Math.round(amount*100),currency:'THB',method:type==='coin'?'COIN':type==='cash'?'CASH':String(row.pay_type||'MOBILE').slice(0,40),checkedAt};
+    if(!latest||payment.receivedAt>latest.receivedAt)latest=payment;
+   }
+  }
+  return {code,payment:latest};
+ });
+}

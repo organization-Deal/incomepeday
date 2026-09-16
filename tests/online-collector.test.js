@@ -53,3 +53,11 @@ test('all current statuses are read before optional history begins',async()=>{
  assert.equal(statuses,5);return new Response('unavailable',{status:503});};
  const result=await readCemStatuses({mapping},0,'test',Date.now()+45000);assert.equal(result.filter(r=>r.status==='ONLINE').length,5);
 });
+
+test('scheduled payment work is staggered and saved separately from status observations',async()=>{
+ const payments=[];let selected;
+ const env={ONLINE_TIME_ENABLED:'true',CEM_REFRESH_TOKEN:'test',CEM_MAPPING:JSON.stringify(Array.from({length:6},(_,i)=>({code:'LO_'+String(i+1).padStart(4,'0'),branch:i+1,device:i+1}))),
+ CEM_SESSION:{getByName:()=>({statusBatch:async batch=>Array.from({length:batch?1:5},(_,i)=>({code:'LO_'+String(batch*5+i+1).padStart(4,'0'),at:Date.now(),status:'ONLINE'})),paymentBatch:async batch=>{selected=batch;return [{code:'LO_0006',payment:{provider:'cem',receivedAt:1,amountCents:2000,currency:'THB',method:'ONLINE',checkedAt:2}}];}})},
+ ONLINE_TIME:{getByName:()=>({record:async rows=>({accepted:rows.length}),recordPayments:async rows=>{payments.push(...rows);return {accepted:rows.length};}})}};
+ const result=await collectOnlineTime(env,{paymentSlot:3});assert.equal(selected,1);assert.equal(result.paymentAccepted,1);assert.equal(payments[0].code,'LO_0006');
+});

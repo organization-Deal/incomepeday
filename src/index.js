@@ -10,7 +10,7 @@ const ALLOWED = ['months', 'month', 'history', 'notes'];
 const WRITE = ['note', 'rename'];
 
 export default {
-  async scheduled(event,env){await collectOnlineTime(env);},
+  async scheduled(event,env){await collectOnlineTime(env,{paymentSlot:Math.floor(event.scheduledTime/300000)});},
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     try {

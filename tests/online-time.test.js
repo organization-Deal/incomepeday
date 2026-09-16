@@ -59,3 +59,14 @@ test('source transitions remain distinct from later polling observations',async(
  await core.record([{...sample('2026-09-16T12:00:00'),sourceHistory:h}]);await core.record([sample('2026-09-16T12:05:00')]);
  const d=await core.day('LO_0001','2026-09-16');assert.equal(d.sourceHistory.latestOnlineAt,h.latestOnlineAt);assert.equal(d.latestOnlineAt,time('2026-09-16T12:05:00'));
 });
+
+test('latest source payment is stored independently and an older retry cannot replace it',async()=>{
+ const core=new OnlineTimeCore(store());
+ const newer={provider:'cem',receivedAt:time('2026-09-16T12:05:00'),amountCents:2000,currency:'THB',method:'ONLINE',checkedAt:time('2026-09-16T12:10:00')};
+ const older={provider:'cem',receivedAt:time('2026-09-16T11:00:00'),amountCents:1000,currency:'THB',method:'CASH',checkedAt:time('2026-09-16T12:15:00')};
+ assert.equal((await core.recordPayments([{code:'LO_0001',payment:newer}])).accepted,1);
+ assert.equal((await core.recordPayments([{code:'LO_0001',payment:older},{code:'LO_0002',payment:null}])).accepted,0);
+ assert.deepEqual((await core.day('LO_0001','2026-09-16')).latestPayment,newer);
+ assert.equal((await core.day('LO_0002','2026-09-16')).latestPayment,null);
+ await assert.rejects(core.recordPayments([{code:'../bad',payment:newer}]));
+});

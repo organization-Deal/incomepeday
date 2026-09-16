@@ -22,7 +22,8 @@ globalThis.Workspace=(()=>{
    const dates=DealRevenueGroups.windowDays(api.getData().updated);
    const values=dates.map(d=>r.daily?.[d.slice(8,10)+'/'+d.slice(5,7)]?.d);
    const amount=!r.revenueUnavailable&&values.every(v=>typeof v==='number')?values.reduce((a,b)=>a+b,0).toLocaleString('th-TH')+' บาท':'ยังยืนยันยอดไม่ได้';
-   return '<button class="fp-machine" data-machine="'+escape(r.code)+'" aria-pressed="'+(r.code===selected?.code)+'"><b>'+escape(r.name||r.code)+'</b><small>'+escape(r.code)+' · '+escape(r.revenueSource?.toUpperCase()||'ทะเบียนเดิม')+'</small><span class="online-summary" data-online-summary="'+escape(r.code)+'">วันนี้ · กำลังอ่านเวลาสะสม…</span><span>ณ ตอนเช็ค: '+escape(status)+' · 3 วัน '+amount+'</span></button>';
+   const latest=DealOnlineTime.latestRevenue(r),revenue=latest?' data-last-revenue-cents="'+latest.amountCents+'" data-last-revenue-date="'+latest.date+'"':'';
+   return '<button class="fp-machine" data-machine="'+escape(r.code)+'" aria-pressed="'+(r.code===selected?.code)+'"><b>'+escape(r.name||r.code)+'</b><small>'+escape(r.code)+' · '+escape(r.revenueSource?.toUpperCase()||'ทะเบียนเดิม')+'</small><span class="online-summary" data-online-summary="'+escape(r.code)+'"'+revenue+'>วันนี้ · กำลังอ่านเวลาสะสม…</span><span>ณ ตอนเช็ค: '+escape(status)+' · 3 วัน '+amount+'</span></button>';
   }).join(''):'<div class="fp-empty"><b>ไม่พบตู้</b>ลองเปลี่ยนคำค้นหรือเลือกหมวดอื่น</div>';
   DealOnlineTime.fillSummaries($('fp-list'));
  }

@@ -1,5 +1,6 @@
 import { HttpError, requestJson } from './http.js';
-import { cemConfig, readCemBatch, cemHistory, readCemStatuses } from './cem.js';
+import { cemConfig, readCemBatch, cemHistory, readCemPayments, readCemStatuses } from './cem.js';
+import {eqlinkConfig,readEqlinkPayments} from './eqlink.js';
 
 // Only a Durable Object owns this state. Never use an isolate-global token cache.
 export class CemSessionCore {
@@ -40,5 +41,11 @@ export class CemSessionCore {
   }
   readBatch(month,batch){return this.run((config,bearer,deadline)=>readCemBatch(config,month,batch,new Date(),bearer,deadline));}
   statusBatch(batch){return this.run((config,bearer,deadline)=>readCemStatuses(config,batch,bearer,deadline),10000);}
+  paymentBatch(batch){return this.run((config,bearer,deadline)=>readCemPayments(config,batch,bearer,deadline),10000);}
+  async eqlinkPaymentBatch(batch){
+    const config=eqlinkConfig(this.env),size=5,batches=Math.ceil((config?.mapping.length||0)/size);
+    if(!config||!Number.isInteger(batch)||batch<0||batch>=batches)throw new HttpError('ชุดรายการเงิน EQLink ไม่ถูกต้อง',400);
+    return readEqlinkPayments({...config,mapping:config.mapping.slice(batch*size,(batch+1)*size)});
+  }
   history(data,code){return this.run((config,bearer,deadline)=>cemHistory(data,code,config,new Date(),bearer,deadline));}
 }

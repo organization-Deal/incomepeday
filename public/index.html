@@ -1130,11 +1130,12 @@ function render(){
       (isPartial(x,VIEW.part[i])&&MODE==='day'?' (ยังไม่ปิดวัน)':'')+' · '+x.s+' · '+money(x.d)+' บาท">'+
       '<i style="height:'+Math.max(2, Math.min(30, Math.round((x.d||0)/p90*30)))+'px"></i></i>').join('');
     const upc = m.uptime==null?'mid': m.uptime>=85?'good': m.uptime>=60?'mid':'bad';
+    const latestRevenue=DealOnlineTime.latestRevenue(r),revenueAttrs=latestRevenue?' data-last-revenue-cents="'+latestRevenue.amountCents+'" data-last-revenue-date="'+latestRevenue.date+'"':'';
     return '<div class="row'+((isDead(r)||m.dropping)?' alert':'')+'" data-code="'+r.code+'" style="animation-delay:'+Math.min(ri*9,200)+'ms">'+
       '<div class="code">'+r.code+'</div>'+
       '<div class="nm" title="'+esc(r.name||r.code)+'">'+(m.dropping?'<span class="warn" title="รายได้ร่วงผิดสังเกต">▼</span>':'')+nameOf(r)+'</div>'+
       '<div class="pulse">'+strip+'</div>'+
-      '<div class="daily-status"><div class="online-summary" data-online-summary="'+esc(r.code)+'">วันนี้ · กำลังอ่านเวลาสะสม…</div><small>ณ ตอนเช็ค: '+esc(c.s)+'</small></div>'+
+      '<div class="daily-status"><div class="online-summary" data-online-summary="'+esc(r.code)+'"'+revenueAttrs+'>วันนี้ · กำลังอ่านเวลาสะสม…</div><small>ณ ตอนเช็ค: '+esc(c.s)+'</small></div>'+
       '<div class="num sm'+(m.dayRev?'':' zero')+'">'+money(m.dayRev)+(m.dayOpen&&m.dayRev?'<i class="op">·</i>':'')+'</div>'+
       '<div class="num sm'+(m.week?'':' zero')+'">'+money(m.week)+'</div>'+
       '<div class="num'+(m.month?'':' zero')+'">'+money(m.month)+'</div></div>';

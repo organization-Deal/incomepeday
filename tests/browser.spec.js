@@ -397,3 +397,13 @@ test('source-history transitions are labelled separately from later dashboard ob
  await expect(page.locator('#rows .row[data-code="LO_0001"]')).toContainText('ออนไลน์ล่าสุดจากต้นทาง:');
  await page.evaluate(()=>Workspace.openMachine('LO_0001'));const last=page.locator('#fp-online-time .ot-last');await expect(last).toContainText('10:05');await expect(last).toContainText('22:30');
 });
+
+test('latest incoming money is visible in fleet rows and machine popup',async({page})=>{
+ await setup(page,{onApi:async(route,url)=>{
+  if(url.pathname!=='/api/online-time')return false;
+  const d={code:'LO_0001',onlineMs:0,offlineMs:0,unknownMs:0,elapsedMs:0,observations:0,latestPayment:{provider:'cem',receivedAt:Date.parse('2026-09-16T05:30:00Z'),amountCents:2000,currency:'THB',method:'ONLINE'}};
+  await route.fulfill({json:{ok:true,data:url.searchParams.has('code')?d:{rows:[d]}}});return true;
+ }});
+ const row=page.locator('#rows .row[data-code="LO_0001"]');await expect(row).toContainText('เงินเข้าล่าสุด ฿20');await expect(row).toContainText('12:30');
+ await page.evaluate(()=>Workspace.openMachine('LO_0001'));await expect(page.locator('#fp-online-time')).toContainText('เงินเข้าล่าสุด ฿20');
+});
