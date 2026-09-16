@@ -1,3 +1,4 @@
+import {handleDailyNotes} from './daily-notes.js';
 import { HttpError, json, requestJson, requestBody } from './http.js';
 import { handlePerfume } from './perfume.js';
 import { eqlinkConfig, configFingerprint, readMonth, mergeMonth, replaceHistory } from './eqlink.js';
@@ -15,6 +16,7 @@ export default {
         if (request.method === 'POST') return await handleWrite(request, env);
         return json({ ok: false, error: 'method not allowed' }, 405);
       }
+      if(url.pathname==='/api/daily-notes')return await handleDailyNotes(request,env);
       if (url.pathname === '/api/perfume') {
         if (request.method === 'POST') return await handlePerfume(request);
         if (request.method === 'GET') return json({ ok: true, msg: 'perfume proxy พร้อม — ใช้ POST {token,time,ids}' });

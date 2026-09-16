@@ -488,8 +488,10 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
 .revenue-group[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:2px}.group-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px 0;font-size:12px;color:var(--ink-3)}.group-actions span{margin-right:auto}
 @media(max-width:1000px){.revenue-group-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.revenue-group-grid{grid-template-columns:1fr}.revenue-group{padding:16px}}
 </style>
+<link rel="stylesheet" href="./workspace.css">
 </head>
 <body>
+<aside class="workspace-nav" aria-label="เมนูหลัก"><div class="workspace-brand"><b>DEAL<span>!</span></b><small>ศูนย์ดูแลตู้และรายได้</small></div><nav class="workspace-links"><a href="#overview" aria-current="page"><i>◫</i>ภาพรวม</a><a href="#revenue-groups"><i>◎</i>ติดตามตู้</a><a href="#machines"><i>▤</i>ตู้ทั้งหมด</a><a href="#reports"><i>↗</i>รายได้และรายงาน</a><button id="workspace-notes"><i>✎</i>บันทึกงานรายวัน</button></nav><footer>ดูสถานะ · ติดตามปัญหา<br>บันทึกการทำงานในที่เดียว</footer></aside>
 
 <nav class="nav" id="nav">
   <div class="logo">
@@ -510,7 +512,7 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
 
 <div class="wrap">
 
-  <header class="hero ops-hero">
+  <header class="hero ops-hero" id="overview">
     <div class="ops-title">
       <div class="eyebrow">OPERATIONS · ภาพรวมทั้งกอง</div>
       <h1>สถานะตู้วันนี้</h1>
@@ -525,6 +527,17 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
     <div class="card ops-kpi online"><div class="k">ออนไลน์วันนี้</div><div class="v tab"><span id="ops-online">—</span><small> ตู้ · </small><span id="k-on">—</span><small>%</small></div><div class="ops-deltas"><span class="ops-delta" id="on-d1">เมื่อวาน —</span><span class="ops-delta" id="on-d7">7 วัน —</span><span class="ops-delta" id="on-dm">เดือน —</span></div><div id="k-onsub" style="display:none"></div></div>
     <div class="card ops-kpi offline"><div class="k">ออฟไลน์วันนี้</div><div class="v tab"><span id="ops-offline">—</span><small> ตู้ · </small><span id="ops-offline-pct">—</span><small>%</small></div><div class="ops-deltas"><span class="ops-delta" id="off-d1">เมื่อวาน —</span><span class="ops-delta" id="off-d7">7 วัน —</span><span class="ops-delta" id="off-dm">เดือน —</span></div></div>
     <div class="card ops-kpi attention"><div class="k">ต้องตรวจสอบ</div><div class="v tab"><span id="ops-attention">—</span><small> ตู้</small></div><div class="ops-deltas"><span class="ops-delta bad">ดับ ≥ 2 วัน หรือเช็กไม่ได้</span></div></div>
+  </section>
+
+  <section id="revenue-groups" aria-label="หมวดตู้ตามสถานะและรายได้">
+    <div class="sect"><h2>สถานะตู้และรายได้ 3 วัน</h2><div class="cap" id="group-window"></div></div>
+    <div class="revenue-group-grid">
+      <button class="card revenue-group" data-revenue-group="offline-zero" aria-pressed="false"><span>ออฟไลน์ · ไม่มียอดเงิน</span><strong data-group-count="offline-zero">0</strong><small>ไม่มีรายได้ครบ 3 วันที่ปิดยอดแล้ว</small></button>
+      <button class="card revenue-group" data-revenue-group="offline-money" aria-pressed="false"><span>ออฟไลน์ · มียอดเงิน</span><strong data-group-count="offline-money">0</strong><small>มีรายได้ใน 3 วันที่ปิดยอดแล้ว</small></button>
+      <button class="card revenue-group" data-revenue-group="online-zero" aria-pressed="false"><span>ออนไลน์ · ไม่มียอดเกิน 2 วัน</span><strong data-group-count="online-zero">0</strong><small>ไม่มีรายได้ต่อเนื่องอย่างน้อย 3 วัน</small></button>
+      <button class="card revenue-group" data-revenue-group="online-money" aria-pressed="false"><span>ออนไลน์ · มียอดเงิน</span><strong data-group-count="online-money">0</strong><small>มีรายได้ใน 3 วันที่ปิดยอดแล้ว</small></button>
+    </div>
+    <div class="group-actions"><span id="group-selected">กดหมวดเพื่อดูรายชื่อตู้ในตารางด้านล่าง</span><button class="gbtn" data-revenue-group="unknown">ข้อมูลไม่พอ <b data-group-count="unknown">0</b></button><button class="gbtn" data-revenue-group="">ดูทั้งหมด</button></div>
   </section>
 
   <section class="ops-layout">
@@ -548,17 +561,6 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
     </div></div>
   </section>
 
-  <section id="revenue-groups" aria-label="หมวดตู้ตามสถานะและรายได้">
-    <div class="sect"><h2>สถานะตู้และรายได้ 3 วัน</h2><div class="cap" id="group-window"></div></div>
-    <div class="revenue-group-grid">
-      <button class="card revenue-group" data-revenue-group="offline-zero" aria-pressed="false"><span>ออฟไลน์ · ไม่มียอดเงิน</span><strong data-group-count="offline-zero">0</strong><small>ไม่มีรายได้ครบ 3 วันที่ปิดยอดแล้ว</small></button>
-      <button class="card revenue-group" data-revenue-group="offline-money" aria-pressed="false"><span>ออฟไลน์ · มียอดเงิน</span><strong data-group-count="offline-money">0</strong><small>มีรายได้ใน 3 วันที่ปิดยอดแล้ว</small></button>
-      <button class="card revenue-group" data-revenue-group="online-zero" aria-pressed="false"><span>ออนไลน์ · ไม่มียอดเกิน 2 วัน</span><strong data-group-count="online-zero">0</strong><small>ไม่มีรายได้ต่อเนื่องอย่างน้อย 3 วัน</small></button>
-      <button class="card revenue-group" data-revenue-group="online-money" aria-pressed="false"><span>ออนไลน์ · มียอดเงิน</span><strong data-group-count="online-money">0</strong><small>มีรายได้ใน 3 วันที่ปิดยอดแล้ว</small></button>
-    </div>
-    <div class="group-actions"><span id="group-selected">กดหมวดเพื่อดูรายชื่อตู้ในตารางด้านล่าง</span><button class="gbtn" data-revenue-group="unknown">ข้อมูลไม่พอ <b data-group-count="unknown">0</b></button><button class="gbtn" data-revenue-group="">ดูทั้งหมด</button></div>
-  </section>
-
   <div class="sect"><h2>ต้องทำวันนี้</h2><div class="cap">เรียงตามเงินที่กำลังเสียไป</div></div>
   <div class="card wl">
     <div class="wl-h">
@@ -572,7 +574,7 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
     <div id="wl-rows"></div>
   </div>
 
-  <div class="sect"><h2>รายได้รวม</h2><div class="cap" id="chart-h">—</div></div>
+  <div class="sect" id="reports"><h2>รายได้รวม</h2><div class="cap" id="chart-h">—</div></div>
   <div class="card chartcard">
     <div class="chead">
       <div>
@@ -598,7 +600,7 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
     <div id="lb-rows"></div>
   </div>
 
-  <div class="sect"><h2>ตู้ทั้งหมด</h2></div>
+  <div class="sect" id="machines"><h2>ตู้ทั้งหมด</h2></div>
   <div class="tools">
     <div class="sc" id="seg"><div class="knob"></div>
       <button data-f="" aria-pressed="true">ทั้งหมด <i class="n" data-c="all">0</i></button>
@@ -649,6 +651,7 @@ textarea:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in
 
 <script src="./api-client.js"></script>
 <script src="./revenue-groups.js"></script>
+<script src="./workspace.js"></script>
 <script>
 /* ═══════════ ตั้งค่า ═══════════
    ไม่ต้องใส่ URL ของ Apps Script ตรงนี้ — Worker ที่ /api จัดการให้
@@ -839,15 +842,16 @@ function buildRevenueGroups(){
   const dates=DealRevenueGroups.windowDays(DATA.updated);
   $('#group-window').textContent=dates.length?dates[0].split('-').reverse().join('/')+' – '+dates[2].split('-').reverse().join('/')+' · ไม่รวมวันนี้':'ไม่ทราบเวลาของข้อมูล';
 }
-function selectRevenueGroup(key){
+function filterRevenueGroup(key){
   REVENUE_GROUP=key;FILTER='';
   $$('#seg button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.f===''));knob($('#seg'));render();
   $('#rows').scrollIntoView({behavior:'smooth',block:'start'});
 }
+function selectRevenueGroup(key){Workspace.openGroup(key);}
 function renderRevenueSelection(){
   $$('[data-revenue-group]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.revenueGroup===REVENUE_GROUP)));
   const names={'offline-zero':'ออฟไลน์ · ไม่มียอดเงิน 3 วัน','offline-money':'ออฟไลน์ · มียอดเงิน 3 วัน','online-zero':'ออนไลน์ · ไม่มียอดเกิน 2 วัน','online-money':'ออนไลน์ · มียอดเงิน 3 วัน',unknown:'ข้อมูลไม่พอ: สถานะหรือรายได้ 3 วันไม่ครบ'};
-  $('#group-selected').textContent=REVENUE_GROUP?'กำลังแสดง: '+names[REVENUE_GROUP]:'กดหมวดเพื่อดูรายชื่อตู้ในตารางด้านล่าง';
+  $('#group-selected').textContent=REVENUE_GROUP?'กำลังแสดง: '+names[REVENUE_GROUP]:'กดหมวดเพื่อเปิดรายชื่อตู้และบันทึกงาน';
 }
 const isPartial = (cell, fallback) => typeof cell?.closed==='boolean' ? !cell.closed : fallback;
 const currentCell = (row, cells) => Object.assign({}, lastOf(cells)||{s:'UNKNOWN'},
@@ -1245,6 +1249,7 @@ function open(code){
       'ตู้ยัง Online แต่ '+RULE.DROP_WIN+' วันล่าสุดทำได้เฉลี่ย <b>'+money(m.recent)+'</b> บาท '+
       'จากปกติ <b>'+money(m.base)+'</b> บาท (ร่วง '+Math.round(m.dropPct*100)+'%) — '+
       'ตู้ไม่ได้พัง แต่คนเล่นน้อยลง ลองเช็คว่าโดนย้ายมุม หรือมีอะไรบัง</div></div>' : '')+
+    '<div class="dsec"><button class="fp-primary" id="daily-open">บันทึกงานรายวัน ↗</button></div>'+
     '<div class="teamsec"><h3 style="font-size:9.5px;font-family:var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px">สถานะจากทีม</h3>'+
       '<div id="tnow"><div class="tnone">กำลังโหลด…</div></div>'+
       '<div class="stbtns" id="stbtns"></div>'+
@@ -1260,6 +1265,8 @@ function open(code){
   $('#drawer').classList.add('on'); $('#scrim').classList.add('on'); $('#drawer').setAttribute('aria-hidden','false');
   $('#rename').onclick = () => doRename(r);
   $('#tsave').onclick  = () => saveNote(r);
+  $('#daily-open').onclick=()=>{close();Workspace.openMachine(code);};
+  if(/^(CEM|EQ)_/.test(code))$('.teamsec').style.display='none';
   loadHistory(code);
   loadNotes(code);
 }
@@ -1483,6 +1490,9 @@ $('#scrim').onclick = close;
 $('#rows').onclick = e => { const r = e.target.closest('.row'); if(r) open(r.dataset.code); };
 $('#wl-rows').onclick = e => { const r = e.target.closest('.wrow'); if(r) open(r.dataset.code); };
 $('#mode').onclick = e => { const b = e.target.closest('button'); if(b) setMode(b.dataset.m); };
+Workspace.init({getData:()=>DATA,getGroups:()=>GROUPS,getMetrics:()=>M,onDetails:open,onTable:filterRevenueGroup});
+$('#workspace-notes').onclick=()=>Workspace.openGroup('');
+$$('.workspace-links a').forEach(a=>a.onclick=()=>{$$('.workspace-links a').forEach(x=>x.removeAttribute('aria-current'));a.setAttribute('aria-current','page');});
 $('#revenue-groups').onclick=e=>{const b=e.target.closest('[data-revenue-group]');if(b)selectRevenueGroup(b.dataset.revenueGroup);};
 $('#seg').onclick  = e => { const b = e.target.closest('button'); if(b) setFilter(b.dataset.f); };
 $('#wtab').onclick = e => { const b = e.target.closest('button'); if(!b) return;

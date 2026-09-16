@@ -15,8 +15,8 @@
 
   "observability": { "enabled": true },
 
-  "durable_objects": { "bindings": [{ "name": "CEM_SESSION", "class_name": "CemSession" }] },
-  "migrations": [{ "tag": "cem-session-v1", "new_sqlite_classes": ["CemSession"] }],
+  "durable_objects": { "bindings": [{ "name": "CEM_SESSION", "class_name": "CemSession" }, { "name": "DAILY_NOTES", "class_name": "DailyNotes" }] },
+  "migrations": [{ "tag": "cem-session-v1", "new_sqlite_classes": ["CemSession"] }, { "tag": "daily-notes-v1", "new_sqlite_classes": ["DailyNotes"] }],
 
   // ปิด Preview URL สาธารณะ — กัน URL ของ build เก่าลอยแบบไม่มีใครล็อก
   "preview_urls": false

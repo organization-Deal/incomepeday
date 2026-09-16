@@ -11,11 +11,16 @@ const data = month => ({ month, updated: '2026-09-16T00:00:00Z', ownerField: '�
 async function setup(page, { baseline = false, onApi, expectedRows=2, reducedMotion='reduce' } = {}) {
   await page.clock.install({ time: new Date('2026-09-16T12:00:00Z') });
   await page.emulateMedia({ reducedMotion });
+  const dailyNotes=[];
   await page.route('**/*', async route => {
     const url = new URL(route.request().url());
     if (url.hostname !== 'dashboard.test') return route.abort();
-    if (['/api','/api/perfume','/api/cem'].includes(url.pathname)) {
+    if (['/api','/api/perfume','/api/cem','/api/daily-notes'].includes(url.pathname)) {
       if (onApi && await onApi(route, url)) return;
+      if(url.pathname==='/api/daily-notes'){
+        if(route.request().method()==='POST'){const note=route.request().postDataJSON();if(!dailyNotes.some(n=>n.id===note.id))dailyNotes.unshift({...note,at:'2026-09-16T12:00:00Z'});return route.fulfill({json:{ok:true,data:{saved:true,storage:'shared'}}});}
+        return route.fulfill({json:{ok:true,data:{notes:dailyNotes.filter(n=>n.code===url.searchParams.get('code')&&n.date===url.searchParams.get('date')),storage:'shared'}}});
+      }
       const action = url.searchParams.get('action');
       let value;
       if (route.request().method() === 'POST') value = {};
@@ -25,6 +30,7 @@ async function setup(page, { baseline = false, onApi, expectedRows=2, reducedMot
       else value = { history: [] };
       return route.fulfill({ json: { ok: true, data: value } });
     }
+    if(['/workspace.js','/workspace.css'].includes(url.pathname))return route.fulfill({contentType:url.pathname.endsWith('.css')?'text/css':'text/javascript',body:readFileSync('public'+url.pathname,'utf8')});
     if(url.pathname==='/revenue-groups.js')return route.fulfill({contentType:'text/javascript',body:readFileSync('public/revenue-groups.js','utf8')});
     if (url.pathname === '/api-client.js') return route.fulfill({ contentType: 'text/javascript', body: readFileSync('public/api-client.js', 'utf8') });
     if (url.pathname === '/revenue-model.js') return route.fulfill({ contentType:'text/javascript',body:readFileSync('public/revenue-model.js','utf8') });
@@ -136,32 +142,18 @@ test('refresh refetches history instead of reusing stale memoized history', asyn
   expect(history).toBe(2);
 });
 
-for (const width of [1440, 390]) test('unchanged dashboard and drawer appearance at width ' + width, async ({ browser }, testInfo) => {
-  const context = await browser.newContext({ viewport: { width, height: 1000 }, deviceScaleFactor: 1 });
-  const before = await context.newPage(), after = await context.newPage();
-  await setup(before, { baseline: true }); await setup(after);
-  await after.addStyleTag({content:'#revenue-groups{display:none!important}'});
-  for (const theme of ['light', 'dark']) {
-    for (const page of [before, after]) {
-      await page.evaluate(t => setTheme(t), theme); await page.clock.runFor(2000);
-    }
-    const actual = await after.screenshot({ animations: 'disabled' });
-    const expected = await before.screenshot({ animations: 'disabled' });
-    writeFileSync(testInfo.outputPath('after-'+theme+'.png'), actual);
-    writeFileSync(testInfo.outputPath('before-'+theme+'.png'), expected);
-    expect(actual.equals(expected), 'dashboard pixels match baseline '+theme).toBe(true);
-  }
-  for (const page of [before, after]) {
-    await page.evaluate(() => open('LO_0001'));
-    await expect(page.locator('#tnow')).toContainText('LO_0001');
-    await expect(page.locator('#hist')).toContainText('ยังไม่มี');
-    await page.clock.runFor(2000);
-  }
-  const afterDrawer=await after.screenshot({animations:'disabled'}),beforeDrawer=await before.screenshot({animations:'disabled'});
-  writeFileSync(testInfo.outputPath('after-drawer.png'),afterDrawer);
-  writeFileSync(testInfo.outputPath('before-drawer.png'),beforeDrawer);
-  expect(afterDrawer.equals(beforeDrawer),'drawer pixels match baseline').toBe(true);
-  await context.close();
+for(const width of [1440,390])test('redesigned workspace and popup render at width '+width,async({browser},testInfo)=>{
+ const context=await browser.newContext({viewport:{width,height:1000}}),page=await context.newPage();await setup(page);
+ await expect(page.locator('.workspace-links')).toContainText('บันทึกงานรายวัน');
+ for(const theme of ['light','dark']){
+  await page.evaluate(t=>setTheme(t),theme);await page.clock.runFor(1000);
+  await page.screenshot({path:testInfo.outputPath('workspace-'+theme+'.png'),animations:'disabled'});
+ }
+ await page.click('#workspace-notes');await expect(page.locator('#fleet-popup')).toBeVisible();
+ await page.locator('.fp-machine').first().click();await expect(page.locator('#fp-form')).toBeVisible();
+ expect(await page.locator('#fleet-popup').evaluate(el=>el.getBoundingClientRect().right<=innerWidth&&el.getBoundingClientRect().left>=0)).toBe(true);
+ await page.screenshot({path:testInfo.outputPath('popup.png'),animations:'disabled'});
+ await page.keyboard.press('Escape');await expect(page.locator('#fleet-popup')).not.toBeVisible();await context.close();
 });
 
 test('save before initial notes load still resolves history and status buttons', async ({ page }) => {
@@ -313,14 +305,43 @@ test('revenue groups partition machines and filter the original table on desktop
  }});
  for(const key of ['offline-zero','offline-money','online-zero','online-money','unknown']){
   await expect(page.locator('[data-group-count="'+key+'"]')).toHaveText('1');
-  await page.locator('[data-revenue-group="'+key+'"]').click();await expect(page.locator('#rows .row')).toHaveCount(1);
+  await page.locator('[data-revenue-group="'+key+'"]').click();await expect(page.locator('.fp-machine')).toHaveCount(1);await page.click('#fp-table');await expect(page.locator('#rows .row')).toHaveCount(1);
   expect(await page.evaluate(()=>GROUPS[LIST[0].code])).toBe(key);
  }
- await page.locator('[data-revenue-group=""]').click();await expect(page.locator('#rows .row')).toHaveCount(5);
- await page.locator('[data-revenue-group="offline-zero"]').click();
+ await page.locator('[data-revenue-group=""]').click();await page.click('#fp-table');await expect(page.locator('#rows .row')).toHaveCount(5);
+ await page.locator('[data-revenue-group="offline-zero"]').click();await page.click('#fp-table');
  await page.evaluate(()=>setFilter('ONLINE'));await expect(page.locator('#rows .row')).toHaveCount(3);
  await page.setViewportSize({width:390,height:844});await page.locator('#revenue-groups').scrollIntoViewIfNeeded();
  expect(await page.locator('#revenue-groups').evaluate(el=>Array.from(el.querySelectorAll('*')).every(n=>n.getBoundingClientRect().right<=innerWidth+1&&n.getBoundingClientRect().left>=0))).toBe(true);
- await page.locator('[data-revenue-group="online-money"]').click();await expect(page.locator('#rows .row')).toHaveCount(1);
+ await page.locator('[data-revenue-group="online-money"]').click();await page.click('#fp-table');await expect(page.locator('#rows .row')).toHaveCount(1);
  await page.locator('#rows .row').click();await expect(page.locator('#dname')).toContainText('Group 3');
+});
+
+test('daily-note popup searches locations, preserves drafts and saves by machine and date',async({page})=>{
+ await setup(page);await page.click('#workspace-notes');
+ await page.fill('#fp-search','ร้าน 1');await expect(page.locator('.fp-machine')).toHaveCount(1);
+ await page.locator('.fp-machine').first().click();await page.fill('#fp-author','Test team');await page.fill('#fp-text','Draft for first machine');
+ await page.fill('#fp-search','');await page.locator('[data-machine="LO_0002"]').click();await expect(page.locator('#fp-text')).toHaveValue('');
+ await page.locator('[data-machine="LO_0001"]').click();await expect(page.locator('#fp-text')).toHaveValue('Draft for first machine');
+ await page.fill('#fp-date','2026-09-15');await expect(page.locator('#fp-text')).toHaveValue('');
+ await page.fill('#fp-author','Test team');await page.fill('#fp-text','Checked yesterday');await page.click('#fp-save');
+ await expect(page.locator('#fp-history')).toContainText('Checked yesterday');await expect(page.locator('#fp-text')).toHaveValue('');
+ await page.fill('#fp-date','2026-09-16');await expect(page.locator('#fp-text')).toHaveValue('Draft for first machine');
+ await expect(page.locator('#fp-history')).not.toContainText('Checked yesterday');
+ await page.click('#fp-close');await page.click('#workspace-notes');await page.locator('[data-machine="LO_0001"]').click();
+ await expect(page.locator('#fp-text')).toHaveValue('Draft for first machine');
+ await page.fill('#fp-date','2026-09-15');await expect(page.locator('#fp-history')).toContainText('Checked yesterday');
+});
+
+test('closing a pending note save cannot resurrect the saved text as a new draft',async({page})=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ await setup(page,{onApi:async(route,url)=>{
+  if(url.pathname==='/api/daily-notes'&&route.request().method()==='POST'){
+   await gate;await route.fulfill({json:{ok:true,data:{saved:true,storage:'shared'}}});return true;
+  }return false;
+ }});
+ await page.click('#workspace-notes');await page.locator('.fp-machine').first().click();
+ await page.fill('#fp-author','Team');await page.fill('#fp-text','Saved while closed');await page.click('#fp-save');
+ await page.click('#fp-close');release();await expect(page.locator('#fp-text')).toHaveValue('');
+ await page.click('#workspace-notes');await page.locator('.fp-machine').first().click();await expect(page.locator('#fp-text')).toHaveValue('');
 });
